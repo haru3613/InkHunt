@@ -152,7 +152,7 @@ export function InquiryForm({
         </SheetHeader>
 
         <form
-          className="flex-1 overflow-y-auto space-y-4 px-4"
+          className="overflow-y-auto space-y-4 px-4 pb-4"
           onSubmit={(e) => {
             e.preventDefault()
             handleSubmit()
