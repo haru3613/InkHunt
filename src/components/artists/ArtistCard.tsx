@@ -1,4 +1,5 @@
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import type { ArtistWithDetails } from '@/lib/supabase/queries/artists'
@@ -14,10 +15,12 @@ interface ArtistCardProps {
 
 const MAX_VISIBLE_STYLES = 3
 
-export function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
+export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
   if (variant === 'compact') {
     return <CompactCard artist={artist} />
   }
+
+  const t = await getTranslations('artists')
 
   const visibleStyles = artist.styles.slice(0, MAX_VISIBLE_STYLES)
   const extraCount = artist.styles.length - MAX_VISIBLE_STYLES
@@ -39,7 +42,7 @@ export function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
                 </h3>
                 {artist.featured && (
                   <Badge className="shrink-0 bg-amber-500 text-white hover:bg-amber-600">
-                    推薦
+                    {t('recommended')}
                   </Badge>
                 )}
               </div>
@@ -69,7 +72,9 @@ export function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
   )
 }
 
-function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
+async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
+  const t = await getTranslations('artists')
+
   return (
     <Link
       href={`/artists/${artist.slug}`}
@@ -105,7 +110,7 @@ function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
       )}
       {artist.price_min !== null && artist.price_min !== undefined && (
         <p className="mt-2 text-sm text-amber-600">
-          {formatPrice(artist.price_min)} 起
+          {t('priceFrom', { price: formatPrice(artist.price_min) })}
         </p>
       )}
     </Link>

@@ -1,6 +1,7 @@
-import Link from "next/link"
 import { MapPinIcon, CalendarIcon, BanknoteIcon, InfoIcon } from "lucide-react"
+import { getTranslations } from "next-intl/server"
 import { Badge } from "@/components/ui/badge"
+import { Link } from "@/i18n/navigation"
 import { formatPrice, formatPriceRange, formatIgUrl } from "@/lib/utils"
 import type { ArtistWithDetails } from "@/lib/supabase/queries/artists"
 import { ArtistAvatar } from "./ArtistAvatar"
@@ -9,7 +10,8 @@ interface ArtistProfileProps {
   readonly artist: ArtistWithDetails
 }
 
-export function ArtistProfile({ artist }: ArtistProfileProps) {
+export async function ArtistProfile({ artist }: ArtistProfileProps) {
+  const t = await getTranslations("artistProfile")
   const priceText = formatPriceRange(artist.price_min, artist.price_max)
   const igUrl = artist.ig_handle ? formatIgUrl(artist.ig_handle) : null
   const location = [artist.city, artist.district].filter(Boolean).join(" ")
@@ -85,7 +87,7 @@ export function ArtistProfile({ artist }: ArtistProfileProps) {
         {artist.deposit_amount !== null && artist.deposit_amount > 0 && (
           <div className="flex items-center gap-1.5 text-sm text-stone-600">
             <InfoIcon className="size-4 shrink-0 text-stone-400" />
-            <span>訂金 {formatPrice(artist.deposit_amount)}</span>
+            <span>{t("deposit", { amount: formatPrice(artist.deposit_amount) })}</span>
           </div>
         )}
         {artist.booking_notice && (
@@ -102,7 +104,7 @@ export function ArtistProfile({ artist }: ArtistProfileProps) {
           href={`/artists/${artist.slug}/inquiry`}
           className="inline-flex h-11 items-center justify-center rounded-lg bg-amber-500 px-8 text-base font-medium text-white transition-colors hover:bg-amber-600"
         >
-          我想詢價
+          {t("inquire")}
         </Link>
       </div>
     </section>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { setRequestLocale, getTranslations } from "next-intl/server"
 import { getArtistBySlug, getArtists } from "@/lib/supabase/queries/artists"
 import { formatPriceRange } from "@/lib/utils"
 import { generateArtistJsonLd } from "@/lib/seo"
@@ -10,7 +11,7 @@ import { PortfolioSection } from "@/components/artists/PortfolioSection"
 import { MobileCTA } from "@/components/artists/MobileCTA"
 
 interface PageProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ locale: string; slug: string }>
 }
 
 export async function generateStaticParams() {
@@ -19,11 +20,12 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params
+  const { locale, slug } = await params
+  const t = await getTranslations({ locale, namespace: "metadata" })
   const artist = await getArtistBySlug(slug)
 
   if (!artist) {
-    return { title: "找不到刺青師" }
+    return { title: t("artistNotFound") }
   }
 
   const stylesText = artist.styles.map((s) => s.name).join("、")
@@ -37,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   ].filter(Boolean)
 
   return {
-    title: `${artist.display_name} — 刺青作品集`,
+    title: t("artistPortfolio", { name: artist.display_name }),
     description:
       descriptionParts.length > 0
         ? `${artist.display_name} 的刺青作品集。${descriptionParts.join("｜")}。在 InkHunt 瀏覽作品、一鍵詢價。`
@@ -51,7 +53,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ArtistProfilePage({ params }: PageProps) {
-  const { slug } = await params
+  const { locale, slug } = await params
+  setRequestLocale(locale)
+
+  const t = await getTranslations("artistProfile")
   const artist = await getArtistBySlug(slug)
 
   if (!artist) {
@@ -73,7 +78,7 @@ export default async function ArtistProfilePage({ params }: PageProps) {
         {/* Portfolio */}
         <div className="mt-6">
           <h2 className="mb-4 text-lg font-bold text-stone-900">
-            作品集
+            {t("portfolio")}
           </h2>
           <PortfolioSection items={artist.portfolio_items} />
         </div>

@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { setRequestLocale, getTranslations } from 'next-intl/server'
 import { getAllStyles, getStyleBySlug } from '@/lib/supabase/queries/styles'
 import { getArtists } from '@/lib/supabase/queries/artists'
 import { generateStyleCollectionJsonLd } from '@/lib/seo'
 import { JsonLd } from '@/components/shared/JsonLd'
 import { ArtistCard } from '@/components/artists/ArtistCard'
+import { Link } from '@/i18n/navigation'
 
 export async function generateStaticParams() {
   const styles = await getAllStyles()
@@ -13,7 +14,7 @@ export async function generateStaticParams() {
 }
 
 interface StylePageProps {
-  readonly params: Promise<{ style: string }>
+  readonly params: Promise<{ locale: string; style: string }>
 }
 
 export async function generateMetadata({ params }: StylePageProps): Promise<Metadata> {
@@ -28,7 +29,11 @@ export async function generateMetadata({ params }: StylePageProps): Promise<Meta
 }
 
 export default async function StylePage({ params }: StylePageProps) {
-  const { style: slug } = await params
+  const { locale, style: slug } = await params
+  setRequestLocale(locale)
+
+  const t = await getTranslations('style')
+
   const [style, { data: artists, total: artistCount }] = await Promise.all([
     getStyleBySlug(slug),
     getArtists({ style: slug }),
@@ -52,13 +57,13 @@ export default async function StylePage({ params }: StylePageProps) {
               href="/artists"
               className="text-sm text-stone-500 hover:text-stone-700"
             >
-              &larr; 所有刺青師
+              &larr; {t('allArtists')}
             </Link>
             <h1 className="mt-2 text-2xl font-bold text-stone-900 lg:text-3xl">
-              {style.icon} {style.name}刺青師推薦
+              {style.icon} {t('recommendTitle', { styleName: style.name })}
             </h1>
             <p className="mt-1 text-stone-500">
-              共 {artistCount} 位刺青師
+              {t('totalArtists', { count: artistCount })}
             </p>
           </div>
 
@@ -70,7 +75,7 @@ export default async function StylePage({ params }: StylePageProps) {
             </div>
           ) : (
             <p className="text-stone-400">
-              目前沒有{style.name}風格的刺青師，敬請期待。
+              {t('noArtists', { styleName: style.name })}
             </p>
           )}
 
@@ -79,7 +84,7 @@ export default async function StylePage({ params }: StylePageProps) {
               href={`/artists?style=${slug}`}
               className="text-sm font-medium text-amber-600 hover:text-amber-700"
             >
-              查看所有{style.name}刺青師 &rarr;
+              {t('viewAll', { styleName: style.name })} &rarr;
             </Link>
           </div>
         </div>

@@ -1,4 +1,5 @@
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import type { Database } from '@/types/database'
 
 type StyleRow = Database['public']['Tables']['styles']['Row']
@@ -6,9 +7,10 @@ type StyleRow = Database['public']['Tables']['styles']['Row']
 interface StyleCardProps {
   readonly style: StyleRow
   readonly artistCount: number
+  readonly artistsLabel: string
 }
 
-function StyleCard({ style, artistCount }: StyleCardProps) {
+function StyleCard({ style, artistCount, artistsLabel }: StyleCardProps) {
   return (
     <Link
       href={`/styles/${style.slug}`}
@@ -18,7 +20,7 @@ function StyleCard({ style, artistCount }: StyleCardProps) {
         {style.icon}
       </span>
       <p className="mt-2 font-medium text-stone-900">{style.name}</p>
-      <p className="text-sm text-stone-500">{artistCount} 位刺青師</p>
+      <p className="text-sm text-stone-500">{artistCount} {artistsLabel}</p>
     </Link>
   )
 }
@@ -28,7 +30,9 @@ interface StyleGridProps {
   readonly artistCounts: ReadonlyMap<string, number>
 }
 
-export function StyleGrid({ styles, artistCounts }: StyleGridProps) {
+export async function StyleGrid({ styles, artistCounts }: StyleGridProps) {
+  const t = await getTranslations('common')
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {styles.map((style) => (
@@ -36,6 +40,7 @@ export function StyleGrid({ styles, artistCounts }: StyleGridProps) {
           key={style.id}
           style={style}
           artistCount={artistCounts.get(style.slug) ?? 0}
+          artistsLabel={t('artists')}
         />
       ))}
     </div>

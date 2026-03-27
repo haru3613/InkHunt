@@ -1,12 +1,17 @@
-import Link from "next/link"
+"use client"
 
-const footerLinks = [
-  { href: "/about", label: "關於我們" },
-  { href: "/privacy", label: "隱私政策" },
-  { href: "/terms", label: "使用條款" },
-] as const
+import { useTranslations } from "next-intl"
+import { Link } from "@/i18n/navigation"
 
 export function Footer() {
+  const t = useTranslations("footer")
+
+  const footerLinks = [
+    { href: "/about" as const, label: t("about") },
+    { href: "/privacy" as const, label: t("privacy") },
+    { href: "/terms" as const, label: t("terms") },
+  ]
+
   return (
     <footer className="border-t border-stone-200 bg-stone-100 py-8">
       <div className="container mx-auto px-4">

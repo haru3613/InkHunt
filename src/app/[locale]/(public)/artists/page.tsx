@@ -1,15 +1,26 @@
 import type { Metadata } from 'next'
+import { setRequestLocale, getTranslations } from 'next-intl/server'
 import { getArtists } from '@/lib/supabase/queries/artists'
 import { getAllStyles } from '@/lib/supabase/queries/styles'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { ArtistFilters } from '@/components/artists/ArtistFilters'
 
-export const metadata: Metadata = {
-  title: '找刺青師 | InkHunt',
-  description: '按風格、地區篩選台灣刺青師，瀏覽作品集，一鍵詢價',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'metadata' })
+
+  return {
+    title: t('artistsTitle'),
+    description: t('artistsDescription'),
+  }
 }
 
 interface ArtistsPageProps {
+  params: Promise<{ locale: string }>
   searchParams: Promise<{
     style?: string
     city?: string
@@ -17,13 +28,17 @@ interface ArtistsPageProps {
   }>
 }
 
-export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
-  const params = await searchParams
+export default async function ArtistsPage({ params, searchParams }: ArtistsPageProps) {
+  const { locale } = await params
+  setRequestLocale(locale)
+
+  const t = await getTranslations('artists')
+  const sp = await searchParams
 
   const filters = {
-    style: params.style ?? null,
-    city: params.city ?? null,
-    page: params.page ? (parseInt(params.page, 10) || 1) : 1,
+    style: sp.style ?? null,
+    city: sp.city ?? null,
+    page: sp.page ? (parseInt(sp.page, 10) || 1) : 1,
   }
 
   const [{ data: artists, total }, styles] = await Promise.all([
@@ -33,8 +48,8 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
-      <h1 className="mb-1 text-2xl font-bold text-stone-900">找刺青師</h1>
-      <p className="mb-4 text-sm text-stone-500">共 {total} 位刺青師</p>
+      <h1 className="mb-1 text-2xl font-bold text-stone-900">{t('title')}</h1>
+      <p className="mb-4 text-sm text-stone-500">{t('total', { count: total })}</p>
 
       <ArtistFilters styles={styles} />
 
@@ -46,7 +61,7 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
         </div>
       ) : (
         <div className="mt-12 text-center text-stone-500">
-          沒有符合條件的刺青師
+          {t('noResults')}
         </div>
       )}
     </div>

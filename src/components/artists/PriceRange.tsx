@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { formatPrice } from '@/lib/utils'
 
 interface PriceRangeProps {
@@ -5,9 +6,11 @@ interface PriceRangeProps {
   max?: number | null
 }
 
-export function PriceRange({ min, max }: PriceRangeProps) {
+export async function PriceRange({ min, max }: PriceRangeProps) {
+  const t = await getTranslations('artistProfile')
+
   if (min == null && max == null) {
-    return <span className="text-sm text-stone-500">價格洽詢</span>
+    return <span className="text-sm text-stone-500">{t('priceInquiry')}</span>
   }
 
   if (min != null && max != null) {

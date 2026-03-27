@@ -1,7 +1,8 @@
 "use client"
 
-import Link from "next/link"
+import { useTranslations } from "next-intl"
 import { MenuIcon } from "lucide-react"
+import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -12,12 +13,14 @@ import {
   SheetClose,
 } from "@/components/ui/sheet"
 
-const navLinks = [
-  { href: "/artists", label: "找刺青師" },
-  { href: "/artist", label: "設計師入口" },
-] as const
-
 export function Header() {
+  const t = useTranslations("nav")
+
+  const navLinks = [
+    { href: "/artists" as const, label: t("findArtist") },
+    { href: "/artist" as const, label: t("artistEntry") },
+  ]
+
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200 bg-white">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
@@ -46,7 +49,7 @@ export function Header() {
             }
           >
             <MenuIcon className="size-5" />
-            <span className="sr-only">開啟選單</span>
+            <span className="sr-only">{t("openMenu")}</span>
           </SheetTrigger>
           <SheetContent side="right" className="w-64">
             <SheetHeader>

@@ -1,19 +1,20 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { HomeIcon, SearchIcon, HeartIcon, UserIcon } from "lucide-react"
+import { Link, usePathname } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
-
-const tabs = [
-  { href: "/", label: "首頁", icon: HomeIcon },
-  { href: "/artists", label: "找刺青師", icon: SearchIcon },
-  { href: "/favorites", label: "收藏", icon: HeartIcon },
-  { href: "/artist", label: "設計師", icon: UserIcon },
-] as const
 
 export function MobileNav() {
   const pathname = usePathname()
+  const t = useTranslations("nav")
+
+  const tabs = [
+    { href: "/" as const, label: t("home"), icon: HomeIcon },
+    { href: "/artists" as const, label: t("findArtist"), icon: SearchIcon },
+    { href: "/favorites" as const, label: t("favorites"), icon: HeartIcon },
+    { href: "/artist" as const, label: t("artist"), icon: UserIcon },
+  ]
 
   return (
     <nav
