@@ -23,8 +23,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    console.log('[LINE CB] exchanging code for tokens...')
     const tokens = await exchangeCodeForTokens(code)
+    console.log('[LINE CB] got tokens, fetching profile...')
     const profile = await getLineProfile(tokens.access_token)
+    console.log('[LINE CB] profile:', profile.userId, profile.displayName)
 
     // Try Supabase OIDC sign-in first
     const supabase = await createServerClient()
@@ -85,7 +88,8 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const message =
       err instanceof Error ? err.message : 'Unknown callback error'
-    console.error('LINE callback error:', message)
+    const stack = err instanceof Error ? err.stack : ''
+    console.error('[LINE CB] FULL ERROR:', message, stack)
     return NextResponse.redirect(`${baseUrl}?auth_error=callback_failed`)
   }
 }
