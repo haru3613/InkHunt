@@ -1,9 +1,9 @@
-import Image from "next/image"
 import Link from "next/link"
 import { MapPinIcon, CalendarIcon, BanknoteIcon, InfoIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice, formatPriceRange, formatIgUrl } from "@/lib/utils"
 import type { ArtistWithDetails } from "@/lib/supabase/queries/artists"
+import { ArtistAvatar } from "./ArtistAvatar"
 
 interface ArtistProfileProps {
   readonly artist: ArtistWithDetails
@@ -18,22 +18,12 @@ export function ArtistProfile({ artist }: ArtistProfileProps) {
     <section className="rounded-xl bg-white p-6">
       {/* Avatar + Name + IG */}
       <div className="flex items-start gap-4">
-        <div className="relative size-20 shrink-0 overflow-hidden rounded-full bg-stone-200">
-          {artist.avatar_url ? (
-            <Image
-              src={artist.avatar_url}
-              alt={artist.display_name}
-              fill
-              className="object-cover"
-              sizes="80px"
-              priority
-            />
-          ) : (
-            <div className="flex size-full items-center justify-center text-2xl font-bold text-stone-400">
-              {artist.display_name.charAt(0)}
-            </div>
-          )}
-        </div>
+        <ArtistAvatar
+          name={artist.display_name}
+          avatarUrl={artist.avatar_url}
+          size="lg"
+          priority
+        />
 
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-stone-900">

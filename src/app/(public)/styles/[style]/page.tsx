@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { getAllStyles, getStyleBySlug } from '@/lib/supabase/queries/styles'
-import { getArtists, type ArtistWithDetails } from '@/lib/supabase/queries/artists'
+import { getArtists } from '@/lib/supabase/queries/artists'
 import { generateStyleCollectionJsonLd } from '@/lib/seo'
 import { JsonLd } from '@/components/shared/JsonLd'
-import { formatPrice } from '@/lib/utils'
+import { ArtistCard } from '@/components/artists/ArtistCard'
 
 export async function generateStaticParams() {
   const styles = await getAllStyles()
@@ -26,57 +25,6 @@ export async function generateMetadata({ params }: StylePageProps): Promise<Meta
     title: `${style.name}刺青推薦`,
     description: `精選台灣${style.name}風格刺青師，查看作品集和價格。在 InkHunt 找到最適合你的${style.name}刺青師。`,
   }
-}
-
-function StyleArtistCard({ artist }: { readonly artist: ArtistWithDetails }) {
-  const priceRange =
-    artist.price_min !== null && artist.price_min !== undefined &&
-    artist.price_max !== null && artist.price_max !== undefined
-      ? `${formatPrice(artist.price_min)} ~ ${formatPrice(artist.price_max)}`
-      : null
-
-  return (
-    <Link
-      href={`/artists/${artist.slug}`}
-      className="rounded-xl border border-stone-200 bg-white p-4 transition hover:shadow-md"
-    >
-      <div className="flex items-center gap-3">
-        <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-stone-100">
-          {artist.avatar_url && (
-            <Image
-              src={artist.avatar_url}
-              alt={artist.display_name}
-              fill
-              className="object-cover"
-              sizes="48px"
-            />
-          )}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate font-medium text-stone-900">{artist.display_name}</p>
-          <p className="text-sm text-stone-500">
-            {artist.city}
-            {artist.district ? ` ${artist.district}` : ''}
-          </p>
-        </div>
-      </div>
-      {artist.styles.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1">
-          {artist.styles.map((s) => (
-            <span
-              key={s.id}
-              className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600"
-            >
-              {s.icon} {s.name}
-            </span>
-          ))}
-        </div>
-      )}
-      {priceRange && (
-        <p className="mt-2 text-sm text-amber-600">{priceRange}</p>
-      )}
-    </Link>
-  )
 }
 
 export default async function StylePage({ params }: StylePageProps) {
@@ -117,7 +65,7 @@ export default async function StylePage({ params }: StylePageProps) {
           {artists.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {artists.map((artist) => (
-                <StyleArtistCard key={artist.id} artist={artist} />
+                <ArtistCard key={artist.id} artist={artist} variant="compact" />
               ))}
             </div>
           ) : (

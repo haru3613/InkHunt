@@ -1,18 +1,24 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import type { ArtistWithDetails } from '@/lib/supabase/queries/artists'
+import { ArtistAvatar } from './ArtistAvatar'
 import { StyleBadge } from './StyleBadge'
 import { PriceRange } from './PriceRange'
+import { formatPrice } from '@/lib/utils'
 
 interface ArtistCardProps {
-  artist: ArtistWithDetails
+  readonly artist: ArtistWithDetails
+  readonly variant?: 'default' | 'compact'
 }
 
 const MAX_VISIBLE_STYLES = 3
 
-export function ArtistCard({ artist }: ArtistCardProps) {
+export function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
+  if (variant === 'compact') {
+    return <CompactCard artist={artist} />
+  }
+
   const visibleStyles = artist.styles.slice(0, MAX_VISIBLE_STYLES)
   const extraCount = artist.styles.length - MAX_VISIBLE_STYLES
 
@@ -21,21 +27,11 @@ export function ArtistCard({ artist }: ArtistCardProps) {
       <Card className="border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md">
         <CardContent className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-stone-100">
-              {artist.avatar_url ? (
-                <Image
-                  src={artist.avatar_url}
-                  alt={artist.display_name}
-                  fill
-                  className="object-cover"
-                  sizes="48px"
-                />
-              ) : (
-                <div className="flex size-full items-center justify-center text-lg text-stone-400">
-                  {artist.display_name.charAt(0)}
-                </div>
-              )}
-            </div>
+            <ArtistAvatar
+              name={artist.display_name}
+              avatarUrl={artist.avatar_url}
+              size="md"
+            />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="truncate text-base font-medium text-stone-900">
@@ -69,6 +65,49 @@ export function ArtistCard({ artist }: ArtistCardProps) {
           <PriceRange min={artist.price_min} max={artist.price_max} />
         </CardContent>
       </Card>
+    </Link>
+  )
+}
+
+function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
+  return (
+    <Link
+      href={`/artists/${artist.slug}`}
+      className="rounded-xl border border-stone-200 bg-white p-4 transition hover:shadow-md"
+    >
+      <div className="flex items-center gap-3">
+        <ArtistAvatar
+          name={artist.display_name}
+          avatarUrl={artist.avatar_url}
+          size="sm"
+        />
+        <div className="min-w-0">
+          <p className="truncate font-medium text-stone-900">
+            {artist.display_name}
+          </p>
+          <p className="text-xs text-stone-500">
+            {artist.city}
+            {artist.district ? ` ${artist.district}` : ''}
+          </p>
+        </div>
+      </div>
+      {artist.styles.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {artist.styles.slice(0, 3).map((s) => (
+            <span
+              key={s.id}
+              className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600"
+            >
+              {s.icon} {s.name}
+            </span>
+          ))}
+        </div>
+      )}
+      {artist.price_min !== null && artist.price_min !== undefined && (
+        <p className="mt-2 text-sm text-amber-600">
+          {formatPrice(artist.price_min)} 起
+        </p>
+      )}
     </Link>
   )
 }
