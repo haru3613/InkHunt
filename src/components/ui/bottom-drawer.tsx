@@ -57,13 +57,14 @@ function BottomDrawerContent({
         className={cn(
           // Positioning: fixed to the bottom, centered on desktop
           "fixed inset-x-0 bottom-0 z-50",
-          "sm:max-w-lg sm:mx-auto",
+          "sm:max-w-lg sm:mx-auto sm:bottom-[8vh]",
           // Size: auto height up to 85dvh
           "max-h-[85dvh]",
           // Layout
           "flex flex-col",
           // Appearance
           "rounded-t-2xl border-t border-border bg-popover text-popover-foreground shadow-xl",
+          "sm:rounded-2xl sm:border sm:border-t",
           // Animation: slide up on open, slide down on close
           "transition-transform duration-300 ease-out",
           "data-starting-style:translate-y-full data-ending-style:translate-y-full",
