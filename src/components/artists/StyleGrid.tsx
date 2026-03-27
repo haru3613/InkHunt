@@ -5,45 +5,49 @@ import type { Database } from '@/types/database'
 
 type StyleRow = Database['public']['Tables']['styles']['Row']
 
-// Style images: local files (hand-picked) or Unsplash fallback.
-// Local: public/styles/{slug}.avif — hand-picked by Harvey.
-// Unsplash: free commercial use, for styles without a local image yet.
-// TODO: Replace all with real artist portfolio samples when artists onboard.
+// 21 styles matching migration 004. Local .avif (hand-picked) or Unsplash placeholder.
+// TODO: Replace with real artist portfolio samples when artists onboard.
 const STYLE_IMAGES: Record<string, string> = {
-  realism:
-    'https://images.unsplash.com/photo-1575492899586-009d962fc732?w=600&q=80',
-  geometric:
-    '/styles/geometric.avif',
-  'japanese-traditional':
-    '/styles/japanese-traditional.avif',
-  'american-traditional':
-    'https://images.unsplash.com/photo-1641402027551-6a2fbf05b356?w=600&q=80',
-  'neo-traditional':
-    '/styles/neo-traditional.avif',
-  watercolor:
-    '/styles/watercolor.avif',
   'fine-line':
     'https://images.unsplash.com/photo-1547754145-ef9ff306e3f3?w=600&q=80',
-  blackwork:
-    'https://images.unsplash.com/photo-1557130641-1b14718f096a?w=600&q=80',
+  micro:
+    'https://images.unsplash.com/photo-1709897237651-1c624b3b428d?w=600&q=80',
+  realism:
+    'https://images.unsplash.com/photo-1575492899586-009d962fc732?w=600&q=80',
   floral:
     '/styles/floral.avif',
+  blackwork:
+    'https://images.unsplash.com/photo-1557130641-1b14718f096a?w=600&q=80',
   lettering:
     '/styles/lettering.avif',
-  dotwork:
-    'https://images.unsplash.com/photo-1585238341710-4d3ff484184d?w=600&q=80',
-  tribal:
-    'https://images.unsplash.com/photo-1595246344716-5c9b563f11fe?w=600&q=80',
   illustrative:
     '/styles/illustrative.avif',
   anime:
     'https://images.unsplash.com/photo-1647929369462-3258f892eb70?w=600&q=80',
+  watercolor:
+    '/styles/watercolor.avif',
+  'japanese-traditional':
+    '/styles/japanese-traditional.avif',
+  geometric:
+    '/styles/geometric.avif',
+  'neo-traditional':
+    '/styles/neo-traditional.avif',
+  'american-traditional':
+    'https://images.unsplash.com/photo-1641402027551-6a2fbf05b356?w=600&q=80',
+  dotwork:
+    'https://images.unsplash.com/photo-1585238341710-4d3ff484184d?w=600&q=80',
   portrait:
     'https://images.unsplash.com/photo-1640202430303-a71359ade259?w=600&q=80',
-  micro:
-    'https://images.unsplash.com/photo-1709897237651-1c624b3b428d?w=600&q=80',
-  coverup:
-    'https://images.unsplash.com/photo-1575492899586-009d962fc732?w=600&q=80',
+  ornamental:
+    'https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=600&q=80',
+  handpoke:
+    'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=600&q=80',
+  tribal:
+    'https://images.unsplash.com/photo-1595246344716-5c9b563f11fe?w=600&q=80',
+  surrealism:
+    'https://images.unsplash.com/photo-1604093882750-3ed498f3178b?w=600&q=80',
+  abstract:
+    'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&q=80',
   other:
     'https://images.unsplash.com/photo-1557130641-1b14718f096a?w=600&q=80',
 }

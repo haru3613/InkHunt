@@ -2,18 +2,31 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 
-const CITIES = [
-  '台北市',
-  '新北市',
-  '桃園市',
-  '台中市',
-  '台南市',
-  '高雄市',
-  '其他',
+const CITY_GROUPS = [
+  {
+    label: '北部',
+    cities: ['台北市', '新北市', '基隆市', '桃園市', '新竹市', '新竹縣'],
+  },
+  {
+    label: '中部',
+    cities: ['苗栗縣', '台中市', '彰化縣', '南投縣', '雲林縣'],
+  },
+  {
+    label: '南部',
+    cities: ['嘉義市', '嘉義縣', '台南市', '高雄市', '屏東縣'],
+  },
+  {
+    label: '東部',
+    cities: ['宜蘭縣', '花蓮縣', '台東縣'],
+  },
+  {
+    label: '離島',
+    cities: ['澎湖縣', '金門縣', '連江縣'],
+  },
 ]
 
 export interface PriceLocationData {
-  city: string
+  cities: string[]
   district: string
   price_min: string
   price_max: string
@@ -33,10 +46,19 @@ export function StepPriceLocation({
   onNext,
   onBack,
 }: StepPriceLocationProps) {
-  const isValid =
-    data.city.trim().length > 0 && data.price_min.trim().length > 0
+  const isValid = data.cities.length > 0 && data.price_min.trim().length > 0
 
-  function handleField(field: keyof PriceLocationData, value: string) {
+  function toggleCity(city: string) {
+    const next = data.cities.includes(city)
+      ? data.cities.filter((c) => c !== city)
+      : [...data.cities, city]
+    onChange({ ...data, cities: next })
+  }
+
+  function handleField(
+    field: Exclude<keyof PriceLocationData, 'cities'>,
+    value: string,
+  ) {
     onChange({ ...data, [field]: value })
   }
 
@@ -48,28 +70,37 @@ export function StepPriceLocation({
       </div>
 
       <div className="space-y-4">
-        {/* City */}
-        <div className="space-y-1.5">
+        {/* Cities — multi-select grouped */}
+        <div className="space-y-3">
           <label className="block text-sm font-medium text-[#F5F0EB]/70">
             服務城市
             <span className="ml-1 text-[#C8A97E]">*</span>
+            <span className="ml-2 text-xs text-[#F5F0EB]/30">可複選</span>
           </label>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {CITIES.map((city) => (
-              <button
-                key={city}
-                type="button"
-                onClick={() => handleField('city', city)}
-                className={`rounded-lg border py-2 text-sm font-medium transition-colors ${
-                  data.city === city
-                    ? 'border-[#C8A97E] bg-[#C8A97E]/10 text-[#C8A97E]'
-                    : 'border-[#2A2A2A] bg-[#141414] text-[#F5F0EB]/60 hover:border-[#3A3A3A] hover:text-[#F5F0EB]'
-                }`}
-              >
-                {city}
-              </button>
-            ))}
-          </div>
+
+          {CITY_GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="mb-1.5 text-xs font-medium text-[#F5F0EB]/30 tracking-wider">
+                {group.label}
+              </p>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {group.cities.map((city) => (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => toggleCity(city)}
+                    className={`rounded-lg border py-2 text-sm font-medium transition-colors ${
+                      data.cities.includes(city)
+                        ? 'border-[#C8A97E] bg-[#C8A97E]/10 text-[#C8A97E]'
+                        : 'border-[#2A2A2A] bg-[#141414] text-[#F5F0EB]/60 hover:border-[#3A3A3A] hover:text-[#F5F0EB]'
+                    }`}
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* District */}
