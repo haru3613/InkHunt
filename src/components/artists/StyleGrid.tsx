@@ -15,23 +15,23 @@ const STYLE_IMAGES: Record<string, string> = {
   'american-traditional':
     'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=600&q=80',
   'neo-traditional':
-    'https://images.unsplash.com/photo-1590246814883-57c511e76ad6?w=600&q=80',
+    'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=600&q=80',
   watercolor:
     'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=600&q=80',
   'fine-line':
-    'https://images.unsplash.com/photo-1590246814883-57c511e76ad6?w=600&q=80',
+    'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=600&q=80',
   blackwork:
-    'https://images.unsplash.com/photo-1612459284270-27b3a394fee7?w=600&q=80',
+    'https://images.unsplash.com/photo-1542396601-dca920ea2807?w=600&q=80',
   floral:
     'https://images.unsplash.com/photo-1565058379802-bbe93b2f703a?w=600&q=80',
   lettering:
     'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?w=600&q=80',
   dotwork:
-    'https://images.unsplash.com/photo-1612459284270-27b3a394fee7?w=600&q=80',
+    'https://images.unsplash.com/photo-1542396601-dca920ea2807?w=600&q=80',
   tribal:
     'https://images.unsplash.com/photo-1562962230-16e4623d36e6?w=600&q=80',
   illustrative:
-    'https://images.unsplash.com/photo-1590246814883-57c511e76ad6?w=600&q=80',
+    'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=600&q=80',
   anime:
     'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=600&q=80',
   portrait:
@@ -39,7 +39,7 @@ const STYLE_IMAGES: Record<string, string> = {
   micro:
     'https://images.unsplash.com/photo-1565058379802-bbe93b2f703a?w=600&q=80',
   coverup:
-    'https://images.unsplash.com/photo-1612459284270-27b3a394fee7?w=600&q=80',
+    'https://images.unsplash.com/photo-1542396601-dca920ea2807?w=600&q=80',
   other:
     'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=600&q=80',
 }
