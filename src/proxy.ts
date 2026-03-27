@@ -13,16 +13,21 @@ export async function proxy(request: NextRequest) {
     return await updateSession(request)
   }
 
-  // Handle i18n locale detection and redirect
   const intlResponse = intlMiddleware(request)
 
-  // If intl middleware returns a redirect, return it directly
   if (intlResponse.headers.get('location')) {
     return intlResponse
   }
 
-  // Otherwise chain with Supabase session refresh
-  return await updateSession(request)
+  const supabaseResponse = await updateSession(request)
+
+  intlResponse.headers.forEach((value, key) => {
+    if (key !== 'content-type') {
+      supabaseResponse.headers.set(key, value)
+    }
+  })
+
+  return supabaseResponse
 }
 
 export const config = {

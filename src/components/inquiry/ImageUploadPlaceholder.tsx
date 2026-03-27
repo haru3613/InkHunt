@@ -1,12 +1,14 @@
 'use client'
 
 import { ImageIcon } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface ImageUploadPlaceholderProps {
   readonly maxSlots?: number
 }
 
 export function ImageUploadPlaceholder({ maxSlots = 3 }: ImageUploadPlaceholderProps) {
+  const t = useTranslations('inquiry')
   return (
     <div className="grid grid-cols-3 gap-3">
       {Array.from({ length: maxSlots }, (_, i) => (
@@ -17,12 +19,12 @@ export function ImageUploadPlaceholder({ maxSlots = 3 }: ImageUploadPlaceholderP
           <div className="flex flex-col items-center gap-1 text-ink-text-muted">
             <ImageIcon className="size-6" />
             {i === 0 && (
-              <span className="text-xs">上傳圖片</span>
+              <span className="text-xs">{t('uploadImage')}</span>
             )}
           </div>
           <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40">
             <span className="rounded-full bg-card/90 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              即將開放
+              {t('comingSoon')}
             </span>
           </div>
         </div>

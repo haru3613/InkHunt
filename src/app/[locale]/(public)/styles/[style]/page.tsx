@@ -18,13 +18,14 @@ interface StylePageProps {
 }
 
 export async function generateMetadata({ params }: StylePageProps): Promise<Metadata> {
-  const { style: slug } = await params
+  const { locale, style: slug } = await params
+  const t = await getTranslations({ locale, namespace: 'style' })
   const style = await getStyleBySlug(slug)
   if (!style) return {}
 
   return {
-    title: `${style.name}刺青推薦`,
-    description: `精選台灣${style.name}風格刺青師，查看作品集和價格。在 InkHunt 找到最適合你的${style.name}刺青師。`,
+    title: t('recommendTitle', { styleName: style.name }),
+    description: t('viewAll', { styleName: style.name }),
   }
 }
 

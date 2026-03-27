@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         ? `${artist.display_name} 的刺青作品集。${descriptionParts.join("｜")}。在 InkHunt 瀏覽作品、一鍵詢價。`
         : `${artist.display_name} 的刺青作品集。在 InkHunt 瀏覽作品、一鍵詢價。`,
     openGraph: {
-      title: `${artist.display_name} — 刺青作品集 | InkHunt`,
+      title: t('artistPortfolio', { name: artist.display_name }),
       description: artist.bio ?? `${artist.display_name} 的刺青作品集`,
       images: artist.avatar_url ? [{ url: artist.avatar_url }] : undefined,
     },

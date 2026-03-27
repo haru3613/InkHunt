@@ -98,13 +98,8 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
       </div>
       {artist.styles.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
-          {artist.styles.slice(0, 3).map((s) => (
-            <span
-              key={s.id}
-              className="rounded-sm bg-ink-accent-dim px-2 py-0.5 text-xs text-muted-foreground"
-            >
-              {s.icon} {s.name}
-            </span>
+          {artist.styles.slice(0, MAX_VISIBLE_STYLES).map((s) => (
+            <StyleBadge key={s.id} name={s.name} icon={s.icon} />
           ))}
         </div>
       )}

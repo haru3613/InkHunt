@@ -43,7 +43,7 @@ export default async function HomePage({
             <Button
               render={<Link href="/artists" />}
               size="lg"
-              className="bg-primary text-white hover:bg-ink-accent-hover"
+              className="bg-primary text-primary-foreground hover:bg-ink-accent-hover"
             >
               {t("startSearch")}
             </Button>

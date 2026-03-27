@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Sheet,
   SheetContent,
@@ -61,6 +62,7 @@ export function InquiryForm({
   open,
   onOpenChange,
 }: InquiryFormProps) {
+  const t = useTranslations('inquiry')
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -115,10 +117,8 @@ export function InquiryForm({
         className="max-h-[85dvh] overflow-y-auto rounded-t-2xl sm:max-w-lg sm:mx-auto"
       >
         <SheetHeader>
-          <SheetTitle>向 {artistName} 詢價</SheetTitle>
-          <SheetDescription>
-            填寫你的刺青需求，刺青師會盡快回覆報價
-          </SheetDescription>
+          <SheetTitle>{t('title', { artistName })}</SheetTitle>
+          <SheetDescription>{t('subtitle')}</SheetDescription>
         </SheetHeader>
 
         <form
@@ -134,11 +134,11 @@ export function InquiryForm({
               htmlFor="inquiry-description"
               className="text-sm font-medium text-foreground"
             >
-              圖案描述 <span className="text-ink-error">*</span>
+              {t('description')} <span className="text-ink-error">{t('required')}</span>
             </label>
             <Textarea
               id="inquiry-description"
-              placeholder="描述你想要的刺青圖案、風格、參考..."
+              placeholder={t('descriptionPlaceholder')}
               value={form.description}
               onChange={(e) =>
                 handleFieldChange('description', e.target.value)
@@ -161,7 +161,7 @@ export function InquiryForm({
           {/* Reference images */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">
-              參考圖片（最多 3 張）
+              {t('referenceImages')}
             </label>
             <ImageUploadPlaceholder />
           </div>
@@ -169,7 +169,7 @@ export function InquiryForm({
           {/* Body part */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">
-              刺青部位 <span className="text-ink-error">*</span>
+              {t('bodyPart')} <span className="text-ink-error">{t('required')}</span>
             </label>
             <Select
               value={form.body_part}
@@ -179,7 +179,7 @@ export function InquiryForm({
                 className="w-full rounded-lg focus-visible:ring-primary"
                 aria-invalid={!!errors.body_part}
               >
-                <SelectValue placeholder="請選擇部位" />
+                <SelectValue placeholder={t('bodyPartPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {BODY_PARTS.map((part) => (
@@ -200,11 +200,11 @@ export function InquiryForm({
               htmlFor="inquiry-size"
               className="text-sm font-medium text-foreground"
             >
-              預計大小 <span className="text-ink-error">*</span>
+              {t('sizeEstimate')} <span className="text-ink-error">{t('required')}</span>
             </label>
             <Input
               id="inquiry-size"
-              placeholder="例如：10x10 cm"
+              placeholder={t('sizePlaceholder')}
               value={form.size_estimate}
               onChange={(e) =>
                 handleFieldChange('size_estimate', e.target.value)
@@ -220,12 +220,12 @@ export function InquiryForm({
           {/* Budget range */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">
-              預算範圍（NTD）
+              {t('budget')}
             </label>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
-                placeholder="最低"
+                placeholder={t('budgetMin')}
                 value={form.budget_min}
                 onChange={(e) =>
                   handleFieldChange('budget_min', e.target.value)
@@ -236,7 +236,7 @@ export function InquiryForm({
               <span className="text-ink-text-muted">~</span>
               <Input
                 type="number"
-                placeholder="最高"
+                placeholder={t('budgetMax')}
                 value={form.budget_max}
                 onChange={(e) =>
                   handleFieldChange('budget_max', e.target.value)
@@ -256,10 +256,10 @@ export function InquiryForm({
         <SheetFooter>
           <Button
             onClick={handleSubmit}
-            className="w-full bg-primary text-white hover:bg-ink-accent-hover"
+            className="w-full bg-primary text-primary-foreground hover:bg-ink-accent-hover"
             size="lg"
           >
-            送出詢價
+            {t('submit')}
           </Button>
         </SheetFooter>
       </SheetContent>
