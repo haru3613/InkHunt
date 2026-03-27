@@ -1,0 +1,87 @@
+{
+  "common": {
+    "brand": "InkHunt",
+    "artists": "位刺青師"
+  },
+  "nav": {
+    "findArtist": "找刺青師",
+    "artistEntry": "設計師入口",
+    "home": "首頁",
+    "favorites": "收藏",
+    "artist": "設計師",
+    "openMenu": "開啟選單"
+  },
+  "home": {
+    "heroTitle": "找到你的刺青師",
+    "heroSubtitle": "按風格篩選、瀏覽作品集、價格透明、一鍵詢價。不用再一個一個 IG 私訊問價了。",
+    "startSearch": "開始找刺青師",
+    "iAmArtist": "我是刺青師",
+    "recommended": "推薦刺青師",
+    "browseByStyle": "按風格找刺青師"
+  },
+  "artists": {
+    "title": "找刺青師",
+    "total": "共 {count} 位刺青師",
+    "noResults": "沒有符合條件的刺青師",
+    "allRegions": "全部地區",
+    "selectRegion": "選擇地區",
+    "allStyles": "全部",
+    "recommended": "推薦",
+    "priceFrom": "{price} 起"
+  },
+  "artistProfile": {
+    "portfolio": "作品集",
+    "inquire": "我想詢價",
+    "back": "返回",
+    "deposit": "訂金 {amount}",
+    "priceInquiry": "價格洽詢",
+    "noPortfolio": "尚無作品"
+  },
+  "portfolio": {
+    "healedPhoto": "恢復照",
+    "viewHealed": "查看恢復照",
+    "viewOriginal": "查看原圖",
+    "imageViewer": "作品圖片瀏覽",
+    "close": "關閉",
+    "prev": "上一張",
+    "next": "下一張"
+  },
+  "inquiry": {
+    "title": "向 {artistName} 詢價",
+    "subtitle": "填寫你的刺青需求，刺青師會盡快回覆報價",
+    "description": "圖案描述",
+    "descriptionPlaceholder": "描述你想要的刺青圖案、風格、參考...",
+    "referenceImages": "參考圖片（最多 3 張）",
+    "bodyPart": "刺青部位",
+    "bodyPartPlaceholder": "請選擇部位",
+    "sizeEstimate": "預計大小",
+    "sizePlaceholder": "例如：10x10 cm",
+    "budget": "預算範圍（NTD）",
+    "budgetMin": "最低",
+    "budgetMax": "最高",
+    "submit": "送出詢價",
+    "required": "*",
+    "comingSoon": "即將開放",
+    "uploadImage": "上傳圖片"
+  },
+  "style": {
+    "recommendTitle": "{styleName}刺青師推薦",
+    "totalArtists": "共 {count} 位刺青師",
+    "noArtists": "目前沒有{styleName}風格的刺青師，敬請期待。",
+    "viewAll": "查看所有{styleName}刺青師",
+    "allArtists": "所有刺青師"
+  },
+  "footer": {
+    "about": "關於我們",
+    "privacy": "隱私政策",
+    "terms": "使用條款"
+  },
+  "metadata": {
+    "defaultTitle": "InkHunt — 找到你的刺青師",
+    "defaultDescription": "台灣第一個刺青師媒合平台。按風格篩選、瀏覽作品集、價格透明、一鍵詢價。",
+    "artistsTitle": "找刺青師 | InkHunt",
+    "artistsDescription": "按風格、地區篩選台灣刺青師，瀏覽作品集，一鍵詢價",
+    "artistPortfolio": "{name} — 刺青作品集",
+    "artistNotFound": "找不到刺青師"
+  }
+}

@@ -1,24 +1,25 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { HomeIcon, SearchIcon, HeartIcon, UserIcon } from "lucide-react"
+import { Link, usePathname } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
-
-const tabs = [
-  { href: "/", label: "首頁", icon: HomeIcon },
-  { href: "/artists", label: "找刺青師", icon: SearchIcon },
-  { href: "/favorites", label: "收藏", icon: HeartIcon },
-  { href: "/artist", label: "設計師", icon: UserIcon },
-] as const
 
 export function MobileNav() {
   const pathname = usePathname()
+  const t = useTranslations("nav")
+
+  const tabs = [
+    { href: "/" as const, label: t("home"), icon: HomeIcon },
+    { href: "/artists" as const, label: t("findArtist"), icon: SearchIcon },
+    { href: "/favorites" as const, label: t("favorites"), icon: HeartIcon },
+    { href: "/artist" as const, label: t("artist"), icon: UserIcon },
+  ]
 
   return (
     <nav
       aria-label="Mobile tab navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200 bg-white lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background lg:hidden"
     >
       <div className="flex h-14 items-center justify-around">
         {tabs.map((tab) => {
@@ -36,8 +37,8 @@ export function MobileNav() {
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs transition-colors",
                 isActive
-                  ? "text-amber-500"
-                  : "text-stone-400 hover:text-stone-600"
+                  ? "text-primary"
+                  : "text-ink-text-muted hover:text-muted-foreground"
               )}
             >
               <Icon className="size-5" />

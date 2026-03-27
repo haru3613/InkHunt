@@ -4,13 +4,16 @@ import type { PortfolioItem } from "@/types/database"
 interface PortfolioGridProps {
   readonly items: readonly PortfolioItem[]
   readonly onItemClick: (index: number) => void
+  readonly emptyLabel: string
+  readonly healedLabel: string
+  readonly workLabel: string
 }
 
-export function PortfolioGrid({ items, onItemClick }: PortfolioGridProps) {
+export function PortfolioGrid({ items, onItemClick, emptyLabel, healedLabel, workLabel }: PortfolioGridProps) {
   if (items.length === 0) {
     return (
-      <div className="py-12 text-center text-sm text-stone-400">
-        尚無作品
+      <div className="py-12 text-center text-sm text-ink-text-muted">
+        {emptyLabel}
       </div>
     )
   }
@@ -22,11 +25,11 @@ export function PortfolioGrid({ items, onItemClick }: PortfolioGridProps) {
           key={item.id}
           type="button"
           onClick={() => onItemClick(index)}
-          className="group relative aspect-square overflow-hidden rounded-lg bg-stone-100"
+          className="group relative aspect-square overflow-hidden rounded-none bg-muted"
         >
           <Image
             src={item.thumbnail_url ?? item.image_url}
-            alt={item.title ?? `作品 ${index + 1}`}
+            alt={item.title ?? `${workLabel} ${index + 1}`}
             fill
             className="object-cover transition-transform duration-200 group-hover:scale-105"
             sizes="(max-width: 768px) 50vw, 33vw"
@@ -45,8 +48,8 @@ export function PortfolioGrid({ items, onItemClick }: PortfolioGridProps) {
 
           {/* Healed indicator */}
           {item.healed_image_url && (
-            <span className="absolute top-1.5 right-1.5 rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-stone-700 backdrop-blur-sm">
-              恢復照
+            <span className="absolute top-1.5 right-1.5 rounded bg-card/80 px-1.5 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
+              {healedLabel}
             </span>
           )}
         </button>
