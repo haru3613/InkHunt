@@ -58,6 +58,12 @@ export function isAdmin(lineUserId: string): boolean {
   return ADMIN_IDS.has(lineUserId)
 }
 
+export async function requireAdmin(): Promise<AuthUser> {
+  const user = await requireAuth()
+  if (!isAdmin(user.lineUserId)) throw new Error('FORBIDDEN')
+  return user
+}
+
 export function handleApiError(err: unknown): NextResponse {
   if (err instanceof Error && err.message === 'UNAUTHORIZED') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
