@@ -4,38 +4,13 @@ import { useState, useCallback, useRef } from 'react'
 import { Send, Image, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { uploadFile } from '@/lib/upload/client'
 
 interface ChatInputProps {
   readonly onSendMessage: (type: 'text' | 'image', content: string) => void
   readonly onSendQuote?: () => void
   readonly isArtist: boolean
   readonly disabled?: boolean
-}
-
-async function uploadImage(file: File): Promise<string> {
-  const signedUrlRes = await fetch('/api/upload/signed-url', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      bucket: 'inquiries',
-      filename: file.name,
-      content_type: file.type,
-    }),
-  })
-
-  if (!signedUrlRes.ok) {
-    throw new Error('Failed to get upload URL')
-  }
-
-  const { signed_url, public_url } = await signedUrlRes.json()
-
-  await fetch(signed_url, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type },
-    body: file,
-  })
-
-  return public_url
 }
 
 export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: ChatInputProps) {
@@ -65,7 +40,7 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
       if (!file) return
 
       try {
-        const publicUrl = await uploadImage(file)
+        const publicUrl = await uploadFile('inquiries', file)
         onSendMessage('image', publicUrl)
       } catch {
         // Image upload failed; user can retry

@@ -1,7 +1,10 @@
+import { cache } from "react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { setRequestLocale, getTranslations } from "next-intl/server"
 import { getArtistBySlug, getArtists } from "@/lib/supabase/queries/artists"
+
+const getCachedArtist = cache(getArtistBySlug)
 import { formatPriceRange } from "@/lib/utils"
 import { generateArtistJsonLd } from "@/lib/seo"
 import { JsonLd } from "@/components/shared/JsonLd"
@@ -22,7 +25,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, slug } = await params
   const t = await getTranslations({ locale, namespace: "metadata" })
-  const artist = await getArtistBySlug(slug)
+  const artist = await getCachedArtist(slug)
 
   if (!artist) {
     return { title: t("artistNotFound") }
@@ -57,7 +60,7 @@ export default async function ArtistProfilePage({ params }: PageProps) {
   setRequestLocale(locale)
 
   const t = await getTranslations("artistProfile")
-  const artist = await getArtistBySlug(slug)
+  const artist = await getCachedArtist(slug)
 
   if (!artist) {
     notFound()

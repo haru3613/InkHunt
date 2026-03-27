@@ -7,6 +7,7 @@ import { StepStylePicker, type StylePickerData } from './StepStylePicker'
 import { StepPriceLocation, type PriceLocationData } from './StepPriceLocation'
 import { StepPortfolio, type PortfolioData } from './StepPortfolio'
 import { OnboardingComplete } from './OnboardingComplete'
+import { uploadFile } from '@/lib/upload/client'
 
 const TOTAL_STEPS = 4
 
@@ -85,36 +86,18 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
 
         const artist = await res.json()
 
-        // Upload portfolio images if any and not skipping
+        // Upload portfolio images in parallel (non-fatal failures)
         if (!skipPortfolio && portfolio.files.length > 0) {
-          for (const file of portfolio.files) {
-            try {
-              // Get signed upload URL
-              const signedRes = await fetch('/api/upload/signed-url', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename: file.name, contentType: file.type }),
-              })
-
-              if (!signedRes.ok) continue
-
-              const { signedUrl, publicUrl } = await signedRes.json()
-
-              await fetch(signedUrl, {
-                method: 'PUT',
-                headers: { 'Content-Type': file.type },
-                body: file,
-              })
-
+          await Promise.allSettled(
+            portfolio.files.map(async (file) => {
+              const publicUrl = await uploadFile('portfolio', file)
               await fetch(`/api/artists/${artist.slug}/portfolio`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image_url: publicUrl }),
               })
-            } catch {
-              // Non-fatal: portfolio upload failure doesn't block onboarding
-            }
-          }
+            }),
+          )
         }
 
         setIsComplete(true)

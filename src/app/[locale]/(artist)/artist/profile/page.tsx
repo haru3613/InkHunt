@@ -15,22 +15,23 @@ export default function ProfilePage() {
   useEffect(() => {
     async function load() {
       try {
-        const stylesRes = await fetch('/api/styles')
+        const [stylesRes, artistRes] = await Promise.all([
+          fetch('/api/styles'),
+          authArtist?.slug ? fetch(`/api/artists/${authArtist.slug}`) : null,
+        ])
+
         if (stylesRes.ok) {
           const stylesData = await stylesRes.json()
           setStyles(stylesData.data ?? stylesData ?? [])
         }
 
-        if (authArtist?.slug) {
-          const artistRes = await fetch(`/api/artists/${authArtist.slug}`)
-          if (artistRes.ok) {
-            const artistData = await artistRes.json()
-            setArtist(artistData)
-            setSelectedStyleIds(artistData.styles?.map((s: Style) => s.id) ?? [])
-          }
+        if (artistRes?.ok) {
+          const artistData = await artistRes.json()
+          setArtist(artistData)
+          setSelectedStyleIds(artistData.styles?.map((s: Style) => s.id) ?? [])
         }
-      } catch (err) {
-        console.error('Failed to load profile data:', err)
+      } catch {
+        // Profile data load failed; show empty state
       } finally {
         setIsLoading(false)
       }

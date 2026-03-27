@@ -4,19 +4,34 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatList } from '@/components/chat/ChatList'
 import { ChatWindow } from '@/components/chat/ChatWindow'
+import type { Inquiry } from '@/types/database'
+
+interface ChatListItem {
+  inquiry: Inquiry
+  artist_display_name: string
+  artist_avatar_url: string | null
+  consumer_name: string | null
+  last_message: string | null
+  last_message_at: string | null
+  unread_count: number
+}
 
 export default function DashboardPage() {
   const { user, artist } = useAuth()
-  const [inquiries, setInquiries] = useState<any[]>([])
+  const [inquiries, setInquiries] = useState<ChatListItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchInquiries = useCallback(async () => {
     try {
       const response = await fetch('/api/inquiries?role=artist')
+      if (!response.ok) {
+        setIsLoading(false)
+        return
+      }
       const data = await response.json()
       setInquiries(
-        (data.data ?? []).map((inq: any) => ({
+        (data.data ?? []).map((inq: Inquiry) => ({
           inquiry: inq,
           artist_display_name: '',
           artist_avatar_url: null,
@@ -26,8 +41,6 @@ export default function DashboardPage() {
           unread_count: 0,
         })),
       )
-    } catch (err) {
-      console.error('Failed to fetch inquiries:', err)
     } finally {
       setIsLoading(false)
     }

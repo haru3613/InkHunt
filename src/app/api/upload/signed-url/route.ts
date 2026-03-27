@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth/helpers'
+import { requireAuth, handleApiError } from '@/lib/auth/helpers'
 import {
   validateUploadRequest,
   createSignedUploadUrl,
@@ -30,12 +30,6 @@ export async function POST(request: NextRequest) {
     )
     return NextResponse.json(result)
   } catch (err) {
-    if (err instanceof Error && err.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    )
+    return handleApiError(err)
   }
 }

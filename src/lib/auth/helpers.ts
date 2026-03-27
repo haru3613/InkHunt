@@ -1,6 +1,7 @@
+import { NextResponse } from 'next/server'
 import type { Session } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
-import type { Artist } from '@/types/database'
+import type { Artist, Inquiry } from '@/types/database'
 
 export interface AuthUser {
   supabaseId: string
@@ -49,7 +50,31 @@ export async function getArtistForUser(
   return data
 }
 
+const ADMIN_IDS = new Set(
+  (process.env.ADMIN_LINE_USER_IDS ?? '').split(',').filter(Boolean),
+)
+
 export function isAdmin(lineUserId: string): boolean {
-  const adminIds = process.env.ADMIN_LINE_USER_IDS?.split(',') ?? []
-  return adminIds.includes(lineUserId)
+  return ADMIN_IDS.has(lineUserId)
+}
+
+export function handleApiError(err: unknown): NextResponse {
+  if (err instanceof Error && err.message === 'UNAUTHORIZED') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (err instanceof Error && err.message === 'FORBIDDEN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+}
+
+export async function authorizeInquiryAccess(
+  user: AuthUser,
+  inquiry: Inquiry,
+): Promise<{ isConsumer: boolean; isArtist: boolean; artist: Artist | null }> {
+  const artist = await getArtistForUser(user.lineUserId)
+  const isConsumer = inquiry.consumer_line_id === user.lineUserId
+  const isArtist = artist !== null && inquiry.artist_id === artist.id
+  if (!isConsumer && !isArtist) throw new Error('FORBIDDEN')
+  return { isConsumer, isArtist, artist }
 }
