@@ -87,6 +87,7 @@ supabase/
 - **LINE 是唯一 Auth**: 消費者和刺青師都用 LINE Login
 - **不做金流**: 台灣刺青多現金/轉帳，MVP 不整合線上付款
 - **指定詢價**: MVP 只做消費者指定刺青師詢價，不做廣播式
+- **雙語 i18n**: 用 `next-intl` 做路由層 i18n (`/zh-TW/artists` vs `/en/artists`)，UI 文字有翻譯檔，刺青師 profile 內容維持原語言
 
 ### Supabase RLS
 - 所有表都啟用 RLS

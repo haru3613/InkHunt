@@ -118,3 +118,4 @@
 | 2026-03-27 | Space Grotesk for display | Geometric grotesk is modern without being generic. Stands out from the condensed/serif fonts most tattoo sites use. |
 | 2026-03-27 | No light mode for MVP | The art demands darkness. Tattoo photography pops on dark backgrounds. |
 | 2026-03-27 | Photo-backed style categories, no emoji | Emoji looked cheap and AI-generated. Real tattoo photos as category thumbnails. |
+| 2026-03-27 | Route-level i18n (next-intl) | zh-TW + en, URL prefix routing. UI text translated, artist content stays original language. |
