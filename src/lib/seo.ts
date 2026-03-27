@@ -1,3 +1,7 @@
+import { formatPriceRange, formatIgUrl } from '@/lib/utils'
+
+const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://inkhunt.tw'
+
 export function generateArtistJsonLd(artist: {
   display_name: string
   bio?: string | null
@@ -9,6 +13,8 @@ export function generateArtistJsonLd(artist: {
   price_max?: number | null
   ig_handle?: string | null
 }) {
+  const igUrl = artist.ig_handle ? formatIgUrl(artist.ig_handle) : null
+
   return {
     '@context': 'https://schema.org',
     '@type': 'TattooParlor',
@@ -21,13 +27,9 @@ export function generateArtistJsonLd(artist: {
       addressRegion: artist.district || undefined,
       addressCountry: 'TW',
     },
-    priceRange: artist.price_min && artist.price_max
-      ? `NT$${artist.price_min.toLocaleString()}~${artist.price_max.toLocaleString()}`
-      : undefined,
-    url: `https://inkhunt.tw/artists/${artist.slug}`,
-    sameAs: artist.ig_handle
-      ? [`https://instagram.com/${artist.ig_handle}`]
-      : undefined,
+    priceRange: formatPriceRange(artist.price_min, artist.price_max) ?? undefined,
+    url: `${SITE_URL}/artists/${artist.slug}`,
+    sameAs: igUrl ? [igUrl] : undefined,
   }
 }
 
@@ -41,7 +43,7 @@ export function generateStyleCollectionJsonLd(style: {
     '@type': 'CollectionPage',
     name: `${style.name}刺青推薦 | InkHunt`,
     description: `精選台灣${style.name}風格刺青師，查看作品集和價格。`,
-    url: `https://inkhunt.tw/styles/${style.slug}`,
+    url: `${SITE_URL}/styles/${style.slug}`,
     numberOfItems: style.artistCount,
   }
 }
@@ -52,7 +54,7 @@ export function generateWebsiteJsonLd() {
     '@type': 'WebSite',
     name: 'InkHunt',
     alternateName: '找到你的刺青師',
-    url: 'https://inkhunt.tw',
+    url: SITE_URL,
     description: '台灣第一個刺青師媒合平台。按風格篩選、瀏覽作品集、價格透明、一鍵詢價。',
     inLanguage: 'zh-TW',
   }
