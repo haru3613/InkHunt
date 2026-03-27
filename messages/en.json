@@ -9,7 +9,8 @@
     "home": "Home",
     "favorites": "Saved",
     "artist": "Artist",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "login": "Sign in"
   },
   "home": {
     "heroTitle": "Find Your Tattoo Artist",
