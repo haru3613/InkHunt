@@ -145,7 +145,7 @@ export function InquiryForm({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="bottom"
-        className="overflow-y-auto rounded-t-2xl sm:max-w-lg sm:mx-auto"
+        className="rounded-t-2xl sm:max-w-lg sm:mx-auto"
       >
         <SheetHeader>
           <SheetTitle>{t('title', { artistName })}</SheetTitle>
@@ -153,7 +153,7 @@ export function InquiryForm({
         </SheetHeader>
 
         <form
-          className="space-y-4 px-4"
+          className="flex-1 overflow-y-auto space-y-4 px-4"
           onSubmit={(e) => {
             e.preventDefault()
             handleSubmit()
