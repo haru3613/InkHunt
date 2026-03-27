@@ -16,6 +16,7 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([])
   const [note, setNote] = useState(artist.admin_note ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchPortfolio() {
@@ -34,8 +35,11 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
 
   const handleAction = async (status: 'active' | 'suspended') => {
     setIsSubmitting(true)
+    setActionError(null)
     try {
       await onAction(status, note)
+    } catch {
+      setActionError('操作失敗，請重試')
     } finally {
       setIsSubmitting(false)
     }
@@ -107,19 +111,24 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
             className="w-full resize-none rounded-lg border border-[#1F1F1F] bg-[#0A0A0A] px-3 py-2 text-sm text-[#F5F0EB] placeholder:text-[#F5F0EB]/20 focus:border-[#C8A97E]/50 focus:outline-none"
           />
         </div>
-        <div className="flex shrink-0 gap-2">
-          {status === 'pending' && (
-            <>
-              <button onClick={() => handleAction('active')} disabled={isSubmitting} className="rounded-lg bg-[#4ade80] px-4 py-2 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#4ade80]/80 disabled:opacity-50">核准上線</button>
-              <button onClick={() => handleAction('suspended')} disabled={isSubmitting} className="rounded-lg bg-[#f87171] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#f87171]/80 disabled:opacity-50">拒絕</button>
-            </>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {actionError && (
+            <p className="mb-2 text-xs text-[#f87171]">{actionError}</p>
           )}
-          {status === 'active' && (
-            <button onClick={() => handleAction('suspended')} disabled={isSubmitting} className="rounded-lg bg-[#f87171] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#f87171]/80 disabled:opacity-50">停權</button>
-          )}
-          {status === 'suspended' && (
-            <button onClick={() => handleAction('active')} disabled={isSubmitting} className="rounded-lg bg-[#4ade80] px-4 py-2 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#4ade80]/80 disabled:opacity-50">重新上線</button>
-          )}
+          <div className="flex gap-2">
+            {status === 'pending' && (
+              <>
+                <button onClick={() => handleAction('active')} disabled={isSubmitting} className="rounded-lg bg-[#4ade80] px-4 py-2 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#4ade80]/80 disabled:opacity-50">核准上線</button>
+                <button onClick={() => handleAction('suspended')} disabled={isSubmitting} className="rounded-lg bg-[#f87171] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#f87171]/80 disabled:opacity-50">拒絕</button>
+              </>
+            )}
+            {status === 'active' && (
+              <button onClick={() => handleAction('suspended')} disabled={isSubmitting} className="rounded-lg bg-[#f87171] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#f87171]/80 disabled:opacity-50">停權</button>
+            )}
+            {status === 'suspended' && (
+              <button onClick={() => handleAction('active')} disabled={isSubmitting} className="rounded-lg bg-[#4ade80] px-4 py-2 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#4ade80]/80 disabled:opacity-50">重新上線</button>
+            )}
+          </div>
         </div>
       </div>
     </div>

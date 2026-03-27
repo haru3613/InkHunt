@@ -3,6 +3,8 @@ import { requireAdmin, handleApiError } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
+const uuidSchema = z.string().uuid()
+
 const updateStatusSchema = z.object({
   status: z.enum(['active', 'suspended']),
   admin_note: z.string().max(1000).nullable().optional(),
@@ -15,6 +17,10 @@ export async function PATCH(
   try {
     await requireAdmin()
     const { id } = await params
+    const idResult = uuidSchema.safeParse(id)
+    if (!idResult.success) {
+      return NextResponse.json({ error: 'Invalid artist ID' }, { status: 400 })
+    }
     const body = await request.json()
     const validation = updateStatusSchema.safeParse(body)
 

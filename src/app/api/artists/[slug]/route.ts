@@ -35,7 +35,8 @@ export async function GET(
   const styles = (artist.artist_styles as unknown as Array<{ styles: unknown }>)?.map(
     (as) => as.styles,
   ) ?? []
-  return NextResponse.json({ ...artist, styles, artist_styles: undefined })
+  const { admin_note: _note, artist_styles: _as, ...publicArtist } = artist
+  return NextResponse.json({ ...publicArtist, styles })
 }
 
 export async function PATCH(

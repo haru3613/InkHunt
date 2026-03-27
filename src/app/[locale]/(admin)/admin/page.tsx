@@ -110,7 +110,7 @@ export default function AdminPage() {
 
         {/* Stats */}
         <div className="mb-6">
-          <AdminStatsBar artists={artists} />
+          <AdminStatsBar counts={{ pending: tabCounts.pending, active: tabCounts.active, suspended: tabCounts.suspended, total: tabCounts.all }} />
         </div>
 
         {/* Search */}
