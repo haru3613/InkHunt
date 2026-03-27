@@ -22,9 +22,11 @@ main ← staging ← feature branches
 
 ## NEVER do these
 
-- `git push origin staging` (direct push)
+- `git push origin main` (direct push to main — ALWAYS go through PR)
+- `git push origin staging` (direct push to staging — ALWAYS go through PR)
+- `git commit` on main or staging directly
 - `git cherry-pick`
-- Working on staging directly
+- Working on main or staging directly
 - Staging → main 用 squash merge
 - Reusing a branch after its PR has been merged
 
