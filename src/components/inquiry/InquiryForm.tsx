@@ -9,7 +9,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -282,20 +281,18 @@ export function InquiryForm({
               </p>
             )}
           </div>
-        </form>
-
-        <SheetFooter className="flex-col gap-2">
+          {/* Submit */}
           {errors._form && (
             <p className="text-sm text-red-500">{errors._form}</p>
           )}
           <Button
-            onClick={handleSubmit}
+            type="submit"
             className="w-full bg-primary text-primary-foreground hover:bg-ink-accent-hover"
             size="lg"
           >
             {isLoggedIn ? t('submit') : 'LINE 登入後詢價'}
           </Button>
-        </SheetFooter>
+        </form>
       </SheetContent>
     </Sheet>
   )
