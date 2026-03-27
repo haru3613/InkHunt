@@ -5,12 +5,8 @@ import type { Database } from '@/types/database'
 
 type StyleRow = Database['public']['Tables']['styles']['Row']
 
-// Style images: local files (hand-picked) or Unsplash fallback.
-// Local: public/styles/{slug}.avif — hand-picked by Harvey.
-// Unsplash: free commercial use, for styles without a local image yet.
-// TODO: Replace all with real artist portfolio samples when artists onboard.
-// Matches the 21 styles from migration 004_update_styles_and_artists.sql.
-// Local .avif = hand-picked by Harvey. Unsplash = placeholder until replaced.
+// 21 styles matching migration 004. Local .avif (hand-picked) or Unsplash placeholder.
+// TODO: Replace with real artist portfolio samples when artists onboard.
 const STYLE_IMAGES: Record<string, string> = {
   'fine-line':
     'https://images.unsplash.com/photo-1547754145-ef9ff306e3f3?w=600&q=80',

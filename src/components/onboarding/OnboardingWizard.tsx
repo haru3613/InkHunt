@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { OnboardingProgress } from './OnboardingProgress'
 import { StepBasicInfo, type BasicInfoData } from './StepBasicInfo'
 import { StepStylePicker, type StylePickerData } from './StepStylePicker'
@@ -46,8 +46,12 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
     previewUrls: [],
   })
 
+  const submittingRef = useRef(false)
+
   const handleSubmit = useCallback(
     async (skipPortfolio = false) => {
+      if (submittingRef.current) return
+      submittingRef.current = true
       setIsSubmitting(true)
       setSubmitError(null)
 
@@ -117,6 +121,7 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
       } catch (err) {
         setSubmitError(err instanceof Error ? err.message : '申請失敗，請稍後再試')
       } finally {
+        submittingRef.current = false
         setIsSubmitting(false)
       }
     },
