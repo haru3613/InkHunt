@@ -298,6 +298,41 @@ export interface Database {
           created_at?: string
         }
       }
+      messages: {
+        Row: {
+          id: string
+          inquiry_id: string
+          sender_type: 'consumer' | 'artist' | 'system'
+          sender_id: string | null
+          message_type: 'text' | 'image' | 'quote' | 'system'
+          content: string | null
+          metadata: Json
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          inquiry_id: string
+          sender_type: 'consumer' | 'artist' | 'system'
+          sender_id?: string | null
+          message_type: 'text' | 'image' | 'quote' | 'system'
+          content?: string | null
+          metadata?: Json
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          inquiry_id?: string
+          sender_type?: 'consumer' | 'artist' | 'system'
+          sender_id?: string | null
+          message_type?: 'text' | 'image' | 'quote' | 'system'
+          content?: string | null
+          metadata?: Json
+          read_at?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -332,3 +367,6 @@ export type QuoteInsert = Database['public']['Tables']['quotes']['Insert']
 export type Review = Database['public']['Tables']['reviews']['Row']
 
 export type Favorite = Database['public']['Tables']['favorites']['Row']
+
+export type Message = Database['public']['Tables']['messages']['Row']
+export type MessageInsert = Database['public']['Tables']['messages']['Insert']
