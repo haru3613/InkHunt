@@ -1,13 +1,17 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import type { User } from '@supabase/supabase-js'
 
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest): Promise<{
+  response: NextResponse
+  user: User | null
+}> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   // Skip Supabase auth when not configured (local dev without Supabase)
   if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.next({ request })
+    return { response: NextResponse.next({ request }), user: null }
   }
 
   let supabaseResponse = NextResponse.next({ request })
@@ -31,6 +35,6 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
-  return supabaseResponse
+  const { data: { user } } = await supabase.auth.getUser()
+  return { response: supabaseResponse, user }
 }
