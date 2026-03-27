@@ -13,8 +13,8 @@ export function StyleBadge({ name, icon, active = false }: StyleBadgeProps) {
     <Badge
       variant="secondary"
       className={cn(
-        'bg-stone-200 text-stone-700 hover:bg-stone-300',
-        active && 'bg-amber-500 text-white hover:bg-amber-600',
+        'rounded-sm bg-ink-accent-dim text-accent-foreground hover:bg-muted',
+        active && 'bg-primary text-primary-foreground hover:bg-ink-accent-hover',
       )}
     >
       {icon && <span>{icon}</span>}

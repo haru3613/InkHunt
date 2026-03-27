@@ -1,0 +1,91 @@
+{
+  "common": {
+    "brand": "InkHunt",
+    "artists": "artists"
+  },
+  "nav": {
+    "findArtist": "Find Artists",
+    "artistEntry": "For Artists",
+    "home": "Home",
+    "favorites": "Saved",
+    "artist": "Artist",
+    "openMenu": "Open menu"
+  },
+  "home": {
+    "heroTitle": "Find Your Tattoo Artist",
+    "heroTitleLine1": "Find Your",
+    "heroTitleLine2": "Tattoo Artist",
+    "heroSubtitle": "Filter by style, browse portfolios, transparent pricing, one-click inquiry. No more DM-ing on Instagram one by one.",
+    "startSearch": "Find Artists",
+    "iAmArtist": "I'm an Artist",
+    "recommended": "Featured Artists",
+    "browseByStyle": "Browse by Style",
+    "sectionLabelFeatured": "FEATURED",
+    "sectionLabelStyles": "BROWSE BY STYLE"
+  },
+  "artists": {
+    "title": "Find Artists",
+    "total": "{count} artists",
+    "noResults": "No artists match your criteria",
+    "allRegions": "All Regions",
+    "selectRegion": "Select region",
+    "allStyles": "All",
+    "recommended": "Featured",
+    "priceFrom": "From {price}"
+  },
+  "artistProfile": {
+    "portfolio": "Portfolio",
+    "inquire": "Get a Quote",
+    "back": "Back",
+    "deposit": "Deposit {amount}",
+    "priceInquiry": "Price on inquiry",
+    "noPortfolio": "No portfolio items yet"
+  },
+  "portfolio": {
+    "healedPhoto": "Healed",
+    "viewHealed": "View healed",
+    "viewOriginal": "View original",
+    "imageViewer": "Portfolio image viewer",
+    "close": "Close",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "inquiry": {
+    "title": "Get a Quote from {artistName}",
+    "subtitle": "Describe your tattoo idea and the artist will reply with a quote",
+    "description": "Design description",
+    "descriptionPlaceholder": "Describe the tattoo you want — style, references, details...",
+    "referenceImages": "Reference images (max 3)",
+    "bodyPart": "Body placement",
+    "bodyPartPlaceholder": "Select placement",
+    "sizeEstimate": "Estimated size",
+    "sizePlaceholder": "e.g. 10x10 cm",
+    "budget": "Budget range (NTD)",
+    "budgetMin": "Min",
+    "budgetMax": "Max",
+    "submit": "Submit Inquiry",
+    "required": "*",
+    "comingSoon": "Coming soon",
+    "uploadImage": "Upload image"
+  },
+  "style": {
+    "recommendTitle": "{styleName} Tattoo Artists",
+    "totalArtists": "{count} artists",
+    "noArtists": "No {styleName} artists yet — stay tuned.",
+    "viewAll": "View all {styleName} artists",
+    "allArtists": "All artists"
+  },
+  "footer": {
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
+  "metadata": {
+    "defaultTitle": "InkHunt — Find Your Tattoo Artist",
+    "defaultDescription": "Taiwan's first tattoo artist marketplace. Filter by style, browse portfolios, transparent pricing, one-click inquiry.",
+    "artistsTitle": "Find Artists | InkHunt",
+    "artistsDescription": "Filter Taiwan's tattoo artists by style and region, browse portfolios, get quotes",
+    "artistPortfolio": "{name} — Tattoo Portfolio",
+    "artistNotFound": "Artist not found"
+  }
+}

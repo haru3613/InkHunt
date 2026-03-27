@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from '@/components/ui/sheet'
+  BottomDrawer,
+  BottomDrawerContent,
+  BottomDrawerHeader,
+  BottomDrawerTitle,
+  BottomDrawerDescription,
+} from '@/components/ui/bottom-drawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -21,9 +22,11 @@ import {
 } from '@/components/ui/select'
 import { ImageUploadPlaceholder } from './ImageUploadPlaceholder'
 import { inquirySchema, BODY_PARTS } from '@/lib/validations/inquiry'
+import { useAuth } from '@/hooks/useAuth'
 import type { ZodError } from 'zod'
 
 interface InquiryFormProps {
+  readonly artistId: string
   readonly artistName: string
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
@@ -57,10 +60,14 @@ function flattenZodErrors(error: ZodError): Record<string, string> {
 }
 
 export function InquiryForm({
+  artistId,
   artistName,
   open,
   onOpenChange,
 }: InquiryFormProps) {
+  const { isLoggedIn, loginWithRedirect } = useAuth()
+  const router = useRouter()
+  const t = useTranslations('inquiry')
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -76,7 +83,12 @@ export function InquiryForm({
     [],
   )
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    if (!isLoggedIn) {
+      loginWithRedirect(window.location.pathname)
+      return
+    }
+
     const parsed = inquirySchema.safeParse({
       description: form.description,
       body_part: form.body_part,
@@ -92,10 +104,30 @@ export function InquiryForm({
     }
 
     setErrors({})
-    // TODO: Replace with LINE Login flow when auth is wired
-    setForm(INITIAL_FORM)
-    onOpenChange(false)
-  }, [form, onOpenChange])
+
+    try {
+      const response = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artist_id: artistId,
+          ...parsed.data,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error ?? 'Failed to create inquiry')
+      }
+
+      const { id } = await response.json()
+      setForm(INITIAL_FORM)
+      onOpenChange(false)
+      router.push(`/inquiries/${id}`)
+    } catch (err) {
+      setErrors({ _form: err instanceof Error ? err.message : 'Something went wrong' })
+    }
+  }, [form, onOpenChange, isLoggedIn, loginWithRedirect, artistId, router])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -109,20 +141,15 @@ export function InquiryForm({
   )
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="max-h-[85dvh] overflow-y-auto rounded-t-2xl sm:max-w-lg sm:mx-auto"
-      >
-        <SheetHeader>
-          <SheetTitle>向 {artistName} 詢價</SheetTitle>
-          <SheetDescription>
-            填寫你的刺青需求，刺青師會盡快回覆報價
-          </SheetDescription>
-        </SheetHeader>
+    <BottomDrawer open={open} onOpenChange={handleOpenChange}>
+      <BottomDrawerContent>
+        <BottomDrawerHeader>
+          <BottomDrawerTitle>{t('title', { artistName })}</BottomDrawerTitle>
+          <BottomDrawerDescription>{t('subtitle')}</BottomDrawerDescription>
+        </BottomDrawerHeader>
 
         <form
-          className="space-y-4 px-4"
+          className="overflow-y-auto space-y-4 px-4 pb-6"
           onSubmit={(e) => {
             e.preventDefault()
             handleSubmit()
@@ -132,27 +159,27 @@ export function InquiryForm({
           <div className="space-y-1.5">
             <label
               htmlFor="inquiry-description"
-              className="text-sm font-medium text-stone-700"
+              className="text-sm font-medium text-foreground"
             >
-              圖案描述 <span className="text-red-500">*</span>
+              {t('description')} <span className="text-ink-error">{t('required')}</span>
             </label>
             <Textarea
               id="inquiry-description"
-              placeholder="描述你想要的刺青圖案、風格、參考..."
+              placeholder={t('descriptionPlaceholder')}
               value={form.description}
               onChange={(e) =>
                 handleFieldChange('description', e.target.value)
               }
-              className="min-h-24 rounded-lg focus-visible:ring-amber-500"
+              className="min-h-24 rounded-lg focus-visible:ring-primary"
               aria-invalid={!!errors.description}
             />
             <div className="flex items-center justify-between">
               {errors.description ? (
-                <p className="text-sm text-red-500">{errors.description}</p>
+                <p className="text-sm text-ink-error">{errors.description}</p>
               ) : (
                 <span />
               )}
-              <span className="text-xs text-stone-400">
+              <span className="text-xs text-ink-text-muted">
                 {form.description.length}/1000
               </span>
             </div>
@@ -160,26 +187,26 @@ export function InquiryForm({
 
           {/* Reference images */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-stone-700">
-              參考圖片（最多 3 張）
+            <label className="text-sm font-medium text-foreground">
+              {t('referenceImages')}
             </label>
             <ImageUploadPlaceholder />
           </div>
 
           {/* Body part */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-stone-700">
-              刺青部位 <span className="text-red-500">*</span>
+            <label className="text-sm font-medium text-foreground">
+              {t('bodyPart')} <span className="text-ink-error">{t('required')}</span>
             </label>
             <Select
               value={form.body_part}
               onValueChange={(val) => handleFieldChange('body_part', val ?? '')}
             >
               <SelectTrigger
-                className="w-full rounded-lg focus-visible:ring-amber-500"
+                className="w-full rounded-lg focus-visible:ring-primary"
                 aria-invalid={!!errors.body_part}
               >
-                <SelectValue placeholder="請選擇部位" />
+                <SelectValue placeholder={t('bodyPartPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {BODY_PARTS.map((part) => (
@@ -190,7 +217,7 @@ export function InquiryForm({
               </SelectContent>
             </Select>
             {errors.body_part && (
-              <p className="text-sm text-red-500">{errors.body_part}</p>
+              <p className="text-sm text-ink-error">{errors.body_part}</p>
             )}
           </div>
 
@@ -198,71 +225,72 @@ export function InquiryForm({
           <div className="space-y-1.5">
             <label
               htmlFor="inquiry-size"
-              className="text-sm font-medium text-stone-700"
+              className="text-sm font-medium text-foreground"
             >
-              預計大小 <span className="text-red-500">*</span>
+              {t('sizeEstimate')} <span className="text-ink-error">{t('required')}</span>
             </label>
             <Input
               id="inquiry-size"
-              placeholder="例如：10x10 cm"
+              placeholder={t('sizePlaceholder')}
               value={form.size_estimate}
               onChange={(e) =>
                 handleFieldChange('size_estimate', e.target.value)
               }
-              className="rounded-lg focus-visible:ring-amber-500"
+              className="rounded-lg focus-visible:ring-primary"
               aria-invalid={!!errors.size_estimate}
             />
             {errors.size_estimate && (
-              <p className="text-sm text-red-500">{errors.size_estimate}</p>
+              <p className="text-sm text-ink-error">{errors.size_estimate}</p>
             )}
           </div>
 
           {/* Budget range */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-stone-700">
-              預算範圍（NTD）
+            <label className="text-sm font-medium text-foreground">
+              {t('budget')}
             </label>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
-                placeholder="最低"
+                placeholder={t('budgetMin')}
                 value={form.budget_min}
                 onChange={(e) =>
                   handleFieldChange('budget_min', e.target.value)
                 }
-                className="rounded-lg focus-visible:ring-amber-500"
+                className="rounded-lg focus-visible:ring-primary"
                 min={0}
               />
-              <span className="text-stone-400">~</span>
+              <span className="text-ink-text-muted">~</span>
               <Input
                 type="number"
-                placeholder="最高"
+                placeholder={t('budgetMax')}
                 value={form.budget_max}
                 onChange={(e) =>
                   handleFieldChange('budget_max', e.target.value)
                 }
-                className="rounded-lg focus-visible:ring-amber-500"
+                className="rounded-lg focus-visible:ring-primary"
                 min={0}
               />
             </div>
             {(errors.budget_min || errors.budget_max) && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-ink-error">
                 {errors.budget_min || errors.budget_max}
               </p>
             )}
           </div>
-        </form>
-
-        <SheetFooter>
+          {/* Submit */}
+          {errors._form && (
+            <p className="text-sm text-red-500">{errors._form}</p>
+          )}
           <Button
-            onClick={handleSubmit}
-            className="w-full bg-amber-500 text-white hover:bg-amber-600"
+            type="submit"
+            className="w-full bg-primary text-primary-foreground hover:bg-ink-accent-hover"
             size="lg"
           >
-            送出詢價
+            {isLoggedIn ? t('submit') : 'LINE 登入後詢價'}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </form>
+      </BottomDrawerContent>
+    </BottomDrawer>
   )
 }

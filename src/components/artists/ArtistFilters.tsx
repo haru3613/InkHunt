@@ -1,7 +1,9 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
+import { useTranslations } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
 import type { Style } from '@/types/database'
 import {
   Select,
@@ -29,6 +31,7 @@ const CITIES = [
 export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const t = useTranslations('artists')
 
   const activeStyle = searchParams.get('style')
   const activeCity = searchParams.get('city')
@@ -69,10 +72,10 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
           onValueChange={handleCityChange}
         >
           <SelectTrigger className="w-auto min-w-[120px]">
-            <SelectValue placeholder="選擇地區" />
+            <SelectValue placeholder={t('selectRegion')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">全部地區</SelectItem>
+            <SelectItem value="all">{t('allRegions')}</SelectItem>
             {CITIES.map((city) => (
               <SelectItem key={city} value={city}>
                 {city}
@@ -88,7 +91,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
           onClick={() => handleStyleClick(null)}
           className="shrink-0"
         >
-          <StyleBadge name="全部" active={activeStyle === null} />
+          <StyleBadge name={t('allStyles')} active={activeStyle === null} />
         </button>
         {styles.map((style) => (
           <button

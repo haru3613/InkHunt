@@ -1,18 +1,20 @@
-import Link from "next/link"
+"use client"
+
+import { InquiryButton } from "@/components/inquiry/InquiryButton"
 
 interface MobileCTAProps {
-  readonly slug: string
+  readonly artistId: string
+  readonly artistName: string
 }
 
-export function MobileCTA({ slug }: MobileCTAProps) {
+export function MobileCTA({ artistId, artistName }: MobileCTAProps) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white p-4 lg:hidden">
-      <Link
-        href={`/artists/${slug}/inquiry`}
-        className="flex h-12 w-full items-center justify-center rounded-lg bg-amber-500 text-base font-medium text-white transition-colors hover:bg-amber-600"
-      >
-        我想詢價
-      </Link>
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-4 lg:hidden">
+      <InquiryButton
+        artistId={artistId}
+        artistName={artistName}
+        className="flex h-12 w-full items-center justify-center rounded-sm bg-primary text-base font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
+      />
     </div>
   )
 }
