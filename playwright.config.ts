@@ -11,6 +11,8 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    video: 'on-first-retry',
+    locale: 'zh-TW',
   },
   projects: [
     {
@@ -23,7 +25,7 @@ export default defineConfig({
     },
   ],
   webServer: process.env.CI ? undefined : {
-    command: 'npm run dev',
+    command: 'E2E_AUTH_BYPASS=true npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
   },
