@@ -22,7 +22,7 @@ export function Header() {
   ]
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Link href="/" className="font-display text-xl font-bold text-primary">
           InkHunt

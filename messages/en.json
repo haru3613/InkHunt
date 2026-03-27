@@ -13,11 +13,15 @@
   },
   "home": {
     "heroTitle": "Find Your Tattoo Artist",
+    "heroTitleLine1": "Find Your",
+    "heroTitleLine2": "Tattoo Artist",
     "heroSubtitle": "Filter by style, browse portfolios, transparent pricing, one-click inquiry. No more DM-ing on Instagram one by one.",
     "startSearch": "Find Artists",
     "iAmArtist": "I'm an Artist",
     "recommended": "Featured Artists",
-    "browseByStyle": "Browse by Style"
+    "browseByStyle": "Browse by Style",
+    "sectionLabelFeatured": "FEATURED",
+    "sectionLabelStyles": "BROWSE BY STYLE"
   },
   "artists": {
     "title": "Find Artists",
