@@ -342,6 +342,41 @@ export interface Database {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          id: string
+          inquiry_id: string
+          sender_type: 'consumer' | 'artist' | 'system'
+          sender_id: string | null
+          message_type: 'text' | 'image' | 'quote' | 'system'
+          content: string | null
+          metadata: Json
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          inquiry_id: string
+          sender_type: 'consumer' | 'artist' | 'system'
+          sender_id?: string | null
+          message_type: 'text' | 'image' | 'quote' | 'system'
+          content?: string | null
+          metadata?: Json
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          inquiry_id?: string
+          sender_type?: 'consumer' | 'artist' | 'system'
+          sender_id?: string | null
+          message_type?: 'text' | 'image' | 'quote' | 'system'
+          content?: string | null
+          metadata?: Json
+          read_at?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
