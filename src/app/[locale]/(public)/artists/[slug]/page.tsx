@@ -85,7 +85,7 @@ export default async function ArtistProfilePage({ params }: PageProps) {
       </div>
 
       {/* Mobile sticky CTA */}
-      <MobileCTA slug={artist.slug} />
+      <MobileCTA artistId={artist.id} artistName={artist.display_name} />
     </>
   )
 }
