@@ -1,0 +1,20 @@
+INSERT INTO styles (slug, name, icon) VALUES
+  ('realism', '寫實', '🎨'),
+  ('geometric', '幾何', '📐'),
+  ('japanese-traditional', '日式傳統', '🏯'),
+  ('american-traditional', '美式傳統', '🦅'),
+  ('neo-traditional', '新傳統', '🌹'),
+  ('watercolor', '水彩', '💧'),
+  ('fine-line', '極簡線條', '✏️'),
+  ('blackwork', '暗黑', '🖤'),
+  ('floral', '花卉', '🌸'),
+  ('lettering', '字體', '✍️'),
+  ('dotwork', '點描', '⚫'),
+  ('tribal', '部落圖騰', '🔱'),
+  ('illustrative', '插畫', '🖊️'),
+  ('anime', '漫畫/動漫', '🎌'),
+  ('portrait', '肖像', '👤'),
+  ('micro', '微刺青', '🔍'),
+  ('coverup', '遮蓋/改圖', '🔄'),
+  ('other', '其他', '➕')
+ON CONFLICT (slug) DO NOTHING;
