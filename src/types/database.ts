@@ -31,6 +31,9 @@ export interface Database {
           status: 'pending' | 'active' | 'suspended'
           is_claimed: boolean
           featured: boolean
+          offers_coverup: boolean
+          offers_custom_design: boolean
+          has_flash_designs: boolean
           created_at: string
           updated_at: string
         }
@@ -55,6 +58,9 @@ export interface Database {
           status?: 'pending' | 'active' | 'suspended'
           is_claimed?: boolean
           featured?: boolean
+          offers_coverup?: boolean
+          offers_custom_design?: boolean
+          has_flash_designs?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -79,6 +85,9 @@ export interface Database {
           status?: 'pending' | 'active' | 'suspended'
           is_claimed?: boolean
           featured?: boolean
+          offers_coverup?: boolean
+          offers_custom_design?: boolean
+          has_flash_designs?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -90,18 +99,39 @@ export interface Database {
           slug: string
           name: string
           icon: string | null
+          name_en: string | null
+          description: string | null
+          subtitle: string | null
+          group_name: string | null
+          color_profile: string | null
+          popularity: number
+          sort_order: number
         }
         Insert: {
           id?: number
           slug: string
           name: string
           icon?: string | null
+          name_en?: string | null
+          description?: string | null
+          subtitle?: string | null
+          group_name?: string | null
+          color_profile?: string | null
+          popularity?: number
+          sort_order?: number
         }
         Update: {
           id?: number
           slug?: string
           name?: string
           icon?: string | null
+          name_en?: string | null
+          description?: string | null
+          subtitle?: string | null
+          group_name?: string | null
+          color_profile?: string | null
+          popularity?: number
+          sort_order?: number
         }
         Relationships: []
       }
