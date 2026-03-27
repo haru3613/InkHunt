@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { PortfolioGrid } from "@/components/artists/PortfolioGrid"
 import { PortfolioLightbox } from "@/components/artists/PortfolioLightbox"
 import type { PortfolioItem } from "@/types/database"
@@ -10,6 +11,8 @@ interface PortfolioSectionProps {
 }
 
 export function PortfolioSection({ items }: PortfolioSectionProps) {
+  const t = useTranslations('portfolio')
+  const tProfile = useTranslations('artistProfile')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   return (
@@ -17,6 +20,9 @@ export function PortfolioSection({ items }: PortfolioSectionProps) {
       <PortfolioGrid
         items={items}
         onItemClick={(index) => setLightboxIndex(index)}
+        emptyLabel={tProfile('noPortfolio')}
+        healedLabel={t('healedPhoto')}
+        workLabel="Work"
       />
       {lightboxIndex !== null && (
         <PortfolioLightbox

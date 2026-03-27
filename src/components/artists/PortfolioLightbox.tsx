@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react"
 import Image from "next/image"
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import type { PortfolioItem } from "@/types/database"
 
@@ -17,6 +18,7 @@ export function PortfolioLightbox({
   initialIndex,
   onClose,
 }: PortfolioLightboxProps) {
+  const t = useTranslations('portfolio')
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [showHealed, setShowHealed] = useState(false)
 
@@ -66,14 +68,14 @@ export function PortfolioLightbox({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
       role="dialog"
       aria-modal="true"
-      aria-label="作品圖片瀏覽"
+      aria-label={t('imageViewer')}
     >
       {/* Overlay click to close */}
       <button
         type="button"
         className="absolute inset-0"
         onClick={onClose}
-        aria-label="關閉"
+        aria-label={t('close')}
       />
 
       {/* Close button */}
@@ -82,7 +84,7 @@ export function PortfolioLightbox({
         size="icon"
         onClick={onClose}
         className="absolute top-4 right-4 z-10 text-white hover:bg-white/10"
-        aria-label="關閉"
+        aria-label={t('close')}
       >
         <XIcon className="size-6" />
       </Button>
@@ -94,7 +96,7 @@ export function PortfolioLightbox({
           size="icon-lg"
           onClick={goToPrev}
           className="absolute left-2 z-10 text-white hover:bg-white/10 md:left-4"
-          aria-label="上一張"
+          aria-label={t('prev')}
         >
           <ChevronLeftIcon className="size-8" />
         </Button>
@@ -107,7 +109,7 @@ export function PortfolioLightbox({
           size="icon-lg"
           onClick={goToNext}
           className="absolute right-2 z-10 text-white hover:bg-white/10 md:right-4"
-          aria-label="下一張"
+          aria-label={t('next')}
         >
           <ChevronRightIcon className="size-8" />
         </Button>
@@ -118,7 +120,7 @@ export function PortfolioLightbox({
         <div className="relative aspect-square w-full max-w-[80vh]">
           <Image
             src={displayUrl}
-            alt={currentItem.title ?? `作品 ${currentIndex + 1}`}
+            alt={currentItem.title ?? `${currentIndex + 1}`}
             fill
             className="object-contain"
             sizes="(max-width: 768px) 90vw, 768px"
@@ -146,7 +148,7 @@ export function PortfolioLightbox({
               onClick={() => setShowHealed((prev) => !prev)}
               className="rounded-full border border-white/30 px-3 py-1 text-xs text-white transition-colors hover:bg-white/10"
             >
-              {showHealed ? "查看原圖" : "查看恢復照"}
+              {showHealed ? t('viewOriginal') : t('viewHealed')}
             </button>
           )}
 

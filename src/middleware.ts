@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import createIntlMiddleware from 'next-intl/middleware'
+import { routing } from '@/i18n/routing'
 import { updateSession } from '@/lib/supabase/middleware'
 
-const PROTECTED_ARTIST_ROUTES =
-  /^\/artist\/(dashboard|profile|portfolio|calendar|clients|settings|stats)/
+const intlMiddleware = createIntlMiddleware(routing)
 
-const PROTECTED_ADMIN_ROUTES = /^\/admin/
+const PROTECTED_ARTIST_ROUTES =
+  /^(\/[a-z-]+)?\/artist\/(dashboard|profile|portfolio|calendar|clients|settings|stats)/
+
+const PROTECTED_ADMIN_ROUTES = /^(\/[a-z-]+)?\/admin/
 
 const PROTECTED_API_ROUTES = [
   { pattern: /^\/api\/inquiries$/, methods: ['POST'] },
@@ -16,6 +20,21 @@ const PROTECTED_API_ROUTES = [
 export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request)
   const pathname = request.nextUrl.pathname
+
+  // Skip i18n for API routes
+  if (pathname.startsWith('/api/')) {
+    for (const route of PROTECTED_API_ROUTES) {
+      if (
+        route.pattern.test(pathname) &&
+        route.methods.includes(request.method)
+      ) {
+        if (!user) {
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+      }
+    }
+    return response
+  }
 
   // Artist dashboard routes require authentication
   if (PROTECTED_ARTIST_ROUTES.test(pathname)) {
@@ -41,19 +60,21 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protected API routes require authentication
-  for (const route of PROTECTED_API_ROUTES) {
-    if (
-      route.pattern.test(pathname) &&
-      route.methods.includes(request.method)
-    ) {
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-    }
+  // Apply i18n middleware for non-API routes
+  const intlResponse = intlMiddleware(request)
+
+  if (intlResponse.headers.get('location')) {
+    return intlResponse
   }
 
-  return response
+  // Merge Supabase session cookies into i18n response
+  response.headers.forEach((value, key) => {
+    if (key !== 'content-type') {
+      intlResponse.headers.set(key, value)
+    }
+  })
+
+  return intlResponse
 }
 
 export const config = {
