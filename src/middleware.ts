@@ -21,6 +21,16 @@ export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request)
   const pathname = request.nextUrl.pathname
 
+  // E2E test mode: skip auth redirects, auth is mocked at the API layer
+  if (process.env.E2E_AUTH_BYPASS === 'true' && !pathname.startsWith('/api/')) {
+    const intlResponse = intlMiddleware(request)
+    if (intlResponse.headers.get('location')) return intlResponse
+    response.headers.forEach((value, key) => {
+      if (key !== 'content-type') intlResponse.headers.set(key, value)
+    })
+    return intlResponse
+  }
+
   // Skip i18n for API routes
   if (pathname.startsWith('/api/')) {
     for (const route of PROTECTED_API_ROUTES) {
