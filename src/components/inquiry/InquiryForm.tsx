@@ -4,13 +4,12 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-} from '@/components/ui/sheet'
+  BottomDrawer,
+  BottomDrawerContent,
+  BottomDrawerHeader,
+  BottomDrawerTitle,
+  BottomDrawerDescription,
+} from '@/components/ui/bottom-drawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -142,18 +141,15 @@ export function InquiryForm({
   )
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="max-h-[85dvh] overflow-y-auto rounded-t-2xl sm:max-w-lg sm:mx-auto"
-      >
-        <SheetHeader>
-          <SheetTitle>{t('title', { artistName })}</SheetTitle>
-          <SheetDescription>{t('subtitle')}</SheetDescription>
-        </SheetHeader>
+    <BottomDrawer open={open} onOpenChange={handleOpenChange}>
+      <BottomDrawerContent>
+        <BottomDrawerHeader>
+          <BottomDrawerTitle>{t('title', { artistName })}</BottomDrawerTitle>
+          <BottomDrawerDescription>{t('subtitle')}</BottomDrawerDescription>
+        </BottomDrawerHeader>
 
         <form
-          className="space-y-4 px-4"
+          className="overflow-y-auto space-y-4 px-4 pb-6"
           onSubmit={(e) => {
             e.preventDefault()
             handleSubmit()
@@ -282,21 +278,19 @@ export function InquiryForm({
               </p>
             )}
           </div>
-        </form>
-
-        <SheetFooter className="flex-col gap-2">
+          {/* Submit */}
           {errors._form && (
             <p className="text-sm text-red-500">{errors._form}</p>
           )}
           <Button
-            onClick={handleSubmit}
+            type="submit"
             className="w-full bg-primary text-primary-foreground hover:bg-ink-accent-hover"
             size="lg"
           >
             {isLoggedIn ? t('submit') : 'LINE 登入後詢價'}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </form>
+      </BottomDrawerContent>
+    </BottomDrawer>
   )
 }

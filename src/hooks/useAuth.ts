@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
 interface AuthState {
   isLoading: boolean
@@ -43,6 +43,11 @@ export function useAuth() {
   }, [])
 
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
+      return
+    }
+
     fetchAuthState()
     const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
@@ -57,8 +62,10 @@ export function useAuth() {
   }, [])
 
   const logout = useCallback(async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    if (isSupabaseConfigured()) {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    }
     setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
   }, [])
 

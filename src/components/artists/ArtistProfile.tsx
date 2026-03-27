@@ -1,7 +1,7 @@
 import { MapPinIcon, CalendarIcon, BanknoteIcon, InfoIcon } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import { Badge } from "@/components/ui/badge"
-import { Link } from "@/i18n/navigation"
+import { InquiryButton } from "@/components/inquiry/InquiryButton"
 import { formatPrice, formatPriceRange, formatIgUrl } from "@/lib/utils"
 import type { ArtistWithDetails } from "@/lib/supabase/queries/artists"
 import { ArtistAvatar } from "./ArtistAvatar"
@@ -100,12 +100,7 @@ export async function ArtistProfile({ artist }: ArtistProfileProps) {
 
       {/* CTA - inline on desktop */}
       <div className="mt-6 hidden lg:block">
-        <Link
-          href={`/artists/${artist.slug}/inquiry`}
-          className="inline-flex h-11 items-center justify-center rounded-sm bg-primary px-8 text-base font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
-        >
-          {t("inquire")}
-        </Link>
+        <InquiryButton artistId={artist.id} artistName={artist.display_name} />
       </div>
     </section>
   )
