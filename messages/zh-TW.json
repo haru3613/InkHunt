@@ -13,11 +13,15 @@
   },
   "home": {
     "heroTitle": "找到你的刺青師",
+    "heroTitleLine1": "找到你的",
+    "heroTitleLine2": "刺青師",
     "heroSubtitle": "按風格篩選、瀏覽作品集、價格透明、一鍵詢價。不用再一個一個 IG 私訊問價了。",
     "startSearch": "開始找刺青師",
     "iAmArtist": "我是刺青師",
     "recommended": "推薦刺青師",
-    "browseByStyle": "按風格找刺青師"
+    "browseByStyle": "按風格找刺青師",
+    "sectionLabelFeatured": "精選推薦",
+    "sectionLabelStyles": "風格探索"
   },
   "artists": {
     "title": "找刺青師",
