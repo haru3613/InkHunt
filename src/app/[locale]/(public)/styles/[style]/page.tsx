@@ -61,7 +61,7 @@ export default async function StylePage({ params }: StylePageProps) {
               &larr; {t('allArtists')}
             </Link>
             <h1 className="font-display mt-2 text-2xl font-bold text-foreground lg:text-3xl">
-              {style.icon} {t('recommendTitle', { styleName: style.name })}
+              {t('recommendTitle', { styleName: style.name })}
             </h1>
             <p className="mt-1 text-muted-foreground">
               {t('totalArtists', { count: artistCount })}

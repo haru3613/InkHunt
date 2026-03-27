@@ -1,6 +1,5 @@
 import { setRequestLocale, getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
-import { Button } from "@/components/ui/button"
 import { StyleGrid } from "@/components/artists/StyleGrid"
 import { ArtistCard } from "@/components/artists/ArtistCard"
 import { JsonLd } from "@/components/shared/JsonLd"
@@ -54,16 +53,18 @@ export default async function HomePage({
             {t("heroSubtitle")}
           </p>
           <div className="mt-8 flex gap-4">
-            <Button
-              render={<Link href="/artists" />}
-              size="lg"
-              className="bg-primary text-primary-foreground hover:bg-ink-accent-hover"
+            <Link
+              href="/artists"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
             >
               {t("startSearch")}
-            </Button>
-            <Button render={<Link href="/artist" />} variant="outline" size="lg">
+            </Link>
+            <Link
+              href="/artist"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border px-8 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
               {t("iAmArtist")}
-            </Button>
+            </Link>
           </div>
         </div>
       </section>
