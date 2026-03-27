@@ -145,7 +145,7 @@ export function InquiryForm({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[85dvh] min-h-[60dvh] overflow-y-auto rounded-t-2xl sm:max-w-lg sm:mx-auto"
+        className="!h-[85dvh] overflow-y-auto rounded-t-2xl sm:max-w-lg sm:mx-auto"
       >
         <SheetHeader>
           <SheetTitle>{t('title', { artistName })}</SheetTitle>
