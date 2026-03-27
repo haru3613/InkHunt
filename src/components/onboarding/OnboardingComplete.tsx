@@ -32,13 +32,13 @@ export function OnboardingComplete() {
 
       <div className="flex w-full flex-col gap-3 pt-2">
         <Button
-          onClick={() => router.push('/artist/portfolio')}
+          onClick={() => router.replace('/artist/portfolio')}
           className="h-11 w-full rounded-lg bg-[#C8A97E] text-[#0A0A0A] font-semibold hover:bg-[#C8A97E]/90"
         >
           繼續上傳作品
         </Button>
         <Button
-          onClick={() => router.push('/')}
+          onClick={() => router.replace('/')}
           variant="outline"
           className="h-11 w-full rounded-lg border-[#2A2A2A] bg-transparent text-[#F5F0EB]/60 hover:bg-[#141414] hover:text-[#F5F0EB]"
         >

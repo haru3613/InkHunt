@@ -3,6 +3,7 @@ import { StyleCard } from './StyleCard'
 
 const STYLE_GROUPS = [
   {
+    id: 'popular' as const,
     title: '熱門風格',
     styles: [
       { slug: 'fine-line', name: '極簡線條', nameEn: 'Fine Line' },
@@ -14,6 +15,7 @@ const STYLE_GROUPS = [
     ],
   },
   {
+    id: 'classic' as const,
     title: '經典風格',
     styles: [
       { slug: 'japanese-traditional', name: '日式傳統', nameEn: 'Japanese Traditional' },
@@ -23,6 +25,7 @@ const STYLE_GROUPS = [
     ],
   },
   {
+    id: 'artistic' as const,
     title: '藝術風格',
     styles: [
       { slug: 'watercolor', name: '水彩', nameEn: 'Watercolor' },
@@ -34,6 +37,7 @@ const STYLE_GROUPS = [
     ],
   },
   {
+    id: 'special' as const,
     title: '特殊分類',
     styles: [
       { slug: 'lettering', name: '字體', nameEn: 'Lettering' },
@@ -112,6 +116,7 @@ export function StepStylePicker({
                     <StyleCard
                       name={style.name}
                       nameEn={style.nameEn}
+                      group={group.id}
                       selected={selected}
                       onToggle={() => !disabled && toggleStyle(style.slug)}
                     />
@@ -124,7 +129,7 @@ export function StepStylePicker({
       </div>
 
       {/* Service toggles */}
-      <div className="space-y-2 rounded-lg border border-[#2A2A2A] bg-[#141414] p-4">
+      <div className="space-y-2 overflow-hidden rounded-lg border border-[#2A2A2A] bg-[#141414] p-4">
         <p className="text-xs font-medium tracking-wide text-[#F5F0EB]/50 uppercase mb-3">
           服務項目
         </p>
@@ -135,15 +140,15 @@ export function StepStylePicker({
         ].map(({ field, label }) => (
           <label
             key={field}
-            className="flex cursor-pointer items-center justify-between py-1"
+            className="flex min-w-0 cursor-pointer items-center justify-between gap-3 py-1"
           >
-            <span className="text-sm text-[#F5F0EB]/80">{label}</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-[#F5F0EB]/80">{label}</span>
             <button
               type="button"
               role="switch"
               aria-checked={data[field]}
               onClick={() => toggleOption(field)}
-              className={`relative h-6 w-10 rounded-full transition-colors duration-200 ${
+              className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-200 ${
                 data[field] ? 'bg-[#C8A97E]' : 'bg-[#2A2A2A]'
               }`}
             >

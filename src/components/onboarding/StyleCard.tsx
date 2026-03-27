@@ -1,26 +1,37 @@
 import { cn } from '@/lib/utils'
 
+type StyleGroup = 'popular' | 'classic' | 'artistic' | 'special'
+
 interface StyleCardProps {
   name: string
   nameEn: string
+  group: StyleGroup
   selected: boolean
   onToggle: () => void
 }
 
-export function StyleCard({ name, nameEn, selected, onToggle }: StyleCardProps) {
+const GROUP_GRADIENTS: Record<StyleGroup, string> = {
+  popular: 'from-[#2a2520] to-[#141414]',
+  classic: 'from-[#2a1f1f] to-[#141414]',
+  artistic: 'from-[#1f2028] to-[#141414]',
+  special: 'from-[#1f2822] to-[#141414]',
+}
+
+export function StyleCard({ name, nameEn, group, selected, onToggle }: StyleCardProps) {
   return (
     <button
       type="button"
       onClick={onToggle}
       className={cn(
-        'relative flex aspect-[3/4] w-full flex-col items-center justify-end overflow-hidden rounded-lg border bg-[#141414] pb-3 text-center transition-all duration-150',
+        'relative flex aspect-[3/4] w-full flex-col items-center justify-end overflow-hidden rounded-lg border pb-3 text-center transition-all duration-150',
+        `bg-gradient-to-b ${GROUP_GRADIENTS[group]}`,
         selected
           ? 'border-[#C8A97E] shadow-[0_0_0_1px_#C8A97E]'
           : 'border-[#2A2A2A] hover:border-[#3A3A3A]',
       )}
       aria-pressed={selected}
     >
-      {/* Background texture */}
+      {/* Overlay gradient for text legibility */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/20 to-transparent" />
 
       {/* Selected checkmark */}

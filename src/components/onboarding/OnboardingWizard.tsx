@@ -34,7 +34,7 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
   })
 
   const [priceLocation, setPriceLocation] = useState<PriceLocationData>({
-    city: '',
+    cities: [],
     district: '',
     price_min: '',
     price_max: '',
@@ -57,7 +57,7 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
           display_name: basicInfo.display_name.trim(),
           ig_handle: basicInfo.ig_handle.trim() || null,
           bio: basicInfo.bio.trim() || null,
-          city: priceLocation.city,
+          city: priceLocation.cities.join(', '),
           district: priceLocation.district.trim() || null,
           price_min: priceLocation.price_min ? Number(priceLocation.price_min) : null,
           price_max: priceLocation.price_max ? Number(priceLocation.price_max) : null,
