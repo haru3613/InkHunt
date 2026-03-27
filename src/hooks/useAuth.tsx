@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, createContext, useContext } from 'react'
+import type { ReactNode } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
 interface AuthState {
@@ -19,7 +20,15 @@ interface AuthState {
   } | null
 }
 
-export function useAuth() {
+interface AuthContextValue extends AuthState {
+  loginWithRedirect: (redirectTo?: string) => void
+  logout: () => Promise<void>
+  refetch: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     isLoading: true,
     isLoggedIn: false,
@@ -30,6 +39,10 @@ export function useAuth() {
   const fetchAuthState = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/me')
+      if (!response.ok) {
+        setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
+        return
+      }
       const data = await response.json()
       setState({
         isLoading: false,
@@ -69,5 +82,17 @@ export function useAuth() {
     setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
   }, [])
 
-  return { ...state, loginWithRedirect, logout, refetch: fetchAuthState }
+  return (
+    <AuthContext.Provider value={{ ...state, loginWithRedirect, logout, refetch: fetchAuthState }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth(): AuthContextValue {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }

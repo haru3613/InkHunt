@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { UserIcon } from "lucide-react"
 import { Link } from "@/i18n/navigation"
@@ -22,9 +23,11 @@ export function Header() {
             className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             {user.avatarUrl ? (
-              <img
+              <Image
                 src={user.avatarUrl}
                 alt={user.displayName}
+                width={32}
+                height={32}
                 className="size-8 rounded-full object-cover"
               />
             ) : (

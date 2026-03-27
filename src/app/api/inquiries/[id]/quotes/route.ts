@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, getArtistForUser } from '@/lib/auth/helpers'
+import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { getInquiryById } from '@/lib/supabase/queries/inquiries'
 import {
   validateQuoteCreate,
@@ -45,20 +45,13 @@ export async function POST(
       validation.data,
     )
 
-    pushQuoteNotification(inquiry, quote, artist.display_name).catch((err) =>
-      console.error('Failed to send quote notification:', err),
-    )
+    pushQuoteNotification(inquiry, quote, artist.display_name).catch(() => {
+      // LINE notification failure is non-fatal
+    })
 
     return NextResponse.json({ quote, message }, { status: 201 })
   } catch (err) {
-    if (err instanceof Error && err.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('Create quote error:', err)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    )
+    return handleApiError(err)
   }
 }
 
@@ -88,13 +81,6 @@ export async function PATCH(
     const quote = await respondToQuote(quote_id, id, status)
     return NextResponse.json(quote)
   } catch (err) {
-    if (err instanceof Error && err.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('Respond to quote error:', err)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    )
+    return handleApiError(err)
   }
 }

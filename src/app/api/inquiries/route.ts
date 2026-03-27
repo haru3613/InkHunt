@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, getArtistForUser } from '@/lib/auth/helpers'
+import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import {
   validateInquiryCreate,
   createInquiry,
@@ -23,17 +23,13 @@ export async function POST(request: NextRequest) {
 
     const { inquiry } = await createInquiry(user.lineUserId, user.displayName, validation.data)
 
-    pushNewInquiryNotification(inquiry).catch((err) =>
-      console.error('Failed to send LINE notification:', err),
-    )
+    pushNewInquiryNotification(inquiry).catch(() => {
+      // LINE notification failure is non-fatal
+    })
 
     return NextResponse.json({ id: inquiry.id }, { status: 201 })
   } catch (err) {
-    if (err instanceof Error && err.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('Create inquiry error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(err)
   }
 }
 
@@ -59,10 +55,6 @@ export async function GET(request: NextRequest) {
     const result = await getInquiriesForConsumer(user.lineUserId, page)
     return NextResponse.json(result)
   } catch (err) {
-    if (err instanceof Error && err.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('List inquiries error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(err)
   }
 }

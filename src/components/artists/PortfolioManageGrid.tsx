@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import Image from 'next/image'
 import { Trash2, Edit2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { PortfolioItem } from '@/types/database'
 
 interface PortfolioManageGridProps {
   readonly items: readonly PortfolioItem[]
-  readonly onDelete: (id: string) => void
+  readonly onDelete: (id: string) => void | Promise<void>
   readonly onEdit: (item: PortfolioItem) => void
 }
 
@@ -16,8 +17,11 @@ export function PortfolioManageGrid({ items, onDelete, onEdit }: PortfolioManage
 
   const handleDelete = useCallback(async (id: string) => {
     setDeletingId(id)
-    onDelete(id)
-    setDeletingId(null)
+    try {
+      await onDelete(id)
+    } finally {
+      setDeletingId(null)
+    }
   }, [onDelete])
 
   if (items.length === 0) {
@@ -35,11 +39,12 @@ export function PortfolioManageGrid({ items, onDelete, onEdit }: PortfolioManage
           key={item.id}
           className="group relative aspect-square overflow-hidden rounded-lg bg-[#141414]"
         >
-          <img
+          <Image
             src={item.image_url}
             alt={item.title ?? 'Portfolio item'}
-            className="h-full w-full object-cover"
-            loading="lazy"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 opacity-0 transition-colors group-hover:bg-black/50 group-hover:opacity-100">
             <Button

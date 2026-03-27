@@ -1,20 +1,17 @@
 import { messagingApi } from '@line/bot-sdk'
 import type { Artist, Inquiry, Quote, Message } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/server'
+import { formatPrice, truncate } from '@/lib/utils'
+
+let messagingClient: messagingApi.MessagingApiClient | null = null
 
 function getMessagingClient(): messagingApi.MessagingApiClient {
-  return new messagingApi.MessagingApiClient({
-    channelAccessToken: process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN!,
-  })
-}
-
-function truncate(text: string, maxLen: number): string {
-  if (text.length <= maxLen) return text
-  return text.slice(0, maxLen - 3) + '...'
-}
-
-function formatPrice(price: number): string {
-  return `NT$${price.toLocaleString('en-US')}`
+  if (!messagingClient) {
+    messagingClient = new messagingApi.MessagingApiClient({
+      channelAccessToken: process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN!,
+    })
+  }
+  return messagingClient
 }
 
 export function buildInquiryNotificationMessage(
@@ -120,11 +117,11 @@ async function getArtistLineId(artistId: string): Promise<string | null> {
   const admin = createAdminClient()
   const { data } = await admin
     .from('artists')
-    .select('*')
+    .select('line_user_id')
     .eq('id', artistId)
     .single()
 
-  return (data as Artist | null)?.line_user_id ?? null
+  return (data as Pick<Artist, 'line_user_id'> | null)?.line_user_id ?? null
 }
 
 export async function pushNewInquiryNotification(

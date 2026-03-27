@@ -35,10 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  // TODO: Add dynamic artist pages when Supabase is connected
-  // const supabase = await createServerClient()
-  // const { data: artists } = await supabase.from('artists').select('slug, updated_at').eq('status', 'active')
-  // const artistPages = artists?.map(...)
+  // TODO: Add dynamic artist pages when Supabase mock data is replaced
 
   return [...staticPages, ...stylePages]
 }

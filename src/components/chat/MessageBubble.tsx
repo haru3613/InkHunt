@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import type { Message } from '@/types/database'
+import type { QuoteMetadata } from '@/types/chat'
 import { QuoteCard } from './QuoteCard'
 
 interface MessageBubbleProps {
@@ -27,15 +28,15 @@ export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubblePr
   }
 
   if (message.message_type === 'quote') {
-    const metadata = message.metadata as Record<string, unknown>
+    const metadata = message.metadata as unknown as QuoteMetadata
     return (
       <div className={cn('flex py-1', isOwn ? 'justify-end' : 'justify-start')}>
         <QuoteCard
-          quoteId={metadata.quote_id as string}
-          price={metadata.price as number}
-          note={metadata.note as string | null}
-          availableDates={metadata.available_dates as string[] | null}
-          status={metadata.status as string}
+          quoteId={metadata.quote_id}
+          price={metadata.price}
+          note={metadata.note}
+          availableDates={metadata.available_dates}
+          status={metadata.status}
           isOwn={isOwn}
           onAction={onQuoteAction}
         />

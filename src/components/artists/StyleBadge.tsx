@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils'
 interface StyleBadgeProps {
   name: string
   icon?: string | null
-  slug?: string
   active?: boolean
 }
 
