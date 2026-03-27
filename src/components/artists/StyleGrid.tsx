@@ -5,36 +5,37 @@ import type { Database } from '@/types/database'
 
 type StyleRow = Database['public']['Tables']['styles']['Row']
 
-// Hand-picked tattoo photos from Unsplash — each matches its style.
-// All verified 200, free commercial use (Unsplash License).
-// TODO: Replace with real artist portfolio samples when artists onboard.
+// Style images: local files (hand-picked) or Unsplash fallback.
+// Local: public/styles/{slug}.avif — hand-picked by Harvey.
+// Unsplash: free commercial use, for styles without a local image yet.
+// TODO: Replace all with real artist portfolio samples when artists onboard.
 const STYLE_IMAGES: Record<string, string> = {
   realism:
     'https://images.unsplash.com/photo-1575492899586-009d962fc732?w=600&q=80',
   geometric:
-    'https://images.unsplash.com/photo-1581182800629-7d90925ad072?w=600&q=80',
+    '/styles/geometric.avif',
   'japanese-traditional':
-    'https://images.unsplash.com/photo-1755282464755-ef4e95c6bae1?w=600&q=80',
+    '/styles/japanese-traditional.avif',
   'american-traditional':
     'https://images.unsplash.com/photo-1641402027551-6a2fbf05b356?w=600&q=80',
   'neo-traditional':
-    'https://images.unsplash.com/photo-1508974635242-47a87fe1a897?w=600&q=80',
+    '/styles/neo-traditional.avif',
   watercolor:
-    'https://images.unsplash.com/photo-1573497491208-6b1acb260507?w=600&q=80',
+    '/styles/watercolor.avif',
   'fine-line':
     'https://images.unsplash.com/photo-1547754145-ef9ff306e3f3?w=600&q=80',
   blackwork:
     'https://images.unsplash.com/photo-1557130641-1b14718f096a?w=600&q=80',
   floral:
-    'https://images.unsplash.com/photo-1726244677944-992a2841fd9a?w=600&q=80',
+    '/styles/floral.avif',
   lettering:
-    'https://images.unsplash.com/photo-1597191013317-e422993454f2?w=600&q=80',
+    '/styles/lettering.avif',
   dotwork:
     'https://images.unsplash.com/photo-1585238341710-4d3ff484184d?w=600&q=80',
   tribal:
     'https://images.unsplash.com/photo-1595246344716-5c9b563f11fe?w=600&q=80',
   illustrative:
-    'https://images.unsplash.com/photo-1485827031228-b1736cb1fd06?w=600&q=80',
+    '/styles/illustrative.avif',
   anime:
     'https://images.unsplash.com/photo-1647929369462-3258f892eb70?w=600&q=80',
   portrait:
@@ -48,7 +49,7 @@ const STYLE_IMAGES: Record<string, string> = {
 }
 
 const DEFAULT_IMAGE =
-  'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?w=600&q=80'
+  'https://images.unsplash.com/photo-1575492899586-009d962fc732?w=600&q=80'
 
 interface StyleCardProps {
   readonly style: StyleRow
