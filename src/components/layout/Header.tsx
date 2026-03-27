@@ -22,9 +22,9 @@ export function Header() {
   ]
 
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-200 bg-white">
+    <header className="sticky top-0 z-40 border-b border-border bg-background">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
-        <Link href="/" className="text-xl font-bold text-stone-900">
+        <Link href="/" className="font-display text-xl font-bold text-primary">
           InkHunt
         </Link>
 
@@ -34,7 +34,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900"
+              className="font-display text-sm font-medium uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
             </Link>
@@ -58,7 +58,7 @@ export function Header() {
             <nav aria-label="Mobile navigation" className="flex flex-col gap-2 px-4">
               {navLinks.map((link) => (
                 <SheetClose key={link.href} render={<Link href={link.href} />}>
-                  <span className="block rounded-lg px-3 py-2 text-base font-medium text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900">
+                  <span className="block rounded-lg px-3 py-2 text-base font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground">
                     {link.label}
                   </span>
                 </SheetClose>

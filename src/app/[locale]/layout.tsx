@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { Metadata } from "next"
-import { Noto_Sans_TC } from "next/font/google"
+import { Space_Grotesk, DM_Sans, Noto_Sans_TC } from "next/font/google"
 import { notFound } from "next/navigation"
 import { hasLocale } from "next-intl"
 import { setRequestLocale, getTranslations } from "next-intl/server"
@@ -9,6 +9,20 @@ import { routing } from "@/i18n/routing"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
 import { MobileNav } from "@/components/layout/MobileNav"
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-space-grotesk",
+})
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: "swap",
+  variable: "--font-dm-sans",
+})
 
 const notoSansTC = Noto_Sans_TC({
   subsets: ["latin"],
@@ -54,8 +68,11 @@ export default async function LocaleLayout({
   setRequestLocale(locale)
 
   return (
-    <html lang={locale} className={`${notoSansTC.variable} antialiased`}>
-      <body className="min-h-screen flex flex-col">
+    <html
+      lang={locale}
+      className={`${spaceGrotesk.variable} ${dmSans.variable} ${notoSansTC.variable} antialiased`}
+    >
+      <body className="min-h-screen flex flex-col bg-background text-foreground">
         <NextIntlClientProvider>
           <Header />
           <main className="flex-1 pb-16 lg:pb-0">{children}</main>

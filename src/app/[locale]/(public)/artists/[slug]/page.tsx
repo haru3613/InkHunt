@@ -77,7 +77,7 @@ export default async function ArtistProfilePage({ params }: PageProps) {
 
         {/* Portfolio */}
         <div className="mt-6">
-          <h2 className="mb-4 text-lg font-bold text-stone-900">
+          <h2 className="font-display mb-4 text-lg font-bold text-foreground">
             {t("portfolio")}
           </h2>
           <PortfolioSection items={artist.portfolio_items} />

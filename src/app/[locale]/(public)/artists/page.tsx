@@ -48,8 +48,8 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
-      <h1 className="mb-1 text-2xl font-bold text-stone-900">{t('title')}</h1>
-      <p className="mb-4 text-sm text-stone-500">{t('total', { count: total })}</p>
+      <h1 className="font-display mb-1 text-2xl font-bold text-foreground">{t('title')}</h1>
+      <p className="mb-4 text-sm text-muted-foreground">{t('total', { count: total })}</p>
 
       <ArtistFilters styles={styles} />
 
@@ -60,7 +60,7 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
           ))}
         </div>
       ) : (
-        <div className="mt-12 text-center text-stone-500">
+        <div className="mt-12 text-center text-muted-foreground">
           {t('noResults')}
         </div>
       )}

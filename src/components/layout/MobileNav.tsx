@@ -19,7 +19,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Mobile tab navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200 bg-white lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background lg:hidden"
     >
       <div className="flex h-14 items-center justify-around">
         {tabs.map((tab) => {
@@ -37,8 +37,8 @@ export function MobileNav() {
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs transition-colors",
                 isActive
-                  ? "text-amber-500"
-                  : "text-stone-400 hover:text-stone-600"
+                  ? "text-primary"
+                  : "text-ink-text-muted hover:text-muted-foreground"
               )}
             >
               <Icon className="size-5" />

@@ -55,14 +55,14 @@ export default async function StylePage({ params }: StylePageProps) {
           <div className="mb-8">
             <Link
               href="/artists"
-              className="text-sm text-stone-500 hover:text-stone-700"
+              className="text-sm text-muted-foreground hover:text-foreground"
             >
               &larr; {t('allArtists')}
             </Link>
-            <h1 className="mt-2 text-2xl font-bold text-stone-900 lg:text-3xl">
+            <h1 className="font-display mt-2 text-2xl font-bold text-foreground lg:text-3xl">
               {style.icon} {t('recommendTitle', { styleName: style.name })}
             </h1>
-            <p className="mt-1 text-stone-500">
+            <p className="mt-1 text-muted-foreground">
               {t('totalArtists', { count: artistCount })}
             </p>
           </div>
@@ -74,7 +74,7 @@ export default async function StylePage({ params }: StylePageProps) {
               ))}
             </div>
           ) : (
-            <p className="text-stone-400">
+            <p className="text-ink-text-muted">
               {t('noArtists', { styleName: style.name })}
             </p>
           )}
@@ -82,7 +82,7 @@ export default async function StylePage({ params }: StylePageProps) {
           <div className="mt-8">
             <Link
               href={`/artists?style=${slug}`}
-              className="text-sm font-medium text-amber-600 hover:text-amber-700"
+              className="text-sm font-medium text-primary hover:text-ink-accent-hover"
             >
               {t('viewAll', { styleName: style.name })} &rarr;
             </Link>

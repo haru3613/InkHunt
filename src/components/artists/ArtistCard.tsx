@@ -27,7 +27,7 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
 
   return (
     <Link href={`/artists/${artist.slug}`} className="block">
-      <Card className="border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+      <Card className="border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30">
         <CardContent className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <ArtistAvatar
@@ -37,16 +37,16 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="truncate text-base font-medium text-stone-900">
+                <h3 className="truncate text-base font-medium text-foreground">
                   {artist.display_name}
                 </h3>
                 {artist.featured && (
-                  <Badge className="shrink-0 bg-amber-500 text-white hover:bg-amber-600">
+                  <Badge className="shrink-0 rounded-sm bg-primary text-primary-foreground hover:bg-ink-accent-hover">
                     {t('recommended')}
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-stone-500">{artist.city}</p>
+              <p className="text-sm text-muted-foreground">{artist.city}</p>
             </div>
           </div>
 
@@ -59,7 +59,7 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
               />
             ))}
             {extraCount > 0 && (
-              <Badge variant="secondary" className="bg-stone-100 text-stone-500">
+              <Badge variant="secondary" className="rounded-sm bg-ink-accent-dim text-muted-foreground">
                 +{extraCount}
               </Badge>
             )}
@@ -78,7 +78,7 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
   return (
     <Link
       href={`/artists/${artist.slug}`}
-      className="rounded-xl border border-stone-200 bg-white p-4 transition hover:shadow-md"
+      className="rounded-lg border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30"
     >
       <div className="flex items-center gap-3">
         <ArtistAvatar
@@ -87,10 +87,10 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
           size="sm"
         />
         <div className="min-w-0">
-          <p className="truncate font-medium text-stone-900">
+          <p className="truncate font-medium text-foreground">
             {artist.display_name}
           </p>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-muted-foreground">
             {artist.city}
             {artist.district ? ` ${artist.district}` : ''}
           </p>
@@ -101,7 +101,7 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
           {artist.styles.slice(0, 3).map((s) => (
             <span
               key={s.id}
-              className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600"
+              className="rounded-sm bg-ink-accent-dim px-2 py-0.5 text-xs text-muted-foreground"
             >
               {s.icon} {s.name}
             </span>
@@ -109,7 +109,7 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
         </div>
       )}
       {artist.price_min !== null && artist.price_min !== undefined && (
-        <p className="mt-2 text-sm text-amber-600">
+        <p className="mt-2 text-sm text-primary">
           {t('priceFrom', { price: formatPrice(artist.price_min) })}
         </p>
       )}

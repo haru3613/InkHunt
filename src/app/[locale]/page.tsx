@@ -31,19 +31,19 @@ export default async function HomePage({
       <JsonLd data={websiteJsonLd} />
 
       {/* Hero */}
-      <section className="bg-stone-50 py-16 lg:py-24">
+      <section className="py-16 lg:py-24">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-stone-900 lg:text-5xl">
+          <h1 className="font-display text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight text-foreground">
             {t("heroTitle")}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-stone-500">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
             {t("heroSubtitle")}
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Button
               render={<Link href="/artists" />}
               size="lg"
-              className="bg-amber-500 text-white hover:bg-amber-600"
+              className="bg-primary text-white hover:bg-ink-accent-hover"
             >
               {t("startSearch")}
             </Button>
@@ -58,7 +58,7 @@ export default async function HomePage({
       {featuredArtists.length > 0 && (
         <section className="py-12">
           <div className="container mx-auto px-4">
-            <h2 className="mb-6 text-2xl font-bold text-stone-900">
+            <h2 className="font-display mb-6 text-2xl font-bold text-foreground">
               {t("recommended")}
             </h2>
             <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-x-visible lg:grid-cols-3">
@@ -73,7 +73,7 @@ export default async function HomePage({
       {/* Style categories */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <h2 className="mb-6 text-2xl font-bold text-stone-900">
+          <h2 className="font-display mb-6 text-2xl font-bold text-foreground">
             {t("browseByStyle")}
           </h2>
           <StyleGrid styles={styles} artistCounts={artistCounts} />

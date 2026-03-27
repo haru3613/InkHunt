@@ -27,7 +27,7 @@ export function ArtistAvatar({
   return (
     <div
       className={cn(
-        'relative shrink-0 overflow-hidden rounded-full bg-stone-100',
+        'relative shrink-0 overflow-hidden rounded-full bg-muted',
         sizeClass,
         className,
       )}
@@ -44,7 +44,7 @@ export function ArtistAvatar({
       ) : (
         <div
           className={cn(
-            'flex size-full items-center justify-center text-stone-400',
+            'flex size-full items-center justify-center text-ink-text-muted',
             textClass,
           )}
         >

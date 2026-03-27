@@ -12,7 +12,7 @@ export function BackButton() {
     <button
       type="button"
       onClick={() => router.back()}
-      className="inline-flex items-center gap-0.5 text-sm text-stone-500 transition-colors hover:text-stone-700"
+      className="inline-flex items-center gap-0.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
     >
       <ChevronLeftIcon className="size-4" />
       <span>{t("back")}</span>

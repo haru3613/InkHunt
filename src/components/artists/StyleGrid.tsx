@@ -14,13 +14,13 @@ function StyleCard({ style, artistCount, artistsLabel }: StyleCardProps) {
   return (
     <Link
       href={`/styles/${style.slug}`}
-      className="rounded-xl border border-stone-200 bg-white p-4 transition hover:shadow-md"
+      className="rounded-none border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30"
     >
       <span className="text-2xl" role="img" aria-label={style.name}>
         {style.icon}
       </span>
-      <p className="mt-2 font-medium text-stone-900">{style.name}</p>
-      <p className="text-sm text-stone-500">{artistCount} {artistsLabel}</p>
+      <p className="mt-2 font-medium text-foreground">{style.name}</p>
+      <p className="text-sm text-muted-foreground">{artistCount} {artistsLabel}</p>
     </Link>
   )
 }

@@ -17,7 +17,7 @@ export async function ArtistProfile({ artist }: ArtistProfileProps) {
   const location = [artist.city, artist.district].filter(Boolean).join(" ")
 
   return (
-    <section className="rounded-xl bg-white p-6">
+    <section className="rounded-lg bg-card p-6">
       {/* Avatar + Name + IG */}
       <div className="flex items-start gap-4">
         <ArtistAvatar
@@ -28,7 +28,7 @@ export async function ArtistProfile({ artist }: ArtistProfileProps) {
         />
 
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-stone-900">
+          <h1 className="text-2xl font-bold text-foreground">
             {artist.display_name}
           </h1>
           {igUrl && (
@@ -36,7 +36,7 @@ export async function ArtistProfile({ artist }: ArtistProfileProps) {
               href={igUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-block text-sm text-amber-600 hover:text-amber-700"
+              className="mt-1 inline-block text-sm text-primary hover:text-ink-accent-hover"
             >
               {artist.ig_handle}
             </a>
@@ -46,14 +46,14 @@ export async function ArtistProfile({ artist }: ArtistProfileProps) {
 
       {/* Bio */}
       {artist.bio && (
-        <p className="mt-4 text-sm leading-relaxed text-stone-600">
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           {artist.bio}
         </p>
       )}
 
       {/* Location */}
       {location && (
-        <div className="mt-4 flex items-center gap-1.5 text-sm text-stone-500">
+        <div className="mt-4 flex items-center gap-1.5 text-sm text-muted-foreground">
           <MapPinIcon className="size-4" />
           <span>{location}</span>
         </div>
@@ -74,25 +74,25 @@ export async function ArtistProfile({ artist }: ArtistProfileProps) {
       {/* Price / Deposit / Booking */}
       <div className="mt-4 space-y-2">
         {priceText && (
-          <div className="flex items-center gap-1.5 text-sm text-stone-700">
-            <BanknoteIcon className="size-4 shrink-0 text-stone-400" />
+          <div className="flex items-center gap-1.5 text-sm text-foreground">
+            <BanknoteIcon className="size-4 shrink-0 text-ink-text-muted" />
             <span className="font-medium">{priceText}</span>
           </div>
         )}
         {artist.pricing_note && (
-          <p className="pl-6 text-xs text-stone-500">
+          <p className="pl-6 text-xs text-muted-foreground">
             {artist.pricing_note}
           </p>
         )}
         {artist.deposit_amount !== null && artist.deposit_amount > 0 && (
-          <div className="flex items-center gap-1.5 text-sm text-stone-600">
-            <InfoIcon className="size-4 shrink-0 text-stone-400" />
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <InfoIcon className="size-4 shrink-0 text-ink-text-muted" />
             <span>{t("deposit", { amount: formatPrice(artist.deposit_amount) })}</span>
           </div>
         )}
         {artist.booking_notice && (
-          <div className="flex items-center gap-1.5 text-sm text-stone-600">
-            <CalendarIcon className="size-4 shrink-0 text-stone-400" />
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <CalendarIcon className="size-4 shrink-0 text-ink-text-muted" />
             <span>{artist.booking_notice}</span>
           </div>
         )}
@@ -102,7 +102,7 @@ export async function ArtistProfile({ artist }: ArtistProfileProps) {
       <div className="mt-6 hidden lg:block">
         <Link
           href={`/artists/${artist.slug}/inquiry`}
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-amber-500 px-8 text-base font-medium text-white transition-colors hover:bg-amber-600"
+          className="inline-flex h-11 items-center justify-center rounded-sm bg-primary px-8 text-base font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
         >
           {t("inquire")}
         </Link>

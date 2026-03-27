@@ -13,10 +13,10 @@ export function Footer() {
   ]
 
   return (
-    <footer className="border-t border-stone-200 bg-stone-100 py-8">
+    <footer className="border-t border-border bg-ink-surface py-8">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-          <p className="text-sm text-stone-500">
+          <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} InkHunt
           </p>
           <nav aria-label="Footer links" className="flex gap-6">
@@ -24,7 +24,7 @@ export function Footer() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-stone-500 transition-colors hover:text-stone-700"
+                className="text-sm text-muted-foreground transition-colors hover:text-muted-foreground"
               >
                 {link.label}
               </Link>

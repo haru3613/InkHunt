@@ -9,7 +9,7 @@ interface PortfolioGridProps {
 export function PortfolioGrid({ items, onItemClick }: PortfolioGridProps) {
   if (items.length === 0) {
     return (
-      <div className="py-12 text-center text-sm text-stone-400">
+      <div className="py-12 text-center text-sm text-ink-text-muted">
         尚無作品
       </div>
     )
@@ -22,7 +22,7 @@ export function PortfolioGrid({ items, onItemClick }: PortfolioGridProps) {
           key={item.id}
           type="button"
           onClick={() => onItemClick(index)}
-          className="group relative aspect-square overflow-hidden rounded-lg bg-stone-100"
+          className="group relative aspect-square overflow-hidden rounded-none bg-muted"
         >
           <Image
             src={item.thumbnail_url ?? item.image_url}
