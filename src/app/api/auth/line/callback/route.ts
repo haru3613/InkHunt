@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
 
   const cookieStore = await cookies()
   const storedState = cookieStore.get('line_auth_state')?.value
+  console.log('[LINE CB] State check:', { storedState: storedState?.slice(0, 8), urlState: state?.slice(0, 8), match: storedState === state })
   if (!storedState || storedState !== state) {
+    console.error('[LINE CB] State mismatch! Cookie missing or tampered.')
     return NextResponse.redirect(`${baseUrl}?auth_error=invalid_state`)
   }
 

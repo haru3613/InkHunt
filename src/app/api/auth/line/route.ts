@@ -9,10 +9,11 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies()
   const cookieOptions = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
     maxAge: 600,
     path: '/',
-  } as const
+  }
   cookieStore.set('line_auth_state', state, cookieOptions)
   cookieStore.set('line_auth_nonce', nonce, cookieOptions)
   cookieStore.set('line_auth_redirect', redirectTo, cookieOptions)
