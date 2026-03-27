@@ -129,6 +129,21 @@ LINE_MESSAGING_CHANNEL_SECRET=
 2. Backend + Frontend + Growth 平行實作
 3. QA 驗證所有流程
 
+## Design System
+
+Always read `DESIGN.md` before making any visual or UI decisions.
+All font choices, colors, spacing, and aesthetic direction are defined there.
+Do not deviate without explicit user approval.
+In QA mode, flag any code that doesn't match DESIGN.md.
+
+Key rules from DESIGN.md:
+- **Dark theme only** — bg #0A0A0A, surface #141414, text #F5F0EB
+- **Accent: brass gold** #C8A97E (not red, not purple, not amber)
+- **Fonts:** Space Grotesk (display), DM Sans (body), Noto Sans TC (CJK)
+- **No emoji in UI** — use real tattoo photos for style categories
+- **Sharp edges for art** (0px radius), **rounded for interaction** (4-12px)
+- **Image-forward** — photos dominate, UI chrome stays minimal
+
 ## DB Schema
 
 7 張表：`artists`, `styles`, `artist_styles`, `portfolio_items`, `inquiries`, `quotes`, `reviews`, `favorites`
