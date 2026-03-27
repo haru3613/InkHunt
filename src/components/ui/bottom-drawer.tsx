@@ -55,9 +55,10 @@ function BottomDrawerContent({
       <Drawer.Popup
         data-slot="bottom-drawer-content"
         className={cn(
-          // Positioning: fixed to the bottom, full width
+          // Positioning: fixed to the bottom, centered on desktop
           "fixed inset-x-0 bottom-0 z-50",
-          // Size: auto height up to 85dvh, scrollable when needed
+          "sm:max-w-lg sm:mx-auto",
+          // Size: auto height up to 85dvh
           "max-h-[85dvh]",
           // Layout
           "flex flex-col",
