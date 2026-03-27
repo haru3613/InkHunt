@@ -82,6 +82,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       styles: {
         Row: {
@@ -102,6 +103,7 @@ export interface Database {
           name?: string
           icon?: string | null
         }
+        Relationships: []
       }
       artist_styles: {
         Row: {
@@ -116,6 +118,7 @@ export interface Database {
           artist_id?: string
           style_id?: number
         }
+        Relationships: []
       }
       portfolio_items: {
         Row: {
@@ -160,6 +163,7 @@ export interface Database {
           sort_order?: number
           created_at?: string
         }
+        Relationships: []
       }
       inquiries: {
         Row: {
@@ -204,6 +208,7 @@ export interface Database {
           status?: 'pending' | 'quoted' | 'accepted' | 'closed'
           created_at?: string
         }
+        Relationships: []
       }
       quotes: {
         Row: {
@@ -236,6 +241,7 @@ export interface Database {
           status?: 'sent' | 'viewed' | 'accepted' | 'rejected'
           created_at?: string
         }
+        Relationships: []
       }
       reviews: {
         Row: {
@@ -280,6 +286,7 @@ export interface Database {
           verified?: boolean
           created_at?: string
         }
+        Relationships: []
       }
       favorites: {
         Row: {
@@ -297,6 +304,43 @@ export interface Database {
           artist_id?: string
           created_at?: string
         }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          id: string
+          inquiry_id: string
+          sender_type: 'consumer' | 'artist' | 'system'
+          sender_id: string | null
+          message_type: 'text' | 'image' | 'quote' | 'system'
+          content: string | null
+          metadata: Json
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          inquiry_id: string
+          sender_type: 'consumer' | 'artist' | 'system'
+          sender_id?: string | null
+          message_type: 'text' | 'image' | 'quote' | 'system'
+          content?: string | null
+          metadata?: Json
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          inquiry_id?: string
+          sender_type?: 'consumer' | 'artist' | 'system'
+          sender_id?: string | null
+          message_type?: 'text' | 'image' | 'quote' | 'system'
+          content?: string | null
+          metadata?: Json
+          read_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -332,3 +376,6 @@ export type QuoteInsert = Database['public']['Tables']['quotes']['Insert']
 export type Review = Database['public']['Tables']['reviews']['Row']
 
 export type Favorite = Database['public']['Tables']['favorites']['Row']
+
+export type Message = Database['public']['Tables']['messages']['Row']
+export type MessageInsert = Database['public']['Tables']['messages']['Insert']

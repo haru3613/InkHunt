@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
   Sheet,
@@ -22,9 +23,11 @@ import {
 } from '@/components/ui/select'
 import { ImageUploadPlaceholder } from './ImageUploadPlaceholder'
 import { inquirySchema, BODY_PARTS } from '@/lib/validations/inquiry'
+import { useAuth } from '@/hooks/useAuth'
 import type { ZodError } from 'zod'
 
 interface InquiryFormProps {
+  readonly artistId: string
   readonly artistName: string
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
@@ -58,10 +61,13 @@ function flattenZodErrors(error: ZodError): Record<string, string> {
 }
 
 export function InquiryForm({
+  artistId,
   artistName,
   open,
   onOpenChange,
 }: InquiryFormProps) {
+  const { isLoggedIn, loginWithRedirect } = useAuth()
+  const router = useRouter()
   const t = useTranslations('inquiry')
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -78,7 +84,12 @@ export function InquiryForm({
     [],
   )
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    if (!isLoggedIn) {
+      loginWithRedirect(window.location.pathname)
+      return
+    }
+
     const parsed = inquirySchema.safeParse({
       description: form.description,
       body_part: form.body_part,
@@ -94,10 +105,30 @@ export function InquiryForm({
     }
 
     setErrors({})
-    // TODO: Replace with LINE Login flow when auth is wired
-    setForm(INITIAL_FORM)
-    onOpenChange(false)
-  }, [form, onOpenChange])
+
+    try {
+      const response = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artist_id: artistId,
+          ...parsed.data,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error ?? 'Failed to create inquiry')
+      }
+
+      const { id } = await response.json()
+      setForm(INITIAL_FORM)
+      onOpenChange(false)
+      router.push(`/inquiries/${id}`)
+    } catch (err) {
+      setErrors({ _form: err instanceof Error ? err.message : 'Something went wrong' })
+    }
+  }, [form, onOpenChange, isLoggedIn, loginWithRedirect, artistId, router])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -253,13 +284,16 @@ export function InquiryForm({
           </div>
         </form>
 
-        <SheetFooter>
+        <SheetFooter className="flex-col gap-2">
+          {errors._form && (
+            <p className="text-sm text-red-500">{errors._form}</p>
+          )}
           <Button
             onClick={handleSubmit}
             className="w-full bg-primary text-primary-foreground hover:bg-ink-accent-hover"
             size="lg"
           >
-            {t('submit')}
+            {isLoggedIn ? t('submit') : 'LINE 登入後詢價'}
           </Button>
         </SheetFooter>
       </SheetContent>

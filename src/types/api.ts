@@ -1,4 +1,4 @@
-import type { Artist, Style, PortfolioItem, Quote } from './database'
+import type { Artist, Style, PortfolioItem, Quote, Inquiry, Message } from './database'
 
 // Artist list
 export interface ArtistListItem {
@@ -56,6 +56,30 @@ export interface QuoteCreateRequest {
 
 export interface QuoteResponse extends Quote {
   artist_display_name: string
+}
+
+// Chat / Messages
+export interface InquiryListItem {
+  id: string
+  artist_id: string
+  artist_slug: string
+  artist_display_name: string
+  artist_avatar_url: string | null
+  consumer_line_id: string
+  consumer_name: string | null
+  description: string
+  body_part: string | null
+  status: 'pending' | 'quoted' | 'accepted' | 'closed'
+  last_message_content: string | null
+  last_message_at: string | null
+  unread_count: number
+  created_at: string
+}
+
+export interface InquiryDetailResponse {
+  inquiry: Inquiry
+  artist: Pick<Artist, 'id' | 'slug' | 'display_name' | 'avatar_url'>
+  messages: Message[]
 }
 
 // Error
