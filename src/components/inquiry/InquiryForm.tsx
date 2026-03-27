@@ -4,12 +4,12 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+  BottomDrawer,
+  BottomDrawerContent,
+  BottomDrawerHeader,
+  BottomDrawerTitle,
+  BottomDrawerDescription,
+} from '@/components/ui/bottom-drawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -141,18 +141,15 @@ export function InquiryForm({
   )
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="rounded-t-2xl sm:max-w-lg sm:mx-auto"
-      >
-        <SheetHeader>
-          <SheetTitle>{t('title', { artistName })}</SheetTitle>
-          <SheetDescription>{t('subtitle')}</SheetDescription>
-        </SheetHeader>
+    <BottomDrawer open={open} onOpenChange={handleOpenChange}>
+      <BottomDrawerContent>
+        <BottomDrawerHeader>
+          <BottomDrawerTitle>{t('title', { artistName })}</BottomDrawerTitle>
+          <BottomDrawerDescription>{t('subtitle')}</BottomDrawerDescription>
+        </BottomDrawerHeader>
 
         <form
-          className="overflow-y-auto space-y-4 px-4 pb-4"
+          className="overflow-y-auto space-y-4 px-4 pb-6"
           onSubmit={(e) => {
             e.preventDefault()
             handleSubmit()
@@ -293,7 +290,7 @@ export function InquiryForm({
             {isLoggedIn ? t('submit') : 'LINE 登入後詢價'}
           </Button>
         </form>
-      </SheetContent>
-    </Sheet>
+      </BottomDrawerContent>
+    </BottomDrawer>
   )
 }
