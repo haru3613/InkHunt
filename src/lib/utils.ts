@@ -19,6 +19,11 @@ export function formatPriceRange(
   return `最高 ${formatPrice(max!)}`
 }
 
+export function truncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text
+  return text.slice(0, maxLen - 3) + '...'
+}
+
 export function formatIgUrl(handle: string): string | null {
   const IG_HANDLE_REGEX = /^@?[\w.][\w.]{0,29}$/
   if (!IG_HANDLE_REGEX.test(handle)) return null

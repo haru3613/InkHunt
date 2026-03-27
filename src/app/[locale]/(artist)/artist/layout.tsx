@@ -1,11 +1,9 @@
 'use client'
 
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, AuthProvider } from '@/hooks/useAuth'
 import { ArtistDashboardNav } from '@/components/artists/ArtistDashboardNav'
 
-export default function ArtistLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+function ArtistLayoutInner({ children }: Readonly<{ children: React.ReactNode }>) {
   const { artist } = useAuth()
   const showNav = artist?.status === 'active'
 
@@ -18,5 +16,15 @@ export default function ArtistLayout({
       <ArtistDashboardNav />
       <main className="flex-1 pb-16 lg:pb-0">{children}</main>
     </div>
+  )
+}
+
+export default function ArtistLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <AuthProvider>
+      <ArtistLayoutInner>{children}</ArtistLayoutInner>
+    </AuthProvider>
   )
 }

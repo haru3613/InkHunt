@@ -103,7 +103,6 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <StyleBadge
               name={style.name}
               icon={style.icon}
-              slug={style.slug}
               active={activeStyle === style.slug}
             />
           </button>

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { uploadFile } from '@/lib/upload/client'
 
 interface PortfolioUploaderProps {
   readonly onUpload: (urls: string[]) => void
@@ -16,40 +17,19 @@ export function PortfolioUploader({ onUpload, disabled }: PortfolioUploaderProps
 
   const handleFiles = useCallback(async (files: FileList) => {
     setIsUploading(true)
-    const urls: string[] = []
     const total = files.length
 
-    for (let i = 0; i < total; i++) {
-      const file = files[i]
-      try {
-        const signedRes = await fetch('/api/upload/signed-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bucket: 'portfolio',
-            filename: file.name,
-            content_type: file.type,
-          }),
-        })
-        if (!signedRes.ok) {
-          throw new Error('Failed to get upload URL')
-        }
-        const { signed_url, public_url } = await signedRes.json()
-
-        await fetch(signed_url, {
-          method: 'PUT',
-          headers: { 'Content-Type': file.type },
-          body: file,
-        })
-
-        urls.push(public_url)
+    const results = await Promise.allSettled(
+      Array.from(files).map(async (file, i) => {
+        const url = await uploadFile('portfolio', file)
         setProgress(((i + 1) / total) * 100)
-      } catch (err) {
-        // Upload failure for individual file is non-fatal; continue with remaining files
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-        void errorMessage
-      }
-    }
+        return url
+      }),
+    )
+
+    const urls = results
+      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+      .map((r) => r.value)
 
     setIsUploading(false)
     setProgress(0)

@@ -31,6 +31,7 @@ export default function ConsumerInquiriesPage() {
     async function load() {
       try {
         const res = await fetch('/api/inquiries?role=consumer')
+        if (!res.ok) return
         const data = await res.json()
         setInquiries(
           (data.data ?? []).map((inq: Record<string, unknown>) => ({

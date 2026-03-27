@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, getArtistForUser } from '@/lib/auth/helpers'
+import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
@@ -73,19 +73,29 @@ export async function PATCH(
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
     if (style_ids !== undefined) {
+      const { data: oldStyles } = await admin
+        .from('artist_styles')
+        .select('style_id')
+        .eq('artist_id', artist.id)
+
       await admin.from('artist_styles').delete().eq('artist_id', artist.id)
       if (style_ids.length > 0) {
-        await admin
+        const { error: insertErr } = await admin
           .from('artist_styles')
           .insert(style_ids.map((style_id) => ({ artist_id: artist.id, style_id })))
+
+        if (insertErr && oldStyles && oldStyles.length > 0) {
+          // Rollback: re-insert old styles on failure
+          await admin
+            .from('artist_styles')
+            .insert(oldStyles.map((s) => ({ artist_id: artist.id, style_id: s.style_id })))
+          return NextResponse.json({ error: 'Failed to update styles' }, { status: 500 })
+        }
       }
     }
 
     return NextResponse.json(updated)
   } catch (err) {
-    if (err instanceof Error && err.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return handleApiError(err)
   }
 }

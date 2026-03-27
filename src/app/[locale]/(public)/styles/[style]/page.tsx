@@ -1,7 +1,10 @@
+import { cache } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { setRequestLocale, getTranslations } from 'next-intl/server'
 import { getAllStyles, getStyleBySlug } from '@/lib/supabase/queries/styles'
+
+const getCachedStyle = cache(getStyleBySlug)
 import { getArtists } from '@/lib/supabase/queries/artists'
 import { generateStyleCollectionJsonLd } from '@/lib/seo'
 import { JsonLd } from '@/components/shared/JsonLd'
@@ -20,7 +23,7 @@ interface StylePageProps {
 export async function generateMetadata({ params }: StylePageProps): Promise<Metadata> {
   const { locale, style: slug } = await params
   const t = await getTranslations({ locale, namespace: 'style' })
-  const style = await getStyleBySlug(slug)
+  const style = await getCachedStyle(slug)
   if (!style) return {}
 
   return {
