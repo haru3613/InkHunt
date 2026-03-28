@@ -51,21 +51,21 @@ export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps)
               isSelected ? 'bg-[#1F1F1F]' : 'hover:bg-[#141414]',
             )}
           >
-            <div className="w-10 h-10 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#F5F0EB]/60 text-sm font-medium shrink-0">
+            <div className="w-11 h-11 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#F5F0EB]/60 text-sm font-medium shrink-0">
               {displayName.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#F5F0EB] truncate">
+                <span className="text-[15px] font-medium text-[#F5F0EB] truncate">
                   {displayName}
                 </span>
                 {item.last_message_at && (
-                  <span className="text-[10px] text-[#F5F0EB]/30 shrink-0">
+                  <span className="text-xs text-[#F5F0EB]/30 shrink-0">
                     {formatDate(item.last_message_at)}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#F5F0EB]/40 truncate mt-0.5">
+              <p className="text-sm text-[#F5F0EB]/40 truncate mt-1">
                 {item.last_message ?? item.inquiry.description}
               </p>
             </div>

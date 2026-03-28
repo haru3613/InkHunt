@@ -54,7 +54,8 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
   )
 
   return (
-    <div className="flex items-center gap-2 p-3 border-t border-[#1F1F1F] bg-[#0A0A0A]">
+    <div className="border-t border-[#1F1F1F] bg-[#0A0A0A] px-4 py-3">
+    <div className="mx-auto flex max-w-2xl items-center gap-2">
       <input
         ref={fileInputRef}
         type="file"
@@ -99,6 +100,7 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
       >
         <Send className="w-5 h-5" />
       </Button>
+    </div>
     </div>
   )
 }
