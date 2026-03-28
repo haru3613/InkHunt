@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       // Fallback: admin-based sign-in for LINE (not natively supported by Supabase)
       // Strategy: try sign-in first (O(1)), create user only if sign-in fails
       const adminClient = createAdminClient()
-      const email = `${profile.userId}@line.inkhunt.local`
+      const email = `${profile.userId.toLowerCase()}@line.inkhunt.local`
       const password = derivePassword(profile.userId)
       const metadata = buildUserMetadata(profile)
 
