@@ -5,7 +5,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { ChatList } from '@/components/chat/ChatList'
 import type { ChatListItem } from '@/components/chat/ChatList'
 import { ChatWindow } from '@/components/chat/ChatWindow'
+import { QuoteFormModal } from '@/components/chat/QuoteFormModal'
+import type { QuoteTemplate } from '@/components/chat/QuoteFormModal'
 import type { Inquiry } from '@/types/database'
+import type { SendQuoteRequest } from '@/types/chat'
 
 // TopBar: h-12 (48px) mobile, h-14 (56px) desktop + bottom tab h-16 (64px) on mobile
 const CHAT_HEIGHT_CLASSES = 'h-[calc(100dvh-48px-64px)] lg:h-[calc(100dvh-56px)]'
@@ -15,6 +18,8 @@ export default function InquiriesPage() {
   const [inquiries, setInquiries] = useState<ChatListItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false)
+  const [templates, setTemplates] = useState<QuoteTemplate[]>([])
 
   const fetchInquiries = useCallback(async () => {
     try {
@@ -44,6 +49,28 @@ export default function InquiriesPage() {
     fetchInquiries()
   }, [fetchInquiries])
 
+  useEffect(() => {
+    fetch('/api/artists/me/templates')
+      .then((res) => (res.ok ? res.json() : { templates: [] }))
+      .then((data: { templates?: QuoteTemplate[] }) =>
+        setTemplates(data.templates ?? []),
+      )
+      .catch(() => {})
+  }, [])
+
+  const handleSendQuote = useCallback(
+    async (data: SendQuoteRequest) => {
+      if (!selectedId) return
+      const res = await fetch(`/api/inquiries/${selectedId}/quotes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Failed to send quote')
+    },
+    [selectedId],
+  )
+
   const handleQuoteAction = useCallback(
     async (quoteId: string, action: 'accepted' | 'rejected') => {
       if (!selectedId) return
@@ -60,6 +87,8 @@ export default function InquiriesPage() {
     },
     [selectedId],
   )
+
+  const selectedItem = inquiries.find((item) => item.inquiry.id === selectedId)
 
   if (isLoading) {
     return (
@@ -106,6 +135,7 @@ export default function InquiriesPage() {
               inquiryId={selectedId}
               currentUserId={user.lineUserId}
               isArtist={true}
+              onSendQuote={() => setQuoteModalOpen(true)}
               onQuoteAction={handleQuoteAction}
             />
           </>
@@ -115,6 +145,18 @@ export default function InquiriesPage() {
           </div>
         )}
       </div>
+
+      {/* Quote form modal — triggered by the $ button in ChatInput */}
+      {selectedId && (
+        <QuoteFormModal
+          open={quoteModalOpen}
+          onOpenChange={setQuoteModalOpen}
+          consumerName={selectedItem?.consumer_name ?? ''}
+          inquiryDescription={selectedItem?.inquiry.description ?? ''}
+          templates={templates}
+          onSubmit={handleSendQuote}
+        />
+      )}
     </div>
   )
 }

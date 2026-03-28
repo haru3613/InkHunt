@@ -10,6 +10,7 @@ import { generateArtistJsonLd } from "@/lib/seo"
 import { JsonLd } from "@/components/shared/JsonLd"
 import { BackButton } from "@/components/artists/BackButton"
 import { ArtistProfile } from "@/components/artists/ArtistProfile"
+import { ArtistCompareAction } from "@/components/artists/ArtistCompareAction"
 import { PortfolioSection } from "@/components/artists/PortfolioSection"
 import { MobileCTA } from "@/components/artists/MobileCTA"
 
@@ -76,6 +77,16 @@ export default async function ArtistProfilePage({ params }: PageProps) {
 
         <div className="mt-4">
           <ArtistProfile artist={artist} />
+          <div className="mt-3">
+            <ArtistCompareAction
+              artist={{
+                id: artist.id,
+                display_name: artist.display_name,
+                slug: artist.slug,
+                avatar_url: artist.avatar_url ?? null,
+              }}
+            />
+          </div>
         </div>
 
         {/* Portfolio */}
