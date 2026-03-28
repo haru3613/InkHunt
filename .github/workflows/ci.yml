@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, staging]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint
+        run: npx eslint src/
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Unit tests
+        run: npx vitest run --reporter=verbose
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [lint-and-typecheck, test]
+    # Skip build on staging → main promotion (already verified)
+    if: ${{ !(github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref == 'staging') }}
+    env:
+      # Dummy env vars for build (not used at runtime)
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+      NEXT_PUBLIC_BASE_URL: https://ink-hunt.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npx next build
+
+  ci-passed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    if: always()
+    needs: [lint-and-typecheck, test, build]
+    steps:
+      - name: Check results
+        run: |
+          LINT="${{ needs.lint-and-typecheck.result }}"
+          TEST="${{ needs.test.result }}"
+          BUILD="${{ needs.build.result }}"
+          if [[ "$LINT" == "failure" || "$TEST" == "failure" || "$BUILD" == "failure" ]]; then
+            echo "CI failed: lint=$LINT test=$TEST build=$BUILD"
+            exit 1
+          fi
+          echo "CI passed: lint=$LINT test=$TEST build=$BUILD"
