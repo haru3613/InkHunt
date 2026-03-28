@@ -35,21 +35,21 @@ const STYLE_IMAGES: Record<string, string> = {
   'american-traditional':
     'https://images.unsplash.com/photo-1641402027551-6a2fbf05b356?w=600&q=80',
   dotwork:
-    'https://images.unsplash.com/photo-1585238341710-4d3ff484184d?w=600&q=80',
+    '/styles/dotwork.avif',
   portrait:
     'https://images.unsplash.com/photo-1640202430303-a71359ade259?w=600&q=80',
   ornamental:
-    'https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=600&q=80',
+    '/styles/ornamental.avif',
   handpoke:
     'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=600&q=80',
   tribal:
     'https://images.unsplash.com/photo-1595246344716-5c9b563f11fe?w=600&q=80',
   surrealism:
-    'https://images.unsplash.com/photo-1604093882750-3ed498f3178b?w=600&q=80',
+    '/styles/surrealism.avif',
   abstract:
-    'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&q=80',
+    '/styles/abstract.avif',
   other:
-    'https://images.unsplash.com/photo-1557130641-1b14718f096a?w=600&q=80',
+    '/styles/other.avif',
 }
 
 const DEFAULT_IMAGE =
