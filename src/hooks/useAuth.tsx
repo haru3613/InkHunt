@@ -17,6 +17,8 @@ interface AuthState {
     slug: string
     display_name: string
     status: 'pending' | 'active' | 'suspended'
+    price_min: number | null
+    portfolio_count: number
   } | null
 }
 
