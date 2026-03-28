@@ -50,12 +50,9 @@ export async function getArtistForUser(
   return data
 }
 
-const ADMIN_IDS = new Set(
-  (process.env.ADMIN_LINE_USER_IDS ?? '').split(',').filter(Boolean),
-)
-
 export function isAdmin(lineUserId: string): boolean {
-  return ADMIN_IDS.has(lineUserId)
+  const adminIds = (process.env.ADMIN_LINE_USER_IDS ?? '').split(',').filter(Boolean)
+  return adminIds.includes(lineUserId)
 }
 
 export async function requireAdmin(): Promise<AuthUser> {
