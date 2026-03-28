@@ -1,6 +1,6 @@
 'use client'
 
-import { cn } from '@/lib/utils'
+import { cn, formatRelativeTime, getInitials } from '@/lib/utils'
 import type { Inquiry } from '@/types/database'
 
 interface ChatListItem {
@@ -41,18 +41,6 @@ const STATUS_CONFIG: Record<
     label: '已關閉',
     className: 'text-[#555555]',
   },
-}
-
-function formatRelativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60_000)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (days > 0) return `${days}天前`
-  if (hours > 0) return `${hours}小時前`
-  if (minutes > 0) return `${minutes}分鐘前`
-  return '剛剛'
 }
 
 function StatusBadge({ status }: { readonly status: Inquiry['status'] }) {
@@ -102,7 +90,7 @@ export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps)
             {/* Avatar with unread dot indicator */}
             <div className="relative shrink-0 mt-0.5">
               <div className="w-10 h-10 rounded-full bg-[#1C1C1C] flex items-center justify-center text-[#F5F0EB]/60 text-sm font-medium">
-                {displayName.charAt(0)}
+                {getInitials(displayName)}
               </div>
               {hasUnread && (
                 <span

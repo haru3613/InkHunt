@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
-import { cn } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
 import { MessageSquare, FolderOpen, User, LayoutDashboard, ChevronDown } from 'lucide-react'
 
 interface ArtistTopBarProps {
@@ -19,16 +19,9 @@ const NAV_ITEMS = [
   { href: '/artist/profile', label: '檔案', icon: User },
 ] as const
 
-// Derive initials from a display name for the avatar fallback
-function getInitials(name: string | null): string {
+function safeInitials(name: string | null): string {
   if (!name) return '?'
-  const trimmed = name.trim()
-  // For CJK names, take the last two characters; for Latin, take first letters of each word
-  const words = trimmed.split(/\s+/)
-  if (words.length >= 2) {
-    return (words[0][0] + words[words.length - 1][0]).toUpperCase()
-  }
-  return trimmed.slice(0, 2).toUpperCase()
+  return getInitials(name)
 }
 
 export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
@@ -47,7 +40,7 @@ export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const initials = getInitials(artistName)
+  const initials = safeInitials(artistName)
 
   return (
     <>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Link } from '@/i18n/navigation'
+import { formatRelativeTime, truncate } from '@/lib/utils'
 import { StatCard } from '@/components/artists/StatCard'
 import { OnboardingChecklist } from '@/components/artists/OnboardingChecklist'
 
@@ -13,24 +14,6 @@ interface InquirySummary {
   body_part: string | null
   status: 'pending' | 'quoted' | 'accepted' | 'closed'
   created_at: string
-}
-
-function formatRelativeTime(isoString: string): string {
-  const now = new Date()
-  const date = new Date(isoString)
-  const diffMs = now.getTime() - date.getTime()
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffHours / 24)
-
-  if (diffHours < 1) return '剛剛'
-  if (diffHours < 24) return `${diffHours} 小時前`
-  if (diffDays === 1) return '昨天'
-  if (diffDays < 7) return `${diffDays} 天前`
-  return date.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })
-}
-
-function truncate(str: string, maxLen: number): string {
-  return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str
 }
 
 export default function DashboardPage() {
