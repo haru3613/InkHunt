@@ -66,7 +66,34 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
-  // Keep existing list endpoint -- will be replaced when mock data is removed
-  return NextResponse.json({ message: 'TODO - migrate from mock data' })
+const listArtistsSchema = z.object({
+  style: z.string().optional(),
+  city: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(50).optional(),
+})
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const params = listArtistsSchema.parse({
+      style: searchParams.get('style') ?? undefined,
+      city: searchParams.get('city') ?? undefined,
+      page: searchParams.get('page') ?? undefined,
+      pageSize: searchParams.get('pageSize') ?? undefined,
+    })
+
+    const { getArtists } = await import('@/lib/supabase/queries/artists')
+    const result = await getArtists(params)
+
+    return NextResponse.json(result)
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: err.flatten().fieldErrors },
+        { status: 400 },
+      )
+    }
+    return handleApiError(err)
+  }
 }
