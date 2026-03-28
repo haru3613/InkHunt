@@ -92,6 +92,14 @@
     "submitting": "送出中...",
     "submitError": "報價送出失敗，請重試"
   },
+  "compare": {
+    "addToCompare": "加入比較",
+    "added": "已加入",
+    "selected": "已選 {count}/3 位刺青師",
+    "clearAll": "清除",
+    "continueToInquiry": "繼續詢價",
+    "remove": "移除"
+  },
   "footer": {
     "about": "關於我們",
     "privacy": "隱私政策",

@@ -92,6 +92,14 @@
     "submitting": "Sending...",
     "submitError": "Failed to send quote, please try again"
   },
+  "compare": {
+    "addToCompare": "Compare",
+    "added": "Added",
+    "selected": "{count}/3 artists selected",
+    "clearAll": "Clear",
+    "continueToInquiry": "Continue to Inquiry",
+    "remove": "Remove"
+  },
   "footer": {
     "about": "About",
     "privacy": "Privacy",
