@@ -39,15 +39,17 @@ export function ChatWindow({
 
   return (
     <div className="flex flex-col h-full">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isOwn={msg.sender_id === currentUserId}
-            onQuoteAction={onQuoteAction}
-          />
-        ))}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="mx-auto max-w-2xl space-y-1">
+          {messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isOwn={msg.sender_id === currentUserId}
+              onQuoteAction={onQuoteAction}
+            />
+          ))}
+        </div>
       </div>
       <ChatInput
         onSendMessage={sendMessage}

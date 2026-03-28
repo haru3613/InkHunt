@@ -18,11 +18,22 @@ function formatTime(dateStr: string): string {
 
 export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubbleProps) {
   if (message.message_type === 'system') {
+    const lines = (message.content ?? '').split('\n').filter(Boolean)
+    const title = lines[0] ?? ''
+    const details = lines.slice(1)
+
     return (
-      <div className="flex justify-center py-2">
-        <span className="text-xs text-[#F5F0EB]/40 bg-[#1F1F1F] px-3 py-1 rounded-full">
-          {message.content}
-        </span>
+      <div className="flex justify-center py-3">
+        <div className="w-full max-w-md rounded-xl border border-[#1F1F1F] bg-[#141414] px-5 py-4">
+          <div className="mb-2 text-sm font-medium text-[#C8A97E]">{title}</div>
+          {details.length > 0 && (
+            <div className="space-y-1">
+              {details.map((line, i) => (
+                <p key={i} className="text-sm text-[#F5F0EB]/60">{line}</p>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -61,11 +72,11 @@ export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubblePr
             loading="lazy"
           />
         ) : (
-          <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+          <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
         )}
         <time
           className={cn(
-            'text-[10px] mt-1 block',
+            'text-xs mt-1.5 block',
             isOwn ? 'text-[#0A0A0A]/50' : 'text-[#F5F0EB]/30',
           )}
         >
