@@ -6,6 +6,7 @@ import {
   createQuote,
   respondToQuote,
 } from '@/lib/supabase/queries/quotes'
+import { createAdminClient } from '@/lib/supabase/server'
 import { pushQuoteNotification } from '@/lib/line/messaging'
 
 export async function POST(
@@ -65,7 +66,7 @@ export async function PATCH(
     const body = await request.json()
     const { quote_id, status } = body
 
-    if (!quote_id || !['accepted', 'rejected'].includes(status)) {
+    if (!quote_id || !['accepted', 'rejected', 'viewed'].includes(status)) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
@@ -76,6 +77,22 @@ export async function PATCH(
 
     if (inquiry.consumer_line_id !== user.lineUserId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (status === 'viewed') {
+      const admin = createAdminClient()
+      const { data: quote } = await admin
+        .from('quotes')
+        .update({ status: 'viewed' })
+        .eq('id', quote_id)
+        .eq('status', 'sent')
+        .select()
+        .maybeSingle()
+
+      if (!quote) {
+        return NextResponse.json({ status: 'already_viewed' })
+      }
+      return NextResponse.json(quote)
     }
 
     const quote = await respondToQuote(quote_id, id, status)

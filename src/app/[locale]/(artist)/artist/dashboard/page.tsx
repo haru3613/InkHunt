@@ -34,14 +34,14 @@ export default function DashboardPage() {
       }
       const data = await response.json()
       setInquiries(
-        (data.data ?? []).map((inq: Inquiry) => ({
+        (data.data ?? []).map((inq: Inquiry & { unread_count?: number }) => ({
           inquiry: inq,
           artist_display_name: '',
           artist_avatar_url: null,
           consumer_name: inq.consumer_name,
           last_message: null,
           last_message_at: null,
-          unread_count: 0,
+          unread_count: inq.unread_count ?? 0,
         })),
       )
     } finally {

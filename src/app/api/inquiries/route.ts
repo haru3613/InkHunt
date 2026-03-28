@@ -6,6 +6,7 @@ import {
   getInquiriesForArtist,
   getInquiriesForConsumer,
 } from '@/lib/supabase/queries/inquiries'
+import { getUnreadCountsForUser } from '@/lib/supabase/queries/messages'
 import { pushNewInquiryNotification } from '@/lib/line/messaging'
 
 export async function POST(request: NextRequest) {
@@ -49,7 +50,13 @@ export async function GET(request: NextRequest) {
       const artist = await getArtistForUser(user.lineUserId)
       if (!artist) return NextResponse.json({ error: 'Not an artist' }, { status: 403 })
       const result = await getInquiriesForArtist(artist.id, status, page)
-      return NextResponse.json(result)
+      const inquiryIds = (result.data ?? []).map((inq: { id: string }) => inq.id)
+      const unreadCounts = await getUnreadCountsForUser(user.lineUserId, inquiryIds)
+      const data = (result.data ?? []).map((inq: { id: string }) => ({
+        ...inq,
+        unread_count: unreadCounts.get(inq.id) ?? 0,
+      }))
+      return NextResponse.json({ ...result, data })
     }
 
     const result = await getInquiriesForConsumer(user.lineUserId, page)
