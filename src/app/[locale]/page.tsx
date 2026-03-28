@@ -1,4 +1,5 @@
 import { setRequestLocale, getTranslations } from "next-intl/server"
+import Image from "next/image"
 import { Link } from "@/i18n/navigation"
 import { StyleGrid } from "@/components/artists/StyleGrid"
 import { ArtistCard } from "@/components/artists/ArtistCard"
@@ -33,12 +34,15 @@ export default async function HomePage({
       <JsonLd data={websiteJsonLd} />
 
       {/* Hero — full-bleed poster */}
-      <section
-        className="relative flex min-h-svh items-end bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url(${HERO_BG_URL})`,
-        }}
-      >
+      <section className="relative flex min-h-svh items-end">
+        <Image
+          src={HERO_BG_URL}
+          alt=""
+          fill
+          priority
+          className="object-cover object-center"
+          sizes="100vw"
+        />
         {/* Gradient overlay */}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,10,10,0)_0%,rgba(10,10,10,0.7)_50%,rgba(10,10,10,0.95)_100%)]" />
 
