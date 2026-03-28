@@ -32,7 +32,7 @@ function chainQueryList(data: unknown[], error: unknown = null) {
   return chain
 }
 
-import { getAllStyles, getStyleBySlug, getAllArtistCounts } from '../styles'
+import { getAllStyles, getStyleBySlug, getArtistCountByStyle, getAllArtistCounts } from '../styles'
 
 describe('getAllStyles', () => {
   beforeEach(() => {
@@ -91,6 +91,50 @@ describe('getStyleBySlug', () => {
     const result = await getStyleBySlug('nonexistent')
 
     expect(result).toBeNull()
+  })
+})
+
+describe('getArtistCountByStyle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns count of active artists for a style', async () => {
+    let callNum = 0
+    mockFrom.mockImplementation((table: string) => {
+      callNum++
+      if (table === 'styles') {
+        const chain: Record<string, unknown> = {}
+        chain.select = vi.fn().mockReturnValue(chain)
+        chain.eq = vi.fn().mockReturnValue(chain)
+        chain.single = vi.fn().mockResolvedValue({ data: { id: 1 }, error: null })
+        return chain
+      }
+      // artist_styles count query
+      const chain: Record<string, unknown> = {}
+      chain.select = vi.fn().mockReturnValue(chain)
+      chain.eq = vi.fn().mockReturnValue(chain)
+      ;(chain.eq as ReturnType<typeof vi.fn>).mockReturnValueOnce(chain).mockResolvedValueOnce({ count: 5, error: null })
+      return chain
+    })
+
+    const result = await getArtistCountByStyle('fine-line')
+
+    expect(result).toBe(5)
+  })
+
+  it('returns 0 when style not found', async () => {
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
+        }),
+      }),
+    })
+
+    const result = await getArtistCountByStyle('nonexistent')
+
+    expect(result).toBe(0)
   })
 })
 

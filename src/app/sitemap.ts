@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { getAllStyles } from '@/lib/supabase/queries/styles'
-import { getArtists } from '@/lib/supabase/queries/artists'
+import { getAllArtistSlugs } from '@/lib/supabase/queries/artists'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://inkhunt.tw'
 
@@ -35,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let artistPages: MetadataRoute.Sitemap = []
   try {
-    const { data: artists } = await getArtists({ pageSize: 1000 })
+    const artists = await getAllArtistSlugs()
     artistPages = artists.map((artist) => ({
       url: `${BASE_URL}/artists/${artist.slug}`,
       lastModified: new Date(artist.updated_at),

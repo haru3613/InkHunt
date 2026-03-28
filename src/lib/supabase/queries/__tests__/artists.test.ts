@@ -309,9 +309,13 @@ describe('getArtists', () => {
         return chain
       }
       if (table === 'artist_styles') {
-        const chain: Record<string, ReturnType<typeof vi.fn>> = {}
-        chain.select = vi.fn().mockReturnValue(chain)
-        chain.eq = vi.fn().mockResolvedValue({ data: [], error: null })
+        // .select().eq().eq() — second eq resolves
+        const resolved = { data: [], error: null }
+        const chain = {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn()
+            .mockReturnValueOnce({ eq: vi.fn().mockResolvedValue(resolved) }),
+        }
         return chain
       }
       return { select: vi.fn() }
@@ -321,5 +325,42 @@ describe('getArtists', () => {
 
     expect(result.data).toEqual([])
     expect(result.total).toBe(0)
+  })
+
+  it('filters by city', async () => {
+    const raw = [{
+      id: 'a1', slug: 'taipei-artist', display_name: 'Taipei', bio: null,
+      avatar_url: null, ig_handle: null, city: '台北市', district: null,
+      address: null, lat: null, lng: null, price_min: null, price_max: null,
+      pricing_note: null, deposit_amount: null, booking_notice: null,
+      status: 'active', is_claimed: true, offers_coverup: false,
+      offers_custom_design: false, has_flash_designs: false, featured: false,
+      created_at: '2025-01-01T00:00:00Z', updated_at: '2025-01-01T00:00:00Z',
+      artist_styles: [], portfolio_items: [],
+    }]
+
+    function makeThenable<T>(result: T) {
+      const chain: Record<string, unknown> = {
+        then: (fn: (v: T) => void) => Promise.resolve(fn(result)),
+      }
+      chain.select = vi.fn().mockReturnValue(chain)
+      chain.eq = vi.fn().mockReturnValue(chain)
+      chain.in = vi.fn().mockReturnValue(chain)
+      chain.order = vi.fn().mockReturnValue(chain)
+      chain.range = vi.fn().mockReturnValue(chain)
+      return chain
+    }
+
+    let callNum = 0
+    mockFrom.mockImplementation(() => {
+      callNum++
+      if (callNum === 1) return makeThenable({ count: 1, error: null })
+      return makeThenable({ data: raw, error: null })
+    })
+
+    const result = await getArtists({ city: '台北市' })
+
+    expect(result.total).toBe(1)
+    expect(result.data[0].city).toBe('台北市')
   })
 })
