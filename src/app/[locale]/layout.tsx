@@ -6,7 +6,6 @@ import { hasLocale } from "next-intl"
 import { setRequestLocale, getTranslations } from "next-intl/server"
 import { NextIntlClientProvider } from "next-intl"
 import { routing } from "@/i18n/routing"
-import { PublicShell } from "@/components/layout/PublicShell"
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -72,7 +71,7 @@ export default async function LocaleLayout({
     >
       <body className="min-h-screen flex flex-col bg-background text-foreground">
         <NextIntlClientProvider>
-          <PublicShell>{children}</PublicShell>
+          {children}
         </NextIntlClientProvider>
       </body>
     </html>
