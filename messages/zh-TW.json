@@ -112,7 +112,11 @@
     "waiting": "等待中...",
     "accept": "接受報價",
     "chat": "聊天",
-    "viewProfile": "查看作品集"
+    "viewProfile": "查看作品集",
+    "noArtistsSelected": "請先選擇至少一位刺青師",
+    "sendInquiryTo": "詢價給 {count} 位刺青師",
+    "formDescription": "填寫一次需求，同時詢價給你選的刺青師",
+    "sendToArtists": "送出給 {count} 位刺青師"
   },
   "footer": {
     "about": "關於我們",

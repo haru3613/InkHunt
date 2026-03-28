@@ -112,7 +112,11 @@
     "waiting": "Waiting...",
     "accept": "Accept Quote",
     "chat": "Chat",
-    "viewProfile": "View Portfolio"
+    "viewProfile": "View Portfolio",
+    "noArtistsSelected": "Please select at least one artist first",
+    "sendInquiryTo": "Inquire with {count} artist(s)",
+    "formDescription": "Fill out once and send your request to all selected artists",
+    "sendToArtists": "Send to {count} artist(s)"
   },
   "footer": {
     "about": "About",
