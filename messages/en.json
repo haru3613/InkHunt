@@ -90,7 +90,15 @@
     "cancel": "Cancel",
     "sendQuote": "Send Quote",
     "submitting": "Sending...",
-    "submitError": "Failed to send quote, please try again"
+    "submitError": "Failed to send quote, please try again",
+    "templateTitle": "Quick Quote Templates",
+    "addTemplate": "Add Template",
+    "noTemplates": "No templates yet. Add common quotes to speed up replies.",
+    "templateLabel": "Template name",
+    "templateNote": "Note",
+    "saveTemplates": "Save Templates",
+    "saving": "Saving...",
+    "saved": "Saved"
   },
   "compare": {
     "addToCompare": "Compare",
@@ -98,7 +106,13 @@
     "selected": "{count}/3 artists selected",
     "clearAll": "Clear",
     "continueToInquiry": "Continue to Inquiry",
-    "remove": "Remove"
+    "remove": "Remove",
+    "yourInquiry": "Your Inquiry",
+    "quotesReceived": "{count}/{total} quotes received",
+    "waiting": "Waiting...",
+    "accept": "Accept Quote",
+    "chat": "Chat",
+    "viewProfile": "View Portfolio"
   },
   "footer": {
     "about": "About",

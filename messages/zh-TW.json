@@ -90,7 +90,15 @@
     "cancel": "取消",
     "sendQuote": "送出報價",
     "submitting": "送出中...",
-    "submitError": "報價送出失敗，請重試"
+    "submitError": "報價送出失敗，請重試",
+    "templateTitle": "快速報價模板",
+    "addTemplate": "新增模板",
+    "noTemplates": "還沒有設定模板。新增常用報價加快回覆速度。",
+    "templateLabel": "模板名稱",
+    "templateNote": "備註",
+    "saveTemplates": "儲存模板",
+    "saving": "儲存中...",
+    "saved": "已儲存"
   },
   "compare": {
     "addToCompare": "加入比較",
@@ -98,7 +106,13 @@
     "selected": "已選 {count}/3 位刺青師",
     "clearAll": "清除",
     "continueToInquiry": "繼續詢價",
-    "remove": "移除"
+    "remove": "移除",
+    "yourInquiry": "你的詢價",
+    "quotesReceived": "已收到 {count}/{total} 個報價",
+    "waiting": "等待中...",
+    "accept": "接受報價",
+    "chat": "聊天",
+    "viewProfile": "查看作品集"
   },
   "footer": {
     "about": "關於我們",
