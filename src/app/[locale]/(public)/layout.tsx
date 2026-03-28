@@ -8,13 +8,11 @@ export default function PublicLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <>
+    <AuthProvider>
       <Header />
-      <AuthProvider>
-        <main className="flex-1 pb-16 lg:pb-0">{children}</main>
-      </AuthProvider>
+      <main className="flex-1 pb-16 lg:pb-0">{children}</main>
       <Footer />
       <MobileNav />
-    </>
+    </AuthProvider>
   )
 }
