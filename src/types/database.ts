@@ -28,6 +28,7 @@ export interface Database {
           pricing_note: string | null
           deposit_amount: number | null
           booking_notice: string | null
+          admin_note: string | null
           status: 'pending' | 'active' | 'suspended'
           is_claimed: boolean
           featured: boolean
@@ -55,6 +56,7 @@ export interface Database {
           pricing_note?: string | null
           deposit_amount?: number | null
           booking_notice?: string | null
+          admin_note?: string | null
           status?: 'pending' | 'active' | 'suspended'
           is_claimed?: boolean
           featured?: boolean
@@ -82,6 +84,7 @@ export interface Database {
           pricing_note?: string | null
           deposit_amount?: number | null
           booking_notice?: string | null
+          admin_note?: string | null
           status?: 'pending' | 'active' | 'suspended'
           is_claimed?: boolean
           featured?: boolean
