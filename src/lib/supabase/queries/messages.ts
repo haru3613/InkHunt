@@ -1,6 +1,27 @@
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import type { Json, Message } from '@/types/database'
 
+export async function getUnreadCountsForUser(
+  userLineId: string,
+  inquiryIds: string[],
+): Promise<Map<string, number>> {
+  if (inquiryIds.length === 0) return new Map()
+
+  const admin = createAdminClient()
+  const results = await Promise.all(
+    inquiryIds.map(async (id) => {
+      const { count } = await admin
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('inquiry_id', id)
+        .neq('sender_id', userLineId)
+        .is('read_at', null)
+      return [id, count ?? 0] as const
+    }),
+  )
+  return new Map(results)
+}
+
 export async function getMessagesByInquiry(inquiryId: string): Promise<Message[]> {
   const supabase = await createServerClient()
   const { data, error } = await supabase

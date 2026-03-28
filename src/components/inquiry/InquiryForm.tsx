@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ImageUploadPlaceholder } from './ImageUploadPlaceholder'
+import { ReferenceImageUpload } from './ReferenceImageUpload'
 import { inquirySchema, BODY_PARTS } from '@/lib/validations/inquiry'
 import { useAuth } from '@/hooks/useAuth'
 import type { ZodError } from 'zod'
@@ -70,6 +70,7 @@ export function InquiryForm({
   const t = useTranslations('inquiry')
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [referenceImages, setReferenceImages] = useState<string[]>([])
 
   const handleFieldChange = useCallback(
     (field: keyof FormState, value: string) => {
@@ -95,7 +96,7 @@ export function InquiryForm({
       size_estimate: form.size_estimate,
       budget_min: form.budget_min ? Number(form.budget_min) : undefined,
       budget_max: form.budget_max ? Number(form.budget_max) : undefined,
-      reference_images: [],
+      reference_images: referenceImages,
     })
 
     if (!parsed.success) {
@@ -127,13 +128,14 @@ export function InquiryForm({
     } catch (err) {
       setErrors({ _form: err instanceof Error ? err.message : 'Something went wrong' })
     }
-  }, [form, onOpenChange, isLoggedIn, loginWithRedirect, artistId, router])
+  }, [form, referenceImages, onOpenChange, isLoggedIn, loginWithRedirect, artistId, router])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) {
         setForm(INITIAL_FORM)
         setErrors({})
+        setReferenceImages([])
       }
       onOpenChange(nextOpen)
     },
@@ -190,7 +192,10 @@ export function InquiryForm({
             <label className="text-sm font-medium text-foreground">
               {t('referenceImages')}
             </label>
-            <ImageUploadPlaceholder />
+            <ReferenceImageUpload
+              images={referenceImages}
+              onImagesChange={setReferenceImages}
+            />
           </div>
 
           {/* Body part */}

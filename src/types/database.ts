@@ -35,6 +35,7 @@ export interface Database {
           offers_coverup: boolean
           offers_custom_design: boolean
           has_flash_designs: boolean
+          quote_templates: Json
           created_at: string
           updated_at: string
         }
@@ -63,6 +64,7 @@ export interface Database {
           offers_coverup?: boolean
           offers_custom_design?: boolean
           has_flash_designs?: boolean
+          quote_templates?: Json
           created_at?: string
           updated_at?: string
         }
@@ -91,6 +93,7 @@ export interface Database {
           offers_coverup?: boolean
           offers_custom_design?: boolean
           has_flash_designs?: boolean
+          quote_templates?: Json
           created_at?: string
           updated_at?: string
         }
@@ -211,6 +214,7 @@ export interface Database {
           budget_min: number | null
           budget_max: number | null
           status: 'pending' | 'quoted' | 'accepted' | 'closed'
+          quote_request_id: string | null
           created_at: string
         }
         Insert: {
@@ -225,6 +229,7 @@ export interface Database {
           budget_min?: number | null
           budget_max?: number | null
           status?: 'pending' | 'quoted' | 'accepted' | 'closed'
+          quote_request_id?: string | null
           created_at?: string
         }
         Update: {
@@ -239,6 +244,49 @@ export interface Database {
           budget_min?: number | null
           budget_max?: number | null
           status?: 'pending' | 'quoted' | 'accepted' | 'closed'
+          quote_request_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      quote_requests: {
+        Row: {
+          id: string
+          consumer_line_id: string
+          consumer_name: string | null
+          description: string
+          reference_images: Json
+          body_part: string | null
+          size_estimate: string | null
+          budget_min: number | null
+          budget_max: number | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          consumer_line_id: string
+          consumer_name?: string | null
+          description: string
+          reference_images?: Json
+          body_part?: string | null
+          size_estimate?: string | null
+          budget_min?: number | null
+          budget_max?: number | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          consumer_line_id?: string
+          consumer_name?: string | null
+          description?: string
+          reference_images?: Json
+          body_part?: string | null
+          size_estimate?: string | null
+          budget_min?: number | null
+          budget_max?: number | null
+          status?: string
           created_at?: string
         }
         Relationships: []
@@ -412,3 +460,6 @@ export type Favorite = Database['public']['Tables']['favorites']['Row']
 
 export type Message = Database['public']['Tables']['messages']['Row']
 export type MessageInsert = Database['public']['Tables']['messages']['Insert']
+
+export type QuoteRequestRow = Database['public']['Tables']['quote_requests']['Row']
+export type QuoteRequestInsert = Database['public']['Tables']['quote_requests']['Insert']
