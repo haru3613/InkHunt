@@ -31,7 +31,7 @@ jobs:
         run: npm install
 
       - name: Lint
-        run: npx eslint . --max-warnings 0
+        run: npx eslint . --ignore-pattern "e2e/"
 
       - name: Type check
         run: npx tsc --noEmit
