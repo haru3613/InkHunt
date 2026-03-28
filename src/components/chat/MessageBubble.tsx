@@ -24,8 +24,8 @@ export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubblePr
 
     return (
       <div className="flex justify-center py-3">
-        <div className="w-full max-w-md rounded-xl border border-[#1F1F1F] bg-[#141414] px-5 py-4">
-          <div className="mb-2 text-sm font-medium text-[#C8A97E]">{title}</div>
+        <div className="w-full max-w-md rounded-xl border border-[#2A2A2A] bg-[#141414] px-5 py-4">
+          <div className="mb-2 text-sm font-display font-medium text-[#C8A97E]">{title}</div>
           {details.length > 0 && (
             <div className="space-y-1">
               {details.map((line, i) => (
