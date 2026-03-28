@@ -28,9 +28,12 @@ Requirement → Design/Spec → Plan → Implement (TDD) → Code Review → /si
 ## Phase 3: Code Review + /simplify
 
 1. 跑 **code-reviewer** agent（MANDATORY）
-2. 修復 CRITICAL / HIGH issues
-3. 跑 `/simplify` — 檢查 code reuse、quality、efficiency
-4. 在同一 branch 修復
+2. 跑 **typescript-reviewer** agent（MANDATORY — 本專案全 TypeScript）
+3. 改了 Supabase schema / migration / 複雜 query → 跑 **database-reviewer** agent
+4. 改了 LINE auth / API endpoint / user input → 跑 `/everything-claude-code:security-review`
+5. 修復 CRITICAL / HIGH issues
+6. 跑 `/simplify` — 檢查 code reuse、quality、efficiency
+7. 在同一 branch 修復
 
 ## Phase 4: QA
 
@@ -48,5 +51,6 @@ Requirement → Design/Spec → Plan → Implement (TDD) → Code Review → /si
 完成前：
 - [ ] Unit tests 通過（80%+ coverage）
 - [ ] Code review 通過（CRITICAL/HIGH = 0）
+- [ ] TypeScript review 通過（typescript-reviewer agent）
 - [ ] `/simplify` 已跑
 - [ ] QA 交付清單齊全
