@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, handleApiError } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
+import { getArtists } from '@/lib/supabase/queries/artists'
 import { z } from 'zod'
 
 const createArtistSchema = z.object({
@@ -83,7 +84,6 @@ export async function GET(request: NextRequest) {
       pageSize: searchParams.get('pageSize') ?? undefined,
     })
 
-    const { getArtists } = await import('@/lib/supabase/queries/artists')
     const result = await getArtists(params)
 
     return NextResponse.json(result)

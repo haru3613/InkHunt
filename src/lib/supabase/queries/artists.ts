@@ -14,7 +14,7 @@ type ArtistRow = Database['public']['Tables']['artists']['Row']
 type StyleRow = Database['public']['Tables']['styles']['Row']
 type PortfolioItemRow = Database['public']['Tables']['portfolio_items']['Row']
 
-export type ArtistWithDetails = ArtistRow & {
+export type ArtistWithDetails = Omit<ArtistRow, 'admin_note' | 'line_user_id'> & {
   styles: StyleRow[]
   portfolio_items: PortfolioItemRow[]
 }
@@ -28,8 +28,18 @@ export interface ArtistFilters {
 
 const DEFAULT_PAGE_SIZE = 12
 
-interface SupabaseArtistRow extends ArtistRow {
-  artist_styles: Array<{ styles: StyleRow }>
+const ARTIST_PUBLIC_SELECT = `
+  id, slug, display_name, bio, avatar_url, ig_handle,
+  city, district, address, lat, lng,
+  price_min, price_max, pricing_note, deposit_amount,
+  booking_notice, status, is_claimed, featured,
+  offers_coverup, offers_custom_design, has_flash_designs,
+  created_at, updated_at,
+  artist_styles(styles(*)), portfolio_items(*)
+` as const
+
+interface SupabaseArtistRow extends Omit<ArtistRow, 'admin_note' | 'line_user_id'> {
+  artist_styles: Array<{ styles: StyleRow | null }>
   portfolio_items: PortfolioItemRow[]
 }
 
@@ -40,7 +50,7 @@ export function transformArtistRow(row: SupabaseArtistRow): ArtistWithDetails {
     styles: artist_styles
       .map((as) => as.styles)
       .filter((s): s is StyleRow => s !== null),
-    portfolio_items: row.portfolio_items.sort(
+    portfolio_items: [...row.portfolio_items].sort(
       (a, b) => a.sort_order - b.sort_order,
     ),
   }
@@ -67,8 +77,9 @@ export async function getArtists(
 
     const { data: matches } = await supabase
       .from('artist_styles')
-      .select('artist_id')
+      .select('artist_id, artists!inner(status)')
       .eq('style_id', style.id)
+      .eq('artists.status', 'active')
 
     if (!matches || matches.length === 0) return { data: [], total: 0 }
 
@@ -93,7 +104,7 @@ export async function getArtists(
 
   let dataQuery = supabase
     .from('artists')
-    .select('*, artist_styles(styles(*)), portfolio_items(*)')
+    .select(ARTIST_PUBLIC_SELECT)
     .eq('status', 'active')
     .order('featured', { ascending: false })
     .order('updated_at', { ascending: false })
@@ -104,10 +115,7 @@ export async function getArtists(
 
   const { data, error } = await dataQuery
 
-  if (error) {
-    console.error('Failed to fetch artists:', error.message)
-    return { data: [], total: 0 }
-  }
+  if (error) return { data: [], total: 0 }
 
   return {
     data: (data as unknown as SupabaseArtistRow[]).map(transformArtistRow),
@@ -123,7 +131,7 @@ export async function getArtistBySlug(
 
   const { data, error } = await supabase
     .from('artists')
-    .select('*, artist_styles(styles(*)), portfolio_items(*)')
+    .select(ARTIST_PUBLIC_SELECT)
     .eq('slug', slug)
     .eq('status', 'active')
     .single()
@@ -141,7 +149,7 @@ export async function getFeaturedArtists(
 
   const { data, error } = await supabase
     .from('artists')
-    .select('*, artist_styles(styles(*)), portfolio_items(*)')
+    .select(ARTIST_PUBLIC_SELECT)
     .eq('status', 'active')
     .eq('featured', true)
     .order('updated_at', { ascending: false })
@@ -150,4 +158,18 @@ export async function getFeaturedArtists(
   if (error || !data) return []
 
   return (data as unknown as SupabaseArtistRow[]).map(transformArtistRow)
+}
+
+export async function getAllArtistSlugs(): Promise<Array<{ slug: string; updated_at: string }>> {
+  const supabase = safeAdminClient()
+  if (!supabase) return []
+
+  const { data, error } = await supabase
+    .from('artists')
+    .select('slug, updated_at')
+    .eq('status', 'active')
+
+  if (error || !data) return []
+
+  return data
 }
