@@ -7,6 +7,35 @@ import { UserIcon, LogOut } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { useAuth } from "@/hooks/useAuth"
 
+function DevLoginButton({ onSuccess }: { onSuccess: () => void }) {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleDevLogin = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const adminId = process.env.NEXT_PUBLIC_DEV_ADMIN_LINE_USER_ID ?? 'dev-user-001'
+      const res = await fetch('/api/auth/dev-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ line_user_id: adminId, display_name: 'Dev Admin' }),
+      })
+      if (res.ok) onSuccess()
+    } finally {
+      setIsLoading(false)
+    }
+  }, [onSuccess])
+
+  return (
+    <button
+      onClick={handleDevLogin}
+      disabled={isLoading}
+      className="rounded bg-amber-600/20 px-2 py-1 text-xs text-amber-400 hover:bg-amber-600/30 disabled:opacity-50"
+    >
+      {isLoading ? '...' : 'Dev Login'}
+    </button>
+  )
+}
+
 export function Header() {
   const t = useTranslations("nav")
   const { isLoggedIn, user, loginWithRedirect, logout } = useAuth()
@@ -31,12 +60,18 @@ export function Header() {
     }
   }, [menuOpen])
 
+  const isDev = process.env.NODE_ENV === 'development'
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Link href="/" className="font-display text-xl font-bold text-primary">
           InkHunt
         </Link>
+
+        {isDev && !isLoggedIn && (
+          <DevLoginButton onSuccess={() => window.location.reload()} />
+        )}
 
         {isLoggedIn && user ? (
           <div ref={menuRef} className="relative">
