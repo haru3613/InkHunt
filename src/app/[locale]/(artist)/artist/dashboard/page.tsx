@@ -17,7 +17,7 @@ interface ChatListItem {
 }
 
 export default function DashboardPage() {
-  const { user, artist } = useAuth()
+  const { user } = useAuth()
   const [inquiries, setInquiries] = useState<ChatListItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
