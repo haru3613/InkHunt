@@ -32,6 +32,7 @@ const BASE_ARTIST = {
   offers_custom_design: false,
   has_flash_designs: false,
   featured: false,
+  quote_templates: [],
   created_at: '2025-01-01T00:00:00Z',
   updated_at: '2025-01-01T00:00:00Z',
 }

@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { ChatList } from '@/components/chat/ChatList'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { QuoteFormModal } from '@/components/chat/QuoteFormModal'
+import type { QuoteTemplate } from '@/components/chat/QuoteFormModal'
 import type { Inquiry } from '@/types/database'
 import type { SendQuoteRequest } from '@/types/chat'
 
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [quoteModalOpen, setQuoteModalOpen] = useState(false)
+  const [templates, setTemplates] = useState<QuoteTemplate[]>([])
 
   const fetchInquiries = useCallback(async () => {
     try {
@@ -52,6 +54,20 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchInquiries()
   }, [fetchInquiries])
+
+  useEffect(() => {
+    async function loadTemplates() {
+      try {
+        const response = await fetch('/api/artists/me/templates')
+        if (!response.ok) return
+        const data = await response.json()
+        setTemplates(data.templates ?? [])
+      } catch {
+        // Non-critical: templates stay empty if fetch fails
+      }
+    }
+    loadTemplates()
+  }, [])
 
   const handleQuoteAction = useCallback(
     async (quoteId: string, action: 'accepted' | 'rejected') => {
@@ -139,7 +155,7 @@ export default function DashboardPage() {
           onOpenChange={setQuoteModalOpen}
           consumerName={selectedInquiry?.consumer_name ?? ''}
           inquiryDescription={selectedInquiry?.inquiry.description ?? ''}
-          templates={[]}
+          templates={templates}
           onSubmit={handleSendQuote}
         />
       )}

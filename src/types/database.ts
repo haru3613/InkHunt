@@ -35,6 +35,7 @@ export interface Database {
           offers_coverup: boolean
           offers_custom_design: boolean
           has_flash_designs: boolean
+          quote_templates: Json
           created_at: string
           updated_at: string
         }
@@ -63,6 +64,7 @@ export interface Database {
           offers_coverup?: boolean
           offers_custom_design?: boolean
           has_flash_designs?: boolean
+          quote_templates?: Json
           created_at?: string
           updated_at?: string
         }
@@ -91,6 +93,7 @@ export interface Database {
           offers_coverup?: boolean
           offers_custom_design?: boolean
           has_flash_designs?: boolean
+          quote_templates?: Json
           created_at?: string
           updated_at?: string
         }
