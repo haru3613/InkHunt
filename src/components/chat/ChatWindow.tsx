@@ -32,7 +32,7 @@ export function ChatWindow({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full text-[#F5F0EB]/40">
-        Loading...
+        載入中...
       </div>
     )
   }

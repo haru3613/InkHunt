@@ -54,7 +54,7 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
   )
 
   return (
-    <div className="border-t border-[#1F1F1F] bg-[#0A0A0A] px-4 py-3">
+    <div className="border-t border-[#2A2A2A] bg-[#0A0A0A] px-4 py-3">
     <div className="mx-auto flex max-w-2xl items-center gap-2">
       <input
         ref={fileInputRef}
@@ -88,7 +88,7 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="輸入訊息..."
-        className="flex-1 bg-[#141414] border-[#1F1F1F] text-[#F5F0EB] placeholder:text-[#F5F0EB]/30"
+        className="flex-1 bg-[#141414] border-[#2A2A2A] text-[#F5F0EB] placeholder:text-[#F5F0EB]/30"
         disabled={disabled}
       />
       <Button

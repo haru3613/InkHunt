@@ -1,10 +1,10 @@
 'use client'
 
 import { useAuth, AuthProvider } from '@/hooks/useAuth'
-import { ArtistDashboardNav } from '@/components/artists/ArtistDashboardNav'
+import { ArtistTopBar } from '@/components/artists/ArtistTopBar'
 
 function ArtistLayoutInner({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { artist } = useAuth()
+  const { artist, user } = useAuth()
   const showNav = artist?.status === 'active'
 
   if (!showNav) {
@@ -12,8 +12,11 @@ function ArtistLayoutInner({ children }: Readonly<{ children: React.ReactNode }>
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0A0A0A]">
-      <ArtistDashboardNav />
+    <div className="flex min-h-screen flex-col bg-[#0A0A0A]">
+      <ArtistTopBar
+        artistName={artist?.display_name ?? user?.displayName ?? null}
+        avatarUrl={user?.avatarUrl ?? null}
+      />
       <main className="flex-1 pb-16 lg:pb-0">{children}</main>
     </div>
   )

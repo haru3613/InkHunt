@@ -20,11 +20,55 @@ interface ChatListProps {
   readonly viewAs: 'artist' | 'consumer'
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('zh-TW', {
-    month: 'short',
-    day: 'numeric',
-  })
+// Status badge config following DESIGN.md color palette
+const STATUS_CONFIG: Record<
+  Inquiry['status'],
+  { label: string; className: string }
+> = {
+  pending: {
+    label: '待回覆',
+    className: 'bg-[#C8A97E] text-[#0A0A0A]',
+  },
+  quoted: {
+    label: '待報價',
+    className: 'border border-[#8A8A8A] text-[#8A8A8A]',
+  },
+  accepted: {
+    label: '已報價',
+    className: 'bg-[#4ADE80]/15 text-[#4ADE80]',
+  },
+  closed: {
+    label: '已關閉',
+    className: 'text-[#555555]',
+  },
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60_000)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (days > 0) return `${days}天前`
+  if (hours > 0) return `${hours}小時前`
+  if (minutes > 0) return `${minutes}分鐘前`
+  return '剛剛'
+}
+
+function StatusBadge({ status }: { readonly status: Inquiry['status'] }) {
+  const config = STATUS_CONFIG[status]
+  if (!config) return null
+
+  return (
+    <span
+      className={cn(
+        'inline-block px-2 py-0.5 rounded-full text-[11px] font-medium leading-tight',
+        config.className,
+      )}
+    >
+      {config.label}
+    </span>
+  )
 }
 
 export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps) {
@@ -41,39 +85,58 @@ export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps)
             ? (item.consumer_name ?? '消費者')
             : item.artist_display_name
         const isSelected = selectedId === item.inquiry.id
+        const hasUnread = item.unread_count > 0
+        const isClosed = item.inquiry.status === 'closed'
+        const timestamp = item.last_message_at ?? item.inquiry.created_at
 
         return (
           <button
             key={item.inquiry.id}
             onClick={() => onSelect(item.inquiry.id)}
             className={cn(
-              'flex items-center gap-3 p-4 text-left transition-colors border-b border-[#1F1F1F]',
-              isSelected ? 'bg-[#1F1F1F]' : 'hover:bg-[#141414]',
+              'flex items-start gap-3 px-4 py-3 text-left transition-colors border-b border-[#2A2A2A]',
+              isSelected ? 'bg-[#1C1C1C]' : 'hover:bg-[#141414]',
+              isClosed && 'opacity-50',
             )}
           >
-            <div className="w-11 h-11 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#F5F0EB]/60 text-sm font-medium shrink-0">
-              {displayName.charAt(0)}
+            {/* Avatar with unread dot indicator */}
+            <div className="relative shrink-0 mt-0.5">
+              <div className="w-10 h-10 rounded-full bg-[#1C1C1C] flex items-center justify-center text-[#F5F0EB]/60 text-sm font-medium">
+                {displayName.charAt(0)}
+              </div>
+              {hasUnread && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#C8A97E] border-2 border-[#0A0A0A]"
+                  aria-label="未讀訊息"
+                />
+              )}
             </div>
+
+            {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className="text-[15px] font-medium text-[#F5F0EB] truncate">
+              {/* Top row: name + timestamp */}
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <span
+                  className={cn(
+                    'text-[14px] font-medium truncate',
+                    hasUnread ? 'text-[#F5F0EB]' : 'text-[#F5F0EB]/80',
+                  )}
+                >
                   {displayName}
                 </span>
-                {item.last_message_at && (
-                  <span className="text-xs text-[#F5F0EB]/30 shrink-0">
-                    {formatDate(item.last_message_at)}
-                  </span>
-                )}
+                <span className="text-[11px] text-[#555555] shrink-0">
+                  {formatRelativeTime(timestamp)}
+                </span>
               </div>
-              <p className="text-sm text-[#F5F0EB]/40 truncate mt-1">
+
+              {/* Middle row: last message preview */}
+              <p className="text-[13px] text-[#F5F0EB]/40 truncate mb-1.5">
                 {item.last_message ?? item.inquiry.description}
               </p>
+
+              {/* Bottom row: status badge */}
+              <StatusBadge status={item.inquiry.status} />
             </div>
-            {item.unread_count > 0 && (
-              <span className="w-5 h-5 rounded-full bg-[#C8A97E] text-[#0A0A0A] text-[10px] font-bold flex items-center justify-center shrink-0">
-                {item.unread_count > 9 ? '9+' : item.unread_count}
-              </span>
-            )}
           </button>
         )
       })}
