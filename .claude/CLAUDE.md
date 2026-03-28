@@ -113,6 +113,26 @@ LINE_MESSAGING_CHANNEL_ACCESS_TOKEN=
 LINE_MESSAGING_CHANNEL_SECRET=
 ```
 
+## Dev Login (Local Testing)
+
+Local 開發和測試時不需要走 LINE OAuth，用 dev-only API 登入：
+
+```bash
+# 登入為 admin 用戶
+curl -X POST http://localhost:3000/api/auth/dev-login \
+  -H 'Content-Type: application/json' \
+  -d '{"line_user_id":"U770e3788b27c6cdeb9248b9f7139f171","display_name":"Harvey"}'
+```
+
+- **只在 `NODE_ENV=development` 時可用**，production 會回 404
+- 建立真正的 Supabase session，所有 `requireAuth()` / `requireAdmin()` 都能正常運作
+- Header 上有 "Dev Login" 按鈕（僅 development 顯示）
+- `.env.local` 需要設定 `ADMIN_LINE_USER_IDS` 和 `NEXT_PUBLIC_DEV_ADMIN_LINE_USER_ID`
+
+### QA / E2E 測試使用方式
+
+Playwright E2E 測試時，在 test setup 裡先呼叫 `/api/auth/dev-login` 取得 session cookie，再帶著 cookie 測試需要登入的頁面。不需要 mock auth middleware。
+
 ## Agent Team
 
 本專案有 5 個專屬 subagent，位於 `.claude/agents/`：
