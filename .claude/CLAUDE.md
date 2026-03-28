@@ -145,6 +145,16 @@ Playwright E2E 測試時，在 test setup 裡先呼叫 `/api/auth/dev-login` 取
 | `inkhunt-growth` | 成長/SEO — meta tags、structured data、爬蟲 |
 | `inkhunt-qa` | QA — E2E 測試、API 測試、accessibility |
 
+### ECC Plugin Agents (Everything Claude Code)
+
+| Agent / Skill | 用途 | 觸發時機 |
+|-------|------|----------|
+| `typescript-reviewer` agent | TS 型別安全、async 正確性 | **每次 code review 必跑** |
+| `database-reviewer` agent | Supabase schema、query 優化、RLS | 改了 migration / 複雜 query |
+| `/everything-claude-code:security-review` | OWASP Top 10、auth 安全 | 改了 LINE auth / API endpoint / user input |
+| `/everything-claude-code:docs` | Context7 查最新文檔 | 用 Next.js / next-intl / Supabase API 不確定時**必查** |
+| `/everything-claude-code:build-fix` | 修 TypeScript / Next.js build 錯誤 | build 壞了直接用 |
+
 ### 協作流程
 1. PM 拆解 user story + 驗收標準
 2. Backend + Frontend + Growth 平行實作

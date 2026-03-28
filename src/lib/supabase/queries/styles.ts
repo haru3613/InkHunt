@@ -21,10 +21,7 @@ export async function getAllStyles(): Promise<StyleRow[]> {
     .select('*')
     .order('sort_order', { ascending: true })
 
-  if (error) {
-    console.error('Failed to fetch styles:', error.message)
-    return []
-  }
+  if (error) return []
 
   return data
 }

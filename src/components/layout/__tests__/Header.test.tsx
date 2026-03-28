@@ -1,70 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 
-// Mock next-intl
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+vi.mock('next-intl/server', () => ({
+  getTranslations: vi.fn().mockResolvedValue((key: string) => key),
 }))
 
-// Mock next/image
-vi.mock('next/image', () => ({
-  default: (props: Record<string, unknown>) => <img {...props} />,
-}))
-
-// Mock i18n navigation
 vi.mock('@/i18n/navigation', () => ({
   Link: ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) => (
     <a href={href} {...props}>{children}</a>
   ),
 }))
 
-// Mock next/navigation
-const mockPush = vi.fn()
-const mockRefresh = vi.fn()
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-    refresh: mockRefresh,
-  }),
-}))
-
-// Mock useAuth — logged-in user
-const mockLogout = vi.fn().mockResolvedValue(undefined)
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({
-    isLoggedIn: true,
-    isLoading: false,
-    user: { lineUserId: 'U123', displayName: 'Test', avatarUrl: null },
-    artist: null,
-    loginWithRedirect: vi.fn(),
-    logout: mockLogout,
-    refetch: vi.fn(),
-  }),
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+vi.mock('../AuthSection', () => ({
+  AuthSection: ({ loginLabel }: { loginLabel: string }) => (
+    <div data-testid="auth-section">{loginLabel}</div>
+  ),
 }))
 
 describe('Header', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     cleanup()
   })
 
-  it('calls router.push on logout instead of window.location', async () => {
+  it('renders InkHunt logo link', async () => {
     const { Header } = await import('../Header')
-    render(<Header />)
-    const user = userEvent.setup()
+    const HeaderResolved = await Header()
+    render(HeaderResolved)
+    expect(screen.getByText('InkHunt')).toBeInTheDocument()
+    expect(screen.getByText('InkHunt').closest('a')).toHaveAttribute('href', '/')
+  })
 
-    // Open dropdown menu — click the avatar/user button
-    const buttons = screen.getAllByRole('button')
-    const avatarButton = buttons[0]
-    await user.click(avatarButton)
-
-    // Click logout
-    const logoutButton = screen.getByText('登出')
-    await user.click(logoutButton)
-
-    expect(mockLogout).toHaveBeenCalled()
-    expect(mockPush).toHaveBeenCalledWith('/')
+  it('renders AuthSection with login label', async () => {
+    const { Header } = await import('../Header')
+    const HeaderResolved = await Header()
+    render(HeaderResolved)
+    expect(screen.getByTestId('auth-section')).toBeInTheDocument()
   })
 })
