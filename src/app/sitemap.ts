@@ -1,17 +1,10 @@
 import type { MetadataRoute } from 'next'
+import { getAllStyles } from '@/lib/supabase/queries/styles'
+import { getArtists } from '@/lib/supabase/queries/artists'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://inkhunt.tw'
 
-// Tattoo style slugs for static generation
-const STYLE_SLUGS = [
-  'realism', 'geometric', 'japanese-traditional', 'american-traditional',
-  'neo-traditional', 'watercolor', 'fine-line', 'blackwork', 'floral',
-  'lettering', 'dotwork', 'tribal', 'illustrative', 'anime',
-  'portrait', 'micro', 'coverup',
-]
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -27,15 +20,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Style category pages
-  const stylePages: MetadataRoute.Sitemap = STYLE_SLUGS.map((slug) => ({
-    url: `${BASE_URL}/styles/${slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
+  let stylePages: MetadataRoute.Sitemap = []
+  try {
+    const styles = await getAllStyles()
+    stylePages = styles.map((style) => ({
+      url: `${BASE_URL}/styles/${style.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+  } catch {
+    // Graceful degradation if Supabase is unreachable
+  }
 
-  // TODO: Add dynamic artist pages when Supabase mock data is replaced
+  let artistPages: MetadataRoute.Sitemap = []
+  try {
+    const { data: artists } = await getArtists({ pageSize: 1000 })
+    artistPages = artists.map((artist) => ({
+      url: `${BASE_URL}/artists/${artist.slug}`,
+      lastModified: new Date(artist.updated_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+  } catch {
+    // Graceful degradation if Supabase is unreachable
+  }
 
-  return [...staticPages, ...stylePages]
+  return [...staticPages, ...stylePages, ...artistPages]
 }
