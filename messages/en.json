@@ -76,6 +76,17 @@
     "viewAll": "View all {styleName} artists",
     "allArtists": "All artists"
   },
+  "quote": {
+    "sendQuoteTo": "Send quote to {name}",
+    "price": "Price",
+    "priceRequired": "Please enter a price",
+    "note": "Note",
+    "notePlaceholder": "Booking details, suggested size, etc...",
+    "cancel": "Cancel",
+    "sendQuote": "Send Quote",
+    "submitting": "Sending...",
+    "submitError": "Failed to send quote, please try again"
+  },
   "footer": {
     "about": "About",
     "privacy": "Privacy",

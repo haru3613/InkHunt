@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatList } from '@/components/chat/ChatList'
 import { ChatWindow } from '@/components/chat/ChatWindow'
+import { QuoteFormModal } from '@/components/chat/QuoteFormModal'
 import type { Inquiry } from '@/types/database'
+import type { SendQuoteRequest } from '@/types/chat'
 
 interface ChatListItem {
   inquiry: Inquiry
@@ -21,6 +23,7 @@ export default function DashboardPage() {
   const [inquiries, setInquiries] = useState<ChatListItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false)
 
   const fetchInquiries = useCallback(async () => {
     try {
@@ -62,6 +65,23 @@ export default function DashboardPage() {
     [selectedId],
   )
 
+  const handleSendQuote = useCallback(
+    async (data: SendQuoteRequest) => {
+      if (!selectedId) return
+      const response = await fetch(`/api/inquiries/${selectedId}/quotes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) {
+        throw new Error('Quote submission failed')
+      }
+    },
+    [selectedId],
+  )
+
+  const selectedInquiry = inquiries.find((item) => item.inquiry.id === selectedId)
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen text-[#F5F0EB]/40">
@@ -101,6 +121,7 @@ export default function DashboardPage() {
               inquiryId={selectedId}
               currentUserId={user.lineUserId}
               isArtist={true}
+              onSendQuote={() => setQuoteModalOpen(true)}
               onQuoteAction={handleQuoteAction}
             />
           </>
@@ -110,6 +131,19 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Quote form modal */}
+      {selectedId && (
+        <QuoteFormModal
+          open={quoteModalOpen}
+          onOpenChange={setQuoteModalOpen}
+          inquiryId={selectedId}
+          consumerName={selectedInquiry?.consumer_name ?? ''}
+          inquiryDescription={selectedInquiry?.inquiry.description ?? ''}
+          templates={[]}
+          onSubmit={handleSendQuote}
+        />
+      )}
     </div>
   )
 }

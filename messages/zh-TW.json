@@ -76,6 +76,17 @@
     "viewAll": "查看所有{styleName}刺青師",
     "allArtists": "所有刺青師"
   },
+  "quote": {
+    "sendQuoteTo": "報價給 {name}",
+    "price": "價格",
+    "priceRequired": "請輸入價格",
+    "note": "備註",
+    "notePlaceholder": "預約須知、建議尺寸等...",
+    "cancel": "取消",
+    "sendQuote": "送出報價",
+    "submitting": "送出中...",
+    "submitError": "報價送出失敗，請重試"
+  },
   "footer": {
     "about": "關於我們",
     "privacy": "隱私政策",
