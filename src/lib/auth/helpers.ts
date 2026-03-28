@@ -57,6 +57,9 @@ export function isAdmin(lineUserId: string): boolean {
 
 export async function requireAdmin(): Promise<AuthUser> {
   const user = await requireAuth()
+  // Temporary debug — remove after fixing admin access
+  const adminIds = (process.env.ADMIN_LINE_USER_IDS ?? '').split(',').filter(Boolean)
+  console.error('[requireAdmin] lineUserId:', user.lineUserId, 'adminIds:', adminIds, 'match:', adminIds.includes(user.lineUserId))
   if (!isAdmin(user.lineUserId)) throw new Error('FORBIDDEN')
   return user
 }
