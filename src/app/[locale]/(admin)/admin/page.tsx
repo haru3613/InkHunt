@@ -46,9 +46,11 @@ export default function AdminPage() {
         body: JSON.stringify({ status, admin_note: note || null }),
       })
       if (!res.ok) throw new Error('Failed to update status')
-      await fetchArtists()
+      setArtists((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status, admin_note: note || null } : a)),
+      )
     },
-    [fetchArtists],
+    [],
   )
 
   const filtered = useMemo(() => {
@@ -68,12 +70,13 @@ export default function AdminPage() {
     return result
   }, [artists, statusFilter, searchQuery])
 
-  const tabCounts = useMemo(() => ({
-    all: artists.length,
-    pending: artists.filter((a) => a.status === 'pending').length,
-    active: artists.filter((a) => a.status === 'active').length,
-    suspended: artists.filter((a) => a.status === 'suspended').length,
-  }), [artists])
+  const tabCounts = useMemo(() => {
+    const counts = { all: artists.length, pending: 0, active: 0, suspended: 0 }
+    for (const a of artists) {
+      if (a.status in counts) (counts as Record<string, number>)[a.status]++
+    }
+    return counts
+  }, [artists])
 
   if (isLoading) {
     return (
@@ -86,7 +89,6 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        {/* Header + Tabs */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-xl font-bold text-[#C8A97E]">InkHunt Admin</h1>
           <div className="flex gap-1 rounded-lg bg-[#141414] p-1">
@@ -108,12 +110,10 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="mb-6">
           <AdminStatsBar counts={{ pending: tabCounts.pending, active: tabCounts.active, suspended: tabCounts.suspended, total: tabCounts.all }} />
         </div>
 
-        {/* Search */}
         <div className="mb-4">
           <input
             type="text"
@@ -124,7 +124,6 @@ export default function AdminPage() {
           />
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 rounded-lg border border-[#f87171]/20 bg-[#f87171]/10 px-4 py-3 text-sm text-[#f87171]">
             {error}
@@ -132,7 +131,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Table */}
         <ArtistTable artists={filtered} onStatusChange={handleStatusChange} />
       </div>
     </div>

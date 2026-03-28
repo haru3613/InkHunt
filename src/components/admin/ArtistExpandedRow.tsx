@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import type { ArtistWithDetails, ArtistStatus } from '@/types/admin'
+import type { ArtistWithDetails } from '@/types/admin'
 import { STATUS_LABELS, STATUS_COLORS } from '@/types/admin'
-import { formatPriceRange, cn } from '@/lib/utils'
+import { formatPriceRange, formatIgUrl, cn } from '@/lib/utils'
 import type { PortfolioItem } from '@/types/database'
 
 interface ArtistExpandedRowProps {
@@ -19,18 +19,22 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
   const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
     async function fetchPortfolio() {
       try {
-        const res = await fetch(`/api/artists/${artist.slug}/portfolio`)
+        const res = await fetch(`/api/artists/${artist.slug}/portfolio`, {
+          signal: controller.signal,
+        })
         if (res.ok) {
           const data = await res.json()
           setPortfolio(Array.isArray(data) ? data : [])
         }
       } catch {
-        // Portfolio fetch failed — show empty grid
+        // Aborted or failed — show empty grid
       }
     }
     fetchPortfolio()
+    return () => controller.abort()
   }, [artist.slug])
 
   const handleAction = async (status: 'active' | 'suspended') => {
@@ -45,7 +49,7 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
     }
   }
 
-  const status = artist.status as ArtistStatus
+  const status = artist.status
   const priceText = formatPriceRange(artist.price_min, artist.price_max)
 
   return (
@@ -61,8 +65,8 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
               {STATUS_LABELS[status]}
             </span>
           </div>
-          {artist.ig_handle && (
-            <a href={`https://instagram.com/${artist.ig_handle}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[#C8A97E] hover:underline">
+          {artist.ig_handle && formatIgUrl(artist.ig_handle) && (
+            <a href={formatIgUrl(artist.ig_handle)!} target="_blank" rel="noopener noreferrer" className="text-sm text-[#C8A97E] hover:underline">
               @{artist.ig_handle}
             </a>
           )}

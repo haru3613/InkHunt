@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { requireAdmin, handleApiError } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
+import { flattenArtistStyles } from '@/lib/supabase/transforms'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await requireAdmin()
     const admin = createAdminClient()
@@ -16,12 +17,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to load artists' }, { status: 500 })
     }
 
-    const enriched = (artists ?? []).map((artist) => {
-      const styles = (artist.artist_styles as unknown as Array<{ styles: unknown }>)?.map(
-        (as) => as.styles,
-      ) ?? []
-      return { ...artist, styles, artist_styles: undefined }
-    })
+    const enriched = (artists ?? []).map((artist) => ({
+      ...artist,
+      styles: flattenArtistStyles(artist.artist_styles),
+      artist_styles: undefined,
+    }))
 
     return NextResponse.json({ data: enriched, total: enriched.length })
   } catch (err) {

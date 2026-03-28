@@ -1,4 +1,4 @@
-import type { ArtistWithDetails, ArtistStatus } from '@/types/admin'
+import type { ArtistWithDetails } from '@/types/admin'
 import { STATUS_LABELS, STATUS_COLORS } from '@/types/admin'
 import { formatPriceRange, cn } from '@/lib/utils'
 import { ChevronDown } from 'lucide-react'
@@ -10,7 +10,7 @@ interface ArtistTableRowProps {
 }
 
 export function ArtistTableRow({ artist, isExpanded, onToggle }: ArtistTableRowProps) {
-  const status = artist.status as ArtistStatus
+  const status = artist.status
   const statusColor = STATUS_COLORS[status]
   const priceText = formatPriceRange(artist.price_min, artist.price_max) ?? '—'
 

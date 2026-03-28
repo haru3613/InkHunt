@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { flattenArtistStyles } from '@/lib/supabase/transforms'
 import { z } from 'zod'
 
 const updateArtistSchema = z.object({
@@ -32,9 +33,7 @@ export async function GET(
 
   if (error || !artist) return NextResponse.json({ error: 'Artist not found' }, { status: 404 })
 
-  const styles = (artist.artist_styles as unknown as Array<{ styles: unknown }>)?.map(
-    (as) => as.styles,
-  ) ?? []
+  const styles = flattenArtistStyles(artist.artist_styles)
   const { admin_note: _note, artist_styles: _as, ...publicArtist } = artist
   return NextResponse.json({ ...publicArtist, styles })
 }
