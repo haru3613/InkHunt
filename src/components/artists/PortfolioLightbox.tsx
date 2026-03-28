@@ -71,11 +71,10 @@ export function PortfolioLightbox({
       aria-label={t('imageViewer')}
     >
       {/* Overlay click to close */}
-      <button
-        type="button"
+      <div
+        role="presentation"
         className="absolute inset-0"
         onClick={onClose}
-        aria-label={t('close')}
       />
 
       {/* Close button */}
