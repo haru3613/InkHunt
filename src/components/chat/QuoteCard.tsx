@@ -66,9 +66,9 @@ export function QuoteCard({
           className={cn(
             'text-xs font-medium',
             status === 'accepted'
-              ? 'text-green-500'
+              ? 'text-[#4ADE80]'
               : status === 'rejected'
-                ? 'text-red-400'
+                ? 'text-[#F87171]'
                 : 'text-[#F5F0EB]/40',
           )}
         >

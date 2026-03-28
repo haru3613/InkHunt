@@ -105,3 +105,16 @@ export async function respondToQuote(
 
   return quote
 }
+
+export async function markQuoteViewed(quoteId: string, inquiryId: string) {
+  const admin = createAdminClient()
+  const { data: quote } = await admin
+    .from('quotes')
+    .update({ status: 'viewed' })
+    .eq('id', quoteId)
+    .eq('inquiry_id', inquiryId)
+    .eq('status', 'sent')
+    .select()
+    .maybeSingle()
+  return quote
+}

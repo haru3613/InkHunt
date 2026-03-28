@@ -17,6 +17,8 @@ interface AuthState {
     slug: string
     display_name: string
     status: 'pending' | 'active' | 'suspended'
+    price_min: number | null
+    portfolio_count: number
   } | null
 }
 
@@ -57,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- guard clause for missing config, not a cascading render
       setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
       return
     }
