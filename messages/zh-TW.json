@@ -67,7 +67,12 @@
     "submit": "送出詢價",
     "required": "*",
     "comingSoon": "即將開放",
-    "uploadImage": "上傳圖片"
+    "uploadImage": "上傳",
+    "referenceImage": "參考圖",
+    "removeImage": "移除",
+    "invalidImageType": "只支援 JPG、PNG、WebP 格式",
+    "imageTooLarge": "圖片大小不能超過 5MB",
+    "uploadFailed": "上傳失敗，請重試"
   },
   "style": {
     "recommendTitle": "{styleName}刺青師推薦",

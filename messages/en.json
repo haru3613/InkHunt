@@ -67,7 +67,12 @@
     "submit": "Submit Inquiry",
     "required": "*",
     "comingSoon": "Coming soon",
-    "uploadImage": "Upload image"
+    "uploadImage": "Upload",
+    "referenceImage": "Reference image",
+    "removeImage": "Remove image",
+    "invalidImageType": "Only JPG, PNG, and WebP files are supported",
+    "imageTooLarge": "Image must be under 5MB",
+    "uploadFailed": "Upload failed, please try again"
   },
   "style": {
     "recommendTitle": "{styleName} Tattoo Artists",
