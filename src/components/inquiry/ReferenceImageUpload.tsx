@@ -70,8 +70,7 @@ export function ReferenceImageUpload({
 
   const handleRemove = useCallback(
     (index: number) => {
-      const next = images.filter((_, i) => i !== index)
-      onImagesChange([...next])
+      onImagesChange(images.filter((_, i) => i !== index))
     },
     [images, onImagesChange],
   )
@@ -83,7 +82,7 @@ export function ReferenceImageUpload({
         {images.map((url, index) => (
           <div
             key={url}
-            className="relative aspect-square overflow-hidden rounded-lg border border-[#2A2A2A]"
+            className="relative aspect-square overflow-hidden rounded-lg border border-border"
           >
             <Image
               src={url}
@@ -105,8 +104,8 @@ export function ReferenceImageUpload({
 
         {/* Loading slot */}
         {uploadingSlot !== null && (
-          <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-[#2A2A2A] bg-[#0A0A0A]">
-            <Loader2 className="size-6 animate-spin text-[#C8A97E]" />
+          <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-border bg-background">
+            <Loader2 className="size-6 animate-spin text-primary" />
           </div>
         )}
 
@@ -118,7 +117,7 @@ export function ReferenceImageUpload({
               type="button"
               onClick={handleSlotClick}
               aria-label={t('uploadImage')}
-              className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-[#2A2A2A] bg-[#0A0A0A] text-[#555555] transition-colors hover:border-[#C8A97E] hover:text-[#C8A97E]"
+              className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border bg-background text-muted-foreground transition-colors hover:border-primary hover:text-primary"
             >
               <ImagePlus className="size-6" />
               {i === 0 && images.length === 0 && (

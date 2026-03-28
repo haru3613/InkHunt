@@ -8,20 +8,18 @@ export async function getUnreadCountsForUser(
   if (inquiryIds.length === 0) return new Map()
 
   const admin = createAdminClient()
-  const { data, error } = await admin
-    .from('messages')
-    .select('inquiry_id')
-    .in('inquiry_id', inquiryIds)
-    .neq('sender_id', userLineId)
-    .is('read_at', null)
-
-  if (error) throw new Error(`Failed to fetch unread counts: ${error.message}`)
-
-  const counts = new Map<string, number>()
-  for (const row of data ?? []) {
-    counts.set(row.inquiry_id, (counts.get(row.inquiry_id) ?? 0) + 1)
-  }
-  return counts
+  const results = await Promise.all(
+    inquiryIds.map(async (id) => {
+      const { count } = await admin
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('inquiry_id', id)
+        .neq('sender_id', userLineId)
+        .is('read_at', null)
+      return [id, count ?? 0] as const
+    }),
+  )
+  return new Map(results)
 }
 
 export async function getMessagesByInquiry(inquiryId: string): Promise<Message[]> {

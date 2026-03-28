@@ -19,7 +19,6 @@ export interface QuoteTemplate {
 interface QuoteFormModalProps {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
-  readonly inquiryId: string
   readonly consumerName: string
   readonly inquiryDescription: string
   readonly templates: readonly QuoteTemplate[]
@@ -84,14 +83,14 @@ export function QuoteFormModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
         showCloseButton={false}
-        className="bg-[#141414] border border-[#2A2A2A] text-[#F5F0EB] max-w-md w-full p-0 gap-0"
+        className="bg-card border border-border text-foreground max-w-md w-full p-0 gap-0"
       >
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#2A2A2A]">
-          <DialogTitle className="text-base font-semibold text-[#F5F0EB] font-['Space_Grotesk',sans-serif]">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+          <DialogTitle className="text-base font-semibold text-foreground font-display">
             {t('sendQuoteTo', { name: consumerName })}
           </DialogTitle>
           {inquiryDescription && (
-            <p className="mt-1 text-xs text-[#F5F0EB]/50 line-clamp-2">
+            <p className="mt-1 text-xs text-foreground/50 line-clamp-2">
               {inquiryDescription}
             </p>
           )}
@@ -106,7 +105,7 @@ export function QuoteFormModal({
                   key={`${tpl.price}-${tpl.label}`}
                   type="button"
                   onClick={() => handleTemplateSelect(tpl)}
-                  className="rounded-md border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-1.5 text-xs text-[#F5F0EB]/70 hover:border-[#C8A97E]/60 hover:text-[#C8A97E] transition-colors"
+                  className="rounded-md border border-border bg-muted px-3 py-1.5 text-xs text-foreground/70 hover:border-primary/60 hover:text-primary transition-colors"
                 >
                   {tpl.label}
                 </button>
@@ -118,12 +117,12 @@ export function QuoteFormModal({
           <div className="space-y-1.5">
             <label
               htmlFor="quote-price"
-              className="block text-xs font-medium text-[#F5F0EB]/60 uppercase tracking-wide"
+              className="block text-xs font-medium text-foreground/60 uppercase tracking-wide"
             >
               {t('price')}
             </label>
-            <div className="flex items-center rounded-md border border-[#2A2A2A] bg-[#0A0A0A] focus-within:border-[#C8A97E]/60">
-              <span className="pl-3 text-sm text-[#F5F0EB]/40">NT$</span>
+            <div className="flex items-center rounded-md border border-border bg-background focus-within:border-primary/60">
+              <span className="pl-3 text-sm text-foreground/40">NT$</span>
               <input
                 id="quote-price"
                 type="number"
@@ -135,7 +134,7 @@ export function QuoteFormModal({
                   setError(null)
                 }}
                 placeholder="0"
-                className="w-full bg-transparent px-2 py-2.5 text-sm text-[#F5F0EB] placeholder:text-[#F5F0EB]/20 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full bg-transparent px-2 py-2.5 text-sm text-foreground placeholder:text-foreground/20 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -144,7 +143,7 @@ export function QuoteFormModal({
           <div className="space-y-1.5">
             <label
               htmlFor="quote-note"
-              className="block text-xs font-medium text-[#F5F0EB]/60 uppercase tracking-wide"
+              className="block text-xs font-medium text-foreground/60 uppercase tracking-wide"
             >
               {t('note')}
             </label>
@@ -155,26 +154,26 @@ export function QuoteFormModal({
               maxLength={500}
               rows={3}
               placeholder={t('notePlaceholder')}
-              className="w-full rounded-md border border-[#2A2A2A] bg-[#0A0A0A] px-3 py-2.5 text-sm text-[#F5F0EB] placeholder:text-[#F5F0EB]/20 outline-none resize-none focus:border-[#C8A97E]/60 transition-colors"
+              className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-foreground/20 outline-none resize-none focus:border-primary/60 transition-colors"
             />
-            <p className="text-right text-xs text-[#F5F0EB]/30">
+            <p className="text-right text-xs text-foreground/30">
               {note.length}/500
             </p>
           </div>
 
           {/* Error message */}
           {error && (
-            <p className="text-xs text-red-400">{error}</p>
+            <p className="text-xs text-destructive">{error}</p>
           )}
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#2A2A2A]">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="rounded-lg px-4 py-2 text-sm text-[#F5F0EB]/60 hover:text-[#F5F0EB] transition-colors disabled:opacity-40"
+            className="rounded-lg px-4 py-2 text-sm text-foreground/60 hover:text-foreground transition-colors disabled:opacity-40"
           >
             {t('cancel')}
           </button>
@@ -182,7 +181,7 @@ export function QuoteFormModal({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="rounded-lg bg-[#C8A97E] px-5 py-2 text-sm font-medium text-[#0A0A0A] hover:bg-[#C8A97E]/90 transition-colors disabled:opacity-50"
+            className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {isSubmitting ? t('submitting') : t('sendQuote')}
           </button>

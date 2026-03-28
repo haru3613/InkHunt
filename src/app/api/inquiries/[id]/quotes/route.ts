@@ -5,8 +5,8 @@ import {
   validateQuoteCreate,
   createQuote,
   respondToQuote,
+  markQuoteViewed,
 } from '@/lib/supabase/queries/quotes'
-import { createAdminClient } from '@/lib/supabase/server'
 import { pushQuoteNotification } from '@/lib/line/messaging'
 
 export async function POST(
@@ -80,19 +80,8 @@ export async function PATCH(
     }
 
     if (status === 'viewed') {
-      const admin = createAdminClient()
-      const { data: quote } = await admin
-        .from('quotes')
-        .update({ status: 'viewed' })
-        .eq('id', quote_id)
-        .eq('status', 'sent')
-        .select()
-        .maybeSingle()
-
-      if (!quote) {
-        return NextResponse.json({ status: 'already_viewed' })
-      }
-      return NextResponse.json(quote)
+      const quote = await markQuoteViewed(quote_id, id)
+      return NextResponse.json(quote ?? { status: 'already_viewed' })
     }
 
     const quote = await respondToQuote(quote_id, id, status)

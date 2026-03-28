@@ -133,11 +133,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Quote form modal */}
-      {selectedId && (
+      {selectedId && quoteModalOpen && (
         <QuoteFormModal
           open={quoteModalOpen}
           onOpenChange={setQuoteModalOpen}
-          inquiryId={selectedId}
           consumerName={selectedInquiry?.consumer_name ?? ''}
           inquiryDescription={selectedInquiry?.inquiry.description ?? ''}
           templates={[]}
