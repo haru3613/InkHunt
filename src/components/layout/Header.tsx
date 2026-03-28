@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { UserIcon, LogOut } from "lucide-react"
 import { Link } from "@/i18n/navigation"
@@ -41,12 +42,13 @@ export function Header() {
   const { isLoggedIn, user, loginWithRedirect, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   const handleLogout = useCallback(async () => {
     setMenuOpen(false)
     await logout()
-    window.location.href = "/"
-  }, [logout])
+    router.push("/")
+  }, [logout, router])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -70,7 +72,7 @@ export function Header() {
         </Link>
 
         {isDev && !isLoggedIn && (
-          <DevLoginButton onSuccess={() => window.location.reload()} />
+          <DevLoginButton onSuccess={() => router.refresh()} />
         )}
 
         {isLoggedIn && user ? (
