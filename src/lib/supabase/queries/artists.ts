@@ -1,5 +1,14 @@
 import type { Database } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+function safeAdminClient(): SupabaseClient<Database> | null {
+  try {
+    return createAdminClient()
+  } catch {
+    return null
+  }
+}
 
 type ArtistRow = Database['public']['Tables']['artists']['Row']
 type StyleRow = Database['public']['Tables']['styles']['Row']
@@ -40,7 +49,8 @@ export function transformArtistRow(row: SupabaseArtistRow): ArtistWithDetails {
 export async function getArtists(
   filters?: ArtistFilters,
 ): Promise<{ data: ArtistWithDetails[]; total: number }> {
-  const supabase = createAdminClient()
+  const supabase = safeAdminClient()
+  if (!supabase) return { data: [], total: 0 }
   const page = filters?.page ?? 1
   const pageSize = filters?.pageSize ?? DEFAULT_PAGE_SIZE
 
@@ -108,7 +118,8 @@ export async function getArtists(
 export async function getArtistBySlug(
   slug: string,
 ): Promise<ArtistWithDetails | null> {
-  const supabase = createAdminClient()
+  const supabase = safeAdminClient()
+  if (!supabase) return null
 
   const { data, error } = await supabase
     .from('artists')
@@ -125,7 +136,8 @@ export async function getArtistBySlug(
 export async function getFeaturedArtists(
   limit = 6,
 ): Promise<ArtistWithDetails[]> {
-  const supabase = createAdminClient()
+  const supabase = safeAdminClient()
+  if (!supabase) return []
 
   const { data, error } = await supabase
     .from('artists')

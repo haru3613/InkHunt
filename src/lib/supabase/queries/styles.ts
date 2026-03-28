@@ -1,10 +1,20 @@
 import type { Database } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+function safeAdminClient(): SupabaseClient<Database> | null {
+  try {
+    return createAdminClient()
+  } catch {
+    return null
+  }
+}
 
 type StyleRow = Database['public']['Tables']['styles']['Row']
 
 export async function getAllStyles(): Promise<StyleRow[]> {
-  const supabase = createAdminClient()
+  const supabase = safeAdminClient()
+  if (!supabase) return []
 
   const { data, error } = await supabase
     .from('styles')
@@ -22,7 +32,8 @@ export async function getAllStyles(): Promise<StyleRow[]> {
 export async function getStyleBySlug(
   slug: string,
 ): Promise<StyleRow | null> {
-  const supabase = createAdminClient()
+  const supabase = safeAdminClient()
+  if (!supabase) return null
 
   const { data, error } = await supabase
     .from('styles')
@@ -38,7 +49,8 @@ export async function getStyleBySlug(
 export async function getArtistCountByStyle(
   styleSlug: string,
 ): Promise<number> {
-  const supabase = createAdminClient()
+  const supabase = safeAdminClient()
+  if (!supabase) return 0
 
   const { data: style } = await supabase
     .from('styles')
@@ -60,7 +72,8 @@ export async function getArtistCountByStyle(
 }
 
 export async function getAllArtistCounts(): Promise<Map<string, number>> {
-  const supabase = createAdminClient()
+  const supabase = safeAdminClient()
+  if (!supabase) return new Map()
   const counts = new Map<string, number>()
 
   const { data: artistStyles, error: asError } = await supabase
