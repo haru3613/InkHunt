@@ -51,7 +51,7 @@ export async function getArtistForUser(
 }
 
 export function isAdmin(lineUserId: string): boolean {
-  const adminIds = (process.env.ADMIN_LINE_USER_IDS ?? '').split(',').filter(Boolean)
+  const adminIds = (process.env.ADMIN_LINE_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)
   return adminIds.includes(lineUserId)
 }
 
