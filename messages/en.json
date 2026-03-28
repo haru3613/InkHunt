@@ -98,7 +98,8 @@
     "templateNote": "Note",
     "saveTemplates": "Save Templates",
     "saving": "Saving...",
-    "saved": "Saved"
+    "saved": "Saved",
+    "saveError": "Failed to save, please try again"
   },
   "compare": {
     "addToCompare": "Compare",
@@ -116,7 +117,10 @@
     "noArtistsSelected": "Please select at least one artist first",
     "sendInquiryTo": "Inquire with {count} artist(s)",
     "formDescription": "Fill out once and send your request to all selected artists",
-    "sendToArtists": "Send to {count} artist(s)"
+    "sendToArtists": "Send to {count} artist(s)",
+    "loginToInquire": "Login with LINE to inquire",
+    "loadError": "Failed to load, please try again",
+    "acceptError": "Failed to accept quote, please try again"
   },
   "footer": {
     "about": "About",

@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react'
 
 const MAX_COMPARE = 3
 
-interface CompareArtist {
+export interface CompareArtist {
   readonly id: string
   readonly display_name: string
   readonly slug: string

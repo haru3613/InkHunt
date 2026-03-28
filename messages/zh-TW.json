@@ -98,7 +98,8 @@
     "templateNote": "備註",
     "saveTemplates": "儲存模板",
     "saving": "儲存中...",
-    "saved": "已儲存"
+    "saved": "已儲存",
+    "saveError": "儲存失敗，請重試"
   },
   "compare": {
     "addToCompare": "加入比較",
@@ -116,7 +117,10 @@
     "noArtistsSelected": "請先選擇至少一位刺青師",
     "sendInquiryTo": "詢價給 {count} 位刺青師",
     "formDescription": "填寫一次需求，同時詢價給你選的刺青師",
-    "sendToArtists": "送出給 {count} 位刺青師"
+    "sendToArtists": "送出給 {count} 位刺青師",
+    "loginToInquire": "LINE 登入後詢價",
+    "loadError": "載入失敗，請重試",
+    "acceptError": "接受報價失敗，請重試"
   },
   "footer": {
     "about": "關於我們",

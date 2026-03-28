@@ -60,7 +60,7 @@ export function QuoteTemplateManager({
       await onSave(localTemplates)
       setSavedSuccess(true)
     } catch {
-      setError('儲存失敗，請重試')
+      setError(t('saveError'))
     } finally {
       setIsSaving(false)
     }

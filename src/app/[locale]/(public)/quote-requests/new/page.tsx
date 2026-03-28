@@ -249,7 +249,7 @@ export default function NewQuoteRequestPage() {
         >
           {isLoggedIn
             ? tCompare('sendToArtists', { count: artistCount })
-            : 'LINE 登入後詢價'}
+            : tCompare('loginToInquire')}
         </Button>
       </form>
     </main>

@@ -46,19 +46,24 @@ export default function QuoteRequestPage() {
 
   const [data, setData] = useState<QuoteRequestWithQuotes | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch(`/api/quote-requests/${id}`)
-      if (!res.ok) return
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        setError((json as { error?: string }).error ?? t('loadError'))
+        return
+      }
       const json = await res.json()
       setData(json as QuoteRequestWithQuotes)
     } catch {
-      // Silently handle fetch failure; data remains null
+      setError(t('loadError'))
     } finally {
       setIsLoading(false)
     }
-  }, [id])
+  }, [id, t])
 
   useEffect(() => {
     fetchData()
@@ -67,19 +72,24 @@ export default function QuoteRequestPage() {
   const handleAcceptQuote = useCallback(
     async (inquiryId: string, quoteId: string) => {
       try {
-        await fetch(`/api/inquiries/${inquiryId}/quotes`, {
+        const res = await fetch(`/api/inquiries/${inquiryId}/quotes`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ quote_id: quoteId, status: 'accepted' }),
         })
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}))
+          setError((json as { error?: string }).error ?? t('acceptError'))
+          return
+        }
         // Refetch to get updated statuses
         setIsLoading(true)
         await fetchData()
       } catch {
-        // Silently handle fetch failure
+        setError(t('acceptError'))
       }
     },
-    [fetchData],
+    [fetchData, t],
   )
 
   const total = data?.inquiries.length ?? 0
@@ -112,6 +122,11 @@ export default function QuoteRequestPage() {
           </div>
         )}
       </div>
+
+      {/* Error state */}
+      {error && (
+        <p className="mb-4 text-sm text-destructive">{error}</p>
+      )}
 
       {/* Cards grid */}
       {isLoading ? (

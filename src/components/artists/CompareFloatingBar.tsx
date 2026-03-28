@@ -5,13 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-
-interface CompareArtist {
-  readonly id: string
-  readonly display_name: string
-  readonly slug: string
-  readonly avatar_url: string | null
-}
+import type { CompareArtist } from '@/hooks/useCompareList'
 
 interface CompareFloatingBarProps {
   readonly artists: CompareArtist[]

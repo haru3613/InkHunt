@@ -3,6 +3,7 @@ import { createInquiry } from '@/lib/supabase/queries/inquiries'
 import type { QuoteRequestInput } from '@/lib/validations/quote-request'
 import type { Inquiry, Quote } from '@/types/database'
 
+// Convenience alias with a narrower status union
 export interface QuoteRequest {
   id: string
   consumer_line_id: string
@@ -27,8 +28,7 @@ export async function createQuoteRequest(
   consumerName: string | null,
   data: QuoteRequestInput,
 ): Promise<QuoteRequestResult> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const admin = createAdminClient() as any
+  const admin = createAdminClient()
 
   // Insert the quote_request record
   const { data: quoteRequest, error: qrError } = await admin
@@ -50,33 +50,33 @@ export async function createQuoteRequest(
     throw new Error(`Failed to create quote request: ${qrError?.message}`)
   }
 
-  const createdInquiries: Inquiry[] = []
+  // Create one inquiry per artist in parallel, then link each back to the quote_request
+  const results = await Promise.all(
+    data.artist_ids.map(async (artistId) => {
+      const { inquiry } = await createInquiry(consumerLineId, consumerName, {
+        artist_id: artistId,
+        description: data.description,
+        reference_images: data.reference_images,
+        body_part: data.body_part,
+        size_estimate: data.size_estimate,
+        budget_min: data.budget_min,
+        budget_max: data.budget_max,
+      })
 
-  // Create one inquiry per artist, then link it back to the quote_request
-  for (const artistId of data.artist_ids) {
-    const { inquiry } = await createInquiry(consumerLineId, consumerName, {
-      artist_id: artistId,
-      description: data.description,
-      reference_images: data.reference_images,
-      body_part: data.body_part,
-      size_estimate: data.size_estimate,
-      budget_min: data.budget_min,
-      budget_max: data.budget_max,
-    })
+      const { error: linkError } = await admin
+        .from('inquiries')
+        .update({ quote_request_id: quoteRequest.id })
+        .eq('id', inquiry.id)
 
-    const { error: linkError } = await admin
-      .from('inquiries')
-      .update({ quote_request_id: (quoteRequest as QuoteRequest).id })
-      .eq('id', inquiry.id)
+      if (linkError) {
+        throw new Error(`Failed to link inquiry to quote request: ${linkError.message}`)
+      }
 
-    if (linkError) {
-      throw new Error(`Failed to link inquiry to quote request: ${linkError.message}`)
-    }
+      return inquiry
+    }),
+  )
 
-    createdInquiries.push(inquiry)
-  }
-
-  return { quoteRequest: quoteRequest as QuoteRequest, inquiries: createdInquiries }
+  return { quoteRequest: quoteRequest as QuoteRequest, inquiries: results }
 }
 
 export interface InquiryWithDetails extends Inquiry {
@@ -98,8 +98,7 @@ export interface QuoteRequestWithQuotes {
 export async function getQuoteRequestWithQuotes(
   id: string,
 ): Promise<QuoteRequestWithQuotes | null> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const admin = createAdminClient() as any
+  const admin = createAdminClient()
 
   const { data: quoteRequest, error: qrError } = await admin
     .from('quote_requests')
