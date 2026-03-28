@@ -51,8 +51,10 @@ export default function DashboardPage() {
 
   const displayName = artist?.display_name ?? user?.displayName ?? ''
   const hasProfile = Boolean(artist?.display_name)
-  const hasPricing = false // determined at render time, not critical for overview
-  const portfolioCount = 0 // TODO: fetch from API
+  // useAuth() artist type only includes id/slug/display_name/status
+  // Full profile data (pricing, portfolio count) requires a separate API call
+  const hasPricing = false
+  const portfolioCount = 0
 
   // No inquiries → show onboarding checklist
   if (inquiries.length === 0) {

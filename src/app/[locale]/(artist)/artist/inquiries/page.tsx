@@ -3,21 +3,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatList } from '@/components/chat/ChatList'
+import type { ChatListItem } from '@/components/chat/ChatList'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import type { Inquiry } from '@/types/database'
 
-// Height of the artist dashboard top bar (56px)
-const TOPBAR_HEIGHT = 56
-
-interface ChatListItem {
-  inquiry: Inquiry
-  artist_display_name: string
-  artist_avatar_url: string | null
-  consumer_name: string | null
-  last_message: string | null
-  last_message_at: string | null
-  unread_count: number
-}
+// TopBar: h-12 (48px) mobile, h-14 (56px) desktop + bottom tab h-16 (64px) on mobile
+const CHAT_HEIGHT_CLASSES = 'h-[calc(100dvh-48px-64px)] lg:h-[calc(100dvh-56px)]'
 
 export default function InquiriesPage() {
   const { user } = useAuth()
@@ -56,31 +47,30 @@ export default function InquiriesPage() {
   const handleQuoteAction = useCallback(
     async (quoteId: string, action: 'accepted' | 'rejected') => {
       if (!selectedId) return
-      await fetch(`/api/inquiries/${selectedId}/quotes`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quote_id: quoteId, status: action }),
-      })
+      try {
+        const response = await fetch(`/api/inquiries/${selectedId}/quotes`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quote_id: quoteId, status: action }),
+        })
+        if (!response.ok) throw new Error(`Quote action failed: ${response.status}`)
+      } catch (error) {
+        throw new Error(error instanceof Error ? error.message : 'Quote action failed')
+      }
     },
     [selectedId],
   )
 
   if (isLoading) {
     return (
-      <div
-        className="flex items-center justify-center text-[#F5F0EB]/40"
-        style={{ height: `calc(100vh - ${TOPBAR_HEIGHT}px)` }}
-      >
+      <div className={`flex items-center justify-center text-[#F5F0EB]/40 ${CHAT_HEIGHT_CLASSES}`}>
         載入中...
       </div>
     )
   }
 
   return (
-    <div
-      className="flex bg-[#0A0A0A]"
-      style={{ height: `calc(100vh - ${TOPBAR_HEIGHT}px)` }}
-    >
+    <div className={`flex bg-[#0A0A0A] ${CHAT_HEIGHT_CLASSES}`}>
       {/* Chat list — full width on mobile, fixed 320px on desktop */}
       <div
         className={`${selectedId ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-80 border-r border-[#2A2A2A]`}

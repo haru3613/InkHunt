@@ -3,7 +3,7 @@
 import { cn, formatRelativeTime, getInitials } from '@/lib/utils'
 import type { Inquiry } from '@/types/database'
 
-interface ChatListItem {
+export interface ChatListItem {
   inquiry: Inquiry
   artist_display_name: string
   artist_avatar_url: string | null
@@ -30,11 +30,11 @@ const STATUS_CONFIG: Record<
     className: 'bg-[#C8A97E] text-[#0A0A0A]',
   },
   quoted: {
-    label: '待報價',
+    label: '已報價',
     className: 'border border-[#8A8A8A] text-[#8A8A8A]',
   },
   accepted: {
-    label: '已報價',
+    label: '已接受',
     className: 'bg-[#4ADE80]/15 text-[#4ADE80]',
   },
   closed: {
