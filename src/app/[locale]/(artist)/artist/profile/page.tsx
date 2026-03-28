@@ -1,23 +1,27 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { ProfileForm } from '@/components/artists/ProfileForm'
+import { QuoteTemplateManager } from '@/components/artist/QuoteTemplateManager'
 import type { Artist, Style } from '@/types/database'
+import type { QuoteTemplate } from '@/components/chat/QuoteFormModal'
 
 export default function ProfilePage() {
   const { artist: authArtist } = useAuth()
   const [artist, setArtist] = useState<Artist | null>(null)
   const [styles, setStyles] = useState<Style[]>([])
   const [selectedStyleIds, setSelectedStyleIds] = useState<number[]>([])
+  const [templates, setTemplates] = useState<QuoteTemplate[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [stylesRes, artistRes] = await Promise.all([
+        const [stylesRes, artistRes, templatesRes] = await Promise.all([
           fetch('/api/styles'),
           authArtist?.slug ? fetch(`/api/artists/${authArtist.slug}`) : null,
+          fetch('/api/artists/me/templates'),
         ])
 
         if (stylesRes.ok) {
@@ -30,6 +34,11 @@ export default function ProfilePage() {
           setArtist(artistData)
           setSelectedStyleIds(artistData.styles?.map((s: Style) => s.id) ?? [])
         }
+
+        if (templatesRes.ok) {
+          const templatesData = await templatesRes.json()
+          setTemplates(templatesData.templates ?? [])
+        }
       } catch {
         // Profile data load failed; show empty state
       } finally {
@@ -38,6 +47,17 @@ export default function ProfilePage() {
     }
     load()
   }, [authArtist?.slug])
+
+  const handleSaveTemplates = useCallback(async (updated: QuoteTemplate[]) => {
+    const res = await fetch('/api/artists/me/templates', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ templates: updated }),
+    })
+    if (!res.ok) throw new Error('Failed to save templates')
+    const data = await res.json()
+    setTemplates(data.templates ?? updated)
+  }, [])
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen text-[#F5F0EB]/40">Loading...</div>
@@ -49,6 +69,11 @@ export default function ProfilePage() {
         {artist ? '編輯個人檔案' : '申請成為刺青師'}
       </h1>
       <ProfileForm artist={artist} styles={styles} selectedStyleIds={selectedStyleIds} />
+
+      <div className="border-t border-[#1F1F1F] mt-10 pt-10 max-w-2xl">
+        <h2 className="text-lg font-semibold text-[#F5F0EB] mb-6">快速報價模板</h2>
+        <QuoteTemplateManager templates={templates} onSave={handleSaveTemplates} />
+      </div>
     </div>
   )
 }

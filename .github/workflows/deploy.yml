@@ -1,0 +1,47 @@
+# Deploy workflow — runs on every push to main.
+#
+# Required GitHub Secrets:
+#   SUPABASE_ACCESS_TOKEN  — Personal access token from Supabase Dashboard
+#                            Settings → Account → Access Tokens
+#   SUPABASE_PROJECT_REF   — Project reference ID from your Supabase project URL
+#                            e.g. https://supabase.com/dashboard/project/<ref>
+#
+# Vercel auto-deploys on push to main independently of this workflow.
+# This job runs migrations first so the DB schema is up to date before
+# Vercel's build + deployment finishes and starts serving traffic.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# Prevent two migration runs from overlapping.
+# cancel-in-progress: false is intentional — cancelling a migration mid-run
+# would leave the database in an indeterminate state.
+concurrency:
+  group: deploy-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Run DB Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Push migrations
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

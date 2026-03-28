@@ -6,6 +6,7 @@ import type { ArtistWithDetails } from '@/lib/supabase/queries/artists'
 import { ArtistAvatar } from './ArtistAvatar'
 import { StyleBadge } from './StyleBadge'
 import { PriceRange } from './PriceRange'
+import { ArtistCompareAction } from './ArtistCompareAction'
 import { formatPrice } from '@/lib/utils'
 
 interface ArtistCardProps {
@@ -26,49 +27,63 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
   const extraCount = artist.styles.length - MAX_VISIBLE_STYLES
 
   return (
-    <Link href={`/artists/${artist.slug}`} className="block">
-      <Card className="border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30">
-        <CardContent className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <ArtistAvatar
-              name={artist.display_name}
-              avatarUrl={artist.avatar_url}
-              size="md"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="truncate text-base font-medium text-foreground">
-                  {artist.display_name}
-                </h3>
-                {artist.featured && (
-                  <Badge className="shrink-0 rounded-sm bg-primary text-primary-foreground hover:bg-ink-accent-hover">
-                    {t('recommended')}
-                  </Badge>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">{artist.city}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {visibleStyles.map((style) => (
-              <StyleBadge
-                key={style.id}
-                name={style.name}
-                icon={style.icon}
+    <div className="relative">
+      <Link href={`/artists/${artist.slug}`} className="block">
+        <Card className="border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30">
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <ArtistAvatar
+                name={artist.display_name}
+                avatarUrl={artist.avatar_url}
+                size="md"
               />
-            ))}
-            {extraCount > 0 && (
-              <Badge variant="secondary" className="rounded-sm bg-ink-accent-dim text-muted-foreground">
-                +{extraCount}
-              </Badge>
-            )}
-          </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate text-base font-medium text-foreground">
+                    {artist.display_name}
+                  </h3>
+                  {artist.featured && (
+                    <Badge className="shrink-0 rounded-sm bg-primary text-primary-foreground hover:bg-ink-accent-hover">
+                      {t('recommended')}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">{artist.city}</p>
+              </div>
+            </div>
 
-          <PriceRange min={artist.price_min} max={artist.price_max} />
-        </CardContent>
-      </Card>
-    </Link>
+            <div className="flex flex-wrap gap-1.5">
+              {visibleStyles.map((style) => (
+                <StyleBadge
+                  key={style.id}
+                  name={style.name}
+                  icon={style.icon}
+                />
+              ))}
+              {extraCount > 0 && (
+                <Badge variant="secondary" className="rounded-sm bg-ink-accent-dim text-muted-foreground">
+                  +{extraCount}
+                </Badge>
+              )}
+            </div>
+
+            <PriceRange min={artist.price_min} max={artist.price_max} />
+          </CardContent>
+        </Card>
+      </Link>
+
+      {/* Compare button sits outside the Link so clicks do not trigger navigation */}
+      <div className="absolute bottom-3 right-3">
+        <ArtistCompareAction
+          artist={{
+            id: artist.id,
+            display_name: artist.display_name,
+            slug: artist.slug,
+            avatar_url: artist.avatar_url ?? null,
+          }}
+        />
+      </div>
+    </div>
   )
 }
 
