@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser, getArtistForUser } from '@/lib/auth/helpers'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function GET() {
   const user = await getCurrentUser()
@@ -16,6 +16,16 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('artist_id', artist.id)
     portfolioCount = count ?? 0
+
+    // Sync LINE profile picture to artist avatar if not set
+    if (!artist.avatar_url && user.avatarUrl) {
+      const admin = createAdminClient()
+      await admin
+        .from('artists')
+        .update({ avatar_url: user.avatarUrl })
+        .eq('id', artist.id)
+      artist.avatar_url = user.avatarUrl
+    }
   }
 
   return NextResponse.json({

@@ -6,6 +6,9 @@ import { hasLocale } from "next-intl"
 import { setRequestLocale, getTranslations } from "next-intl/server"
 import { NextIntlClientProvider } from "next-intl"
 import { routing } from "@/i18n/routing"
+import { GoogleAnalytics } from "@/components/shared/GoogleAnalytics"
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -46,6 +49,21 @@ export async function generateMetadata({
       default: t("defaultTitle"),
     },
     description: t("defaultDescription"),
+    openGraph: {
+      type: 'website',
+      siteName: 'InkHunt',
+      locale: locale === 'zh-TW' ? 'zh_TW' : 'en_US',
+    },
+    twitter: {
+      card: 'summary_large_image',
+    },
+    alternates: {
+      canonical: `${baseUrl}/${locale}`,
+      languages: {
+        'zh-TW': `${baseUrl}/zh-TW`,
+        'en': `${baseUrl}/en`,
+      },
+    },
   }
 }
 
@@ -70,6 +88,7 @@ export default async function LocaleLayout({
       className={`${spaceGrotesk.variable} ${dmSans.variable} ${notoSansTC.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-background text-foreground">
+        <GoogleAnalytics />
         <NextIntlClientProvider>
           {children}
         </NextIntlClientProvider>

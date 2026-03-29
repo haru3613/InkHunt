@@ -11,8 +11,11 @@ import { JsonLd } from "@/components/shared/JsonLd"
 import { BackButton } from "@/components/artists/BackButton"
 import { ArtistProfile } from "@/components/artists/ArtistProfile"
 import { ArtistCompareAction } from "@/components/artists/ArtistCompareAction"
+import { ArtistProfileTracker } from "@/components/artists/ArtistProfileTracker"
 import { PortfolioSection } from "@/components/artists/PortfolioSection"
 import { MobileCTA } from "@/components/artists/MobileCTA"
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>
@@ -42,16 +45,31 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     priceText && `價格：${priceText}`,
   ].filter(Boolean)
 
+  const description =
+    descriptionParts.length > 0
+      ? `${artist.display_name} 的刺青作品集。${descriptionParts.join("｜")}。在 InkHunt 瀏覽作品、一鍵詢價。`
+      : `${artist.display_name} 的刺青作品集。在 InkHunt 瀏覽作品、一鍵詢價。`
+
   return {
     title: t("artistPortfolio", { name: artist.display_name }),
-    description:
-      descriptionParts.length > 0
-        ? `${artist.display_name} 的刺青作品集。${descriptionParts.join("｜")}。在 InkHunt 瀏覽作品、一鍵詢價。`
-        : `${artist.display_name} 的刺青作品集。在 InkHunt 瀏覽作品、一鍵詢價。`,
+    description,
     openGraph: {
       title: t('artistPortfolio', { name: artist.display_name }),
       description: artist.bio ?? `${artist.display_name} 的刺青作品集`,
       images: artist.avatar_url ? [{ url: artist.avatar_url }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('artistPortfolio', { name: artist.display_name }),
+      description,
+      images: artist.avatar_url ? [artist.avatar_url] : undefined,
+    },
+    alternates: {
+      canonical: `${baseUrl}/${locale}/artists/${slug}`,
+      languages: {
+        'zh-TW': `${baseUrl}/zh-TW/artists/${slug}`,
+        'en': `${baseUrl}/en/artists/${slug}`,
+      },
     },
   }
 }
@@ -68,10 +86,17 @@ export default async function ArtistProfilePage({ params }: PageProps) {
   }
 
   const jsonLd = generateArtistJsonLd(artist)
+  const stylesText = artist.styles.map((s) => s.name).join(',')
+  const cityText = [artist.city, artist.district].filter(Boolean).join(' ')
 
   return (
     <>
       <JsonLd data={jsonLd} />
+      <ArtistProfileTracker
+        artistSlug={artist.slug}
+        styles={stylesText}
+        city={cityText}
+      />
       <div className="mx-auto max-w-6xl px-4 py-6">
         <BackButton />
 
@@ -79,7 +104,7 @@ export default async function ArtistProfilePage({ params }: PageProps) {
           {/* Left column — artist info (sticky on desktop) */}
           <div className="lg:w-[340px] lg:shrink-0">
             <div className="lg:sticky lg:top-20">
-              <ArtistProfile artist={artist} />
+              <ArtistProfile artist={artist} artistSlug={artist.slug} />
               <div className="mt-3">
                 <ArtistCompareAction
                   artist={{
@@ -104,7 +129,7 @@ export default async function ArtistProfilePage({ params }: PageProps) {
       </div>
 
       {/* Mobile sticky CTA */}
-      <MobileCTA artistId={artist.id} artistName={artist.display_name} />
+      <MobileCTA artistId={artist.id} artistName={artist.display_name} artistSlug={artist.slug} />
     </>
   )
 }

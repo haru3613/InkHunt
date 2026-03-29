@@ -8,9 +8,10 @@ import { ArtistAvatar } from "./ArtistAvatar"
 
 interface ArtistProfileProps {
   readonly artist: ArtistWithDetails
+  readonly artistSlug?: string
 }
 
-export async function ArtistProfile({ artist }: ArtistProfileProps) {
+export async function ArtistProfile({ artist, artistSlug }: ArtistProfileProps) {
   const t = await getTranslations("artistProfile")
   const priceText = formatPriceRange(artist.price_min, artist.price_max)
   const igUrl = artist.ig_handle ? formatIgUrl(artist.ig_handle) : null
@@ -100,7 +101,11 @@ export async function ArtistProfile({ artist }: ArtistProfileProps) {
 
       {/* CTA - inline on desktop */}
       <div className="mt-6 hidden lg:block">
-        <InquiryButton artistId={artist.id} artistName={artist.display_name} />
+        <InquiryButton
+          artistId={artist.id}
+          artistName={artist.display_name}
+          artistSlug={artistSlug}
+        />
       </div>
     </section>
   )

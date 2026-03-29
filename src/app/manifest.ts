@@ -7,16 +7,16 @@ export default function manifest(): MetadataRoute.Manifest {
     description: '台灣第一個刺青師媒合平台',
     start_url: '/',
     display: 'standalone',
-    background_color: '#fafaf9',
-    theme_color: '#292524',
+    background_color: '#0A0A0A',
+    theme_color: '#0A0A0A',
     icons: [
       {
-        src: '/icon-192.png',
+        src: '/logo-icon-192.png',
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: '/icon-512.png',
+        src: '/logo-icon-512.png',
         sizes: '512x512',
         type: 'image/png',
       },
