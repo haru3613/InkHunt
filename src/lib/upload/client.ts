@@ -1,7 +1,7 @@
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 
 export async function uploadFile(
-  bucket: 'portfolio' | 'inquiries',
+  bucket: 'portfolio' | 'inquiries' | 'avatars',
   file: File,
 ): Promise<string> {
   if (file.size > MAX_FILE_SIZE) {

@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { ArtistAvatar } from '@/components/artists/ArtistAvatar'
+import { uploadFile } from '@/lib/upload/client'
 import type { Artist, Style } from '@/types/database'
 
 interface ProfileFormProps {
@@ -23,12 +25,15 @@ interface FormState {
   ig_handle: string
   pricing_note: string
   booking_notice: string
+  avatar_url: string | null
   style_ids: number[]
 }
 
 export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormProps) {
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState<FormState>({
     display_name: artist?.display_name ?? '',
@@ -41,6 +46,7 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
     ig_handle: artist?.ig_handle ?? '',
     pricing_note: artist?.pricing_note ?? '',
     booking_notice: artist?.booking_notice ?? '',
+    avatar_url: artist?.avatar_url ?? null,
     style_ids: selectedStyleIds,
   })
 
@@ -56,6 +62,29 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
         ? prev.style_ids.filter((id) => id !== styleId)
         : [...prev.style_ids, styleId],
     }))
+  }, [])
+
+  const handleAvatarClick = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleAvatarFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Reset so the same file can be re-selected if needed
+    e.target.value = ''
+
+    setIsUploadingAvatar(true)
+    setMessage(null)
+    try {
+      const url = await uploadFile('avatars', file)
+      setForm((prev) => ({ ...prev, avatar_url: url }))
+    } catch {
+      setMessage({ type: 'error', text: '頭像上傳失敗，請重試' })
+    } finally {
+      setIsUploadingAvatar(false)
+    }
   }, [])
 
   const handleSubmit = useCallback(async () => {
@@ -79,6 +108,7 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
           ig_handle: form.ig_handle || null,
           pricing_note: form.pricing_note || null,
           booking_notice: form.booking_notice || null,
+          avatar_url: form.avatar_url,
           style_ids: form.style_ids,
         }),
       })
@@ -92,11 +122,46 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
     }
   }, [artist, form])
 
+  const avatarDisplayName = form.display_name || artist?.display_name || '?'
+
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
       className="space-y-6 max-w-2xl"
     >
+      {/* Avatar upload */}
+      <div className="flex flex-col items-start gap-3">
+        <label className="text-sm font-medium text-[#F5F0EB]">頭像</label>
+        <button
+          type="button"
+          onClick={handleAvatarClick}
+          disabled={isUploadingAvatar}
+          aria-label="上傳頭像"
+          className="group relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A97E] disabled:cursor-not-allowed"
+        >
+          <ArtistAvatar
+            name={avatarDisplayName}
+            avatarUrl={form.avatar_url}
+            size="lg"
+          />
+          {/* Hover / loading overlay */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 text-[#F5F0EB] text-xs font-medium opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+          >
+            {isUploadingAvatar ? '上傳中...' : '更換照片'}
+          </span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleAvatarFileChange}
+          tabIndex={-1}
+        />
+      </div>
+
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-[#F5F0EB]">顯示名稱 <span className="text-red-500">*</span></label>
         <Input value={form.display_name} onChange={(e) => handleChange('display_name', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" required />
@@ -172,7 +237,7 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
           {message.text}
         </div>
       )}
-      <Button type="submit" disabled={isSaving} className="bg-[#C8A97E] text-[#0A0A0A] hover:bg-[#C8A97E]/90 px-8">
+      <Button type="submit" disabled={isSaving || isUploadingAvatar} className="bg-[#C8A97E] text-[#0A0A0A] hover:bg-[#C8A97E]/90 px-8">
         {isSaving ? '儲存中...' : (artist ? '儲存' : '提交申請')}
       </Button>
     </form>
