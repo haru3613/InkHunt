@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockStyles = [
-  { id: 1, slug: 'fine-line', name: '極簡線條', sort_order: 1, icon: null, image_url: null, created_at: '' },
-  { id: 2, slug: 'micro', name: '微刺青', sort_order: 2, icon: null, image_url: null, created_at: '' },
+  { id: 1, slug: 'fine-line', name: '極簡線條', sort_order: 1, icon: null, name_en: null, description: null, subtitle: null, group_name: null, color_profile: null, popularity: 0 },
+  { id: 2, slug: 'micro', name: '微刺青', sort_order: 2, icon: null, name_en: null, description: null, subtitle: null, group_name: null, color_profile: null, popularity: 0 },
 ]
 
 vi.mock('@/lib/supabase/queries/styles', () => ({

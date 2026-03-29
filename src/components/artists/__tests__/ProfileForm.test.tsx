@@ -18,9 +18,9 @@ import { ProfileForm } from '../ProfileForm'
 import type { Artist, Style } from '@/types/database'
 
 const mockStyles: Style[] = [
-  { id: 1, slug: 'fine-line', name: '極簡線條', sort_order: 1, icon: null, image_url: null, created_at: '' },
-  { id: 2, slug: 'micro', name: '微刺青', sort_order: 2, icon: null, image_url: null, created_at: '' },
-  { id: 3, slug: 'realism', name: '寫實', sort_order: 3, icon: null, image_url: null, created_at: '' },
+  { id: 1, slug: 'fine-line', name: '極簡線條', sort_order: 1, icon: null, name_en: null, description: null, subtitle: null, group_name: null, color_profile: null, popularity: 0 },
+  { id: 2, slug: 'micro', name: '微刺青', sort_order: 2, icon: null, name_en: null, description: null, subtitle: null, group_name: null, color_profile: null, popularity: 0 },
+  { id: 3, slug: 'realism', name: '寫實', sort_order: 3, icon: null, name_en: null, description: null, subtitle: null, group_name: null, color_profile: null, popularity: 0 },
 ]
 
 describe('ProfileForm', () => {
@@ -91,7 +91,8 @@ describe('ProfileForm', () => {
       lat: null, lng: null, offers_coverup: false,
       offers_custom_design: false, has_flash_designs: false,
       deposit_amount: null, line_user_id: 'U123',
-      admin_note: null, created_at: '', updated_at: '',
+      admin_note: null, quote_templates: null,
+      created_at: '', updated_at: '',
     }
     render(<ProfileForm artist={existingArtist} styles={[]} selectedStyleIds={[]} />)
     expect(screen.getByText('儲存')).toBeInTheDocument()
