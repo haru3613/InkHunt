@@ -23,11 +23,13 @@ import {
 import { ReferenceImageUpload } from './ReferenceImageUpload'
 import { inquirySchema, BODY_PARTS } from '@/lib/validations/inquiry'
 import { useAuth } from '@/hooks/useAuth'
+import { trackSubmitInquiry } from '@/lib/analytics'
 import type { ZodError } from 'zod'
 
 interface InquiryFormProps {
   readonly artistId: string
   readonly artistName: string
+  readonly artistSlug?: string
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
 }
@@ -62,6 +64,7 @@ function flattenZodErrors(error: ZodError): Record<string, string> {
 export function InquiryForm({
   artistId,
   artistName,
+  artistSlug,
   open,
   onOpenChange,
 }: InquiryFormProps) {
@@ -122,13 +125,22 @@ export function InquiryForm({
       }
 
       const { id } = await response.json()
+
+      if (artistSlug) {
+        const budgetRange =
+          form.budget_min && form.budget_max
+            ? `${form.budget_min}-${form.budget_max}`
+            : undefined
+        trackSubmitInquiry(artistSlug, form.body_part || undefined, budgetRange)
+      }
+
       setForm(INITIAL_FORM)
       onOpenChange(false)
       router.push(`/inquiries/${id}`)
     } catch (err) {
       setErrors({ _form: err instanceof Error ? err.message : 'Something went wrong' })
     }
-  }, [form, referenceImages, onOpenChange, isLoggedIn, loginWithRedirect, artistId, router])
+  }, [form, referenceImages, onOpenChange, isLoggedIn, loginWithRedirect, artistId, artistSlug, router])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {

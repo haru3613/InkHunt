@@ -5,6 +5,8 @@ import { getAllStyles } from '@/lib/supabase/queries/styles'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { ArtistFilters } from '@/components/artists/ArtistFilters'
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
+
 export async function generateMetadata({
   params,
 }: {
@@ -16,6 +18,20 @@ export async function generateMetadata({
   return {
     title: t('artistsTitle'),
     description: t('artistsDescription'),
+    openGraph: {
+      title: t('artistsTitle'),
+      description: t('artistsDescription'),
+    },
+    twitter: {
+      card: 'summary',
+    },
+    alternates: {
+      canonical: `${baseUrl}/${locale}/artists`,
+      languages: {
+        'zh-TW': `${baseUrl}/zh-TW/artists`,
+        'en': `${baseUrl}/en/artists`,
+      },
+    },
   }
 }
 

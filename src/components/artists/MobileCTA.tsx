@@ -5,9 +5,10 @@ import { InquiryButton } from "@/components/inquiry/InquiryButton"
 interface MobileCTAProps {
   readonly artistId: string
   readonly artistName: string
+  readonly artistSlug?: string
 }
 
-export function MobileCTA({ artistId, artistName }: MobileCTAProps) {
+export function MobileCTA({ artistId, artistName, artistSlug }: MobileCTAProps) {
   return (
     <>
       {/* Spacer to prevent content from hiding behind fixed CTA + bottom nav */}
@@ -16,6 +17,7 @@ export function MobileCTA({ artistId, artistName }: MobileCTAProps) {
         <InquiryButton
           artistId={artistId}
           artistName={artistName}
+          artistSlug={artistSlug}
           className="flex h-12 w-full items-center justify-center rounded-sm bg-primary text-base font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
         />
       </div>
