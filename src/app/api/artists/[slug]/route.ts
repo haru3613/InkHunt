@@ -34,7 +34,7 @@ export async function GET(
   if (error || !artist) return NextResponse.json({ error: 'Artist not found' }, { status: 404 })
 
   const styles = flattenArtistStyles(artist.artist_styles)
-  const { admin_note: _note, artist_styles: _as, ...publicArtist } = artist
+  const { admin_note: _note, artist_styles: _as, line_user_id: _lid, ...publicArtist } = artist
   return NextResponse.json({ ...publicArtist, styles })
 }
 
