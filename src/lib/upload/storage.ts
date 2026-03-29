@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { createServerClient } from '@/lib/supabase/server'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
-const ALLOWED_BUCKETS = ['portfolio', 'inquiries'] as const
+const ALLOWED_BUCKETS = ['portfolio', 'inquiries', 'avatars'] as const
 
 const uploadRequestSchema = z.object({
   bucket: z.enum(ALLOWED_BUCKETS),

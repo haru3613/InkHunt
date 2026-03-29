@@ -12,6 +12,7 @@ export const updateArtistSchema = z
     ig_handle: z.string().nullable().optional(),
     pricing_note: z.string().nullable().optional(),
     booking_notice: z.string().nullable().optional(),
+    avatar_url: z.string().url().nullable().optional(),
     style_ids: z.array(z.number()).optional(),
   })
   .refine(

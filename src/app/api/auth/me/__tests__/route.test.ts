@@ -6,8 +6,16 @@ vi.mock('@/lib/auth/helpers', () => ({
   getArtistForUser: vi.fn(),
 }))
 
+const mockAdminUpdate = vi.fn().mockReturnThis()
+const mockAdminEq = vi.fn().mockResolvedValue({ error: null })
 vi.mock('@/lib/supabase/server', () => ({
   createServerClient: vi.fn(),
+  createAdminClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      update: mockAdminUpdate,
+      eq: mockAdminEq,
+    })),
+  })),
 }))
 
 import { GET } from '../route'
