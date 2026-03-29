@@ -40,12 +40,12 @@ const VALID_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
 const INVALID_UUID = 'not-a-uuid'
 
 function makeRequest(method: string, url: string, body?: unknown): NextRequest {
-  const init: RequestInit = { method }
+  const init: Record<string, unknown> = { method }
   if (body !== undefined) {
     init.body = JSON.stringify(body)
     init.headers = { 'Content-Type': 'application/json' }
   }
-  return new NextRequest(new URL(url, 'http://localhost:3000'), init)
+  return new NextRequest(new URL(url, 'http://localhost:3000'), init as never)
 }
 
 const mockAdmin = {

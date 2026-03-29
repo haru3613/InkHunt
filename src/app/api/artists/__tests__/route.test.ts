@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
+import type { ArtistWithDetails } from '@/lib/supabase/queries/artists'
 
 // Mock all dependencies BEFORE importing route handlers
 vi.mock('@/lib/auth/helpers', () => ({
@@ -33,12 +34,12 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getArtists } from '@/lib/supabase/queries/artists'
 
 function makeRequest(method: string, url: string, body?: unknown): NextRequest {
-  const init: RequestInit = { method }
+  const init: Record<string, unknown> = { method }
   if (body !== undefined) {
     init.body = JSON.stringify(body)
     init.headers = { 'Content-Type': 'application/json' }
   }
-  return new NextRequest(new URL(url, 'http://localhost:3000'), init)
+  return new NextRequest(new URL(url, 'http://localhost:3000'), init as never)
 }
 
 const mockUser = {
@@ -221,7 +222,7 @@ describe('GET /api/artists', () => {
       ],
       total: 2,
     }
-    vi.mocked(getArtists).mockResolvedValue(mockResult)
+    vi.mocked(getArtists).mockResolvedValue(mockResult as unknown as { data: ArtistWithDetails[]; total: number })
 
     const request = makeRequest('GET', 'http://localhost:3000/api/artists')
 
@@ -259,7 +260,7 @@ describe('GET /api/artists', () => {
       data: [{ id: 'a3', slug: 'taipei-artist', display_name: '台北刺青師', city: '台北市', styles: [], portfolio_items: [] }],
       total: 1,
     }
-    vi.mocked(getArtists).mockResolvedValue(mockResult)
+    vi.mocked(getArtists).mockResolvedValue(mockResult as unknown as { data: ArtistWithDetails[]; total: number })
 
     const request = makeRequest('GET', 'http://localhost:3000/api/artists?city=台北市')
 

@@ -31,7 +31,7 @@ function makeMessage(overrides: Partial<Message> = {}): Message {
     sender_id: 'user-1',
     message_type: 'text',
     content: 'Hello!',
-    metadata: {},
+    metadata: {} as Message['metadata'],
     read_at: null,
     created_at: '2026-03-29T10:00:00Z',
     ...overrides,
@@ -98,7 +98,7 @@ describe('MessageBubble', () => {
     }
     const message = makeMessage({
       message_type: 'quote',
-      metadata: quoteMetadata as unknown as Record<string, unknown>,
+      metadata: quoteMetadata as unknown as Message['metadata'],
     })
     render(<MessageBubble message={message} isOwn={false} />)
     expect(screen.getByTestId('quote-card')).toBeInTheDocument()

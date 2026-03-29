@@ -45,12 +45,12 @@ const MOCK_ARTIST = {
 }
 
 function makeRequest(method: string, url: string, body?: unknown): NextRequest {
-  const init: RequestInit = { method }
+  const init: Record<string, unknown> = { method }
   if (body) {
     init.body = JSON.stringify(body)
     init.headers = { 'Content-Type': 'application/json' }
   }
-  return new NextRequest(new URL(url, 'http://localhost:3000'), init)
+  return new NextRequest(new URL(url, 'http://localhost:3000'), init as never)
 }
 
 describe('GET /api/artists/me/templates', () => {

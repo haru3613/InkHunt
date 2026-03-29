@@ -41,12 +41,12 @@ import { requireAuth, getArtistForUser } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 
 function makeRequest(method: string, url: string, body?: unknown): NextRequest {
-  const init: RequestInit = { method }
+  const init: Record<string, unknown> = { method }
   if (body !== undefined) {
     init.body = JSON.stringify(body)
     init.headers = { 'Content-Type': 'application/json' }
   }
-  return new NextRequest(new URL(url, 'http://localhost:3000'), init)
+  return new NextRequest(new URL(url, 'http://localhost:3000'), init as never)
 }
 
 const mockUser = {
