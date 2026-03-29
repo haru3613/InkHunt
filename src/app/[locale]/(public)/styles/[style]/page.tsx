@@ -11,6 +11,8 @@ import { JsonLd } from '@/components/shared/JsonLd'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { Link } from '@/i18n/navigation'
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
+
 export async function generateStaticParams() {
   const styles = await getAllStyles()
   return styles.map((s) => ({ style: s.slug }))
@@ -26,9 +28,25 @@ export async function generateMetadata({ params }: StylePageProps): Promise<Meta
   const style = await getCachedStyle(slug)
   if (!style) return {}
 
+  const description = `${style.name}刺青推薦｜瀏覽台灣${style.name}風格刺青師作品集，價格透明，一鍵詢價。`
+
   return {
     title: t('recommendTitle', { styleName: style.name }),
-    description: t('viewAll', { styleName: style.name }),
+    description,
+    openGraph: {
+      title: t('recommendTitle', { styleName: style.name }),
+      description,
+    },
+    twitter: {
+      card: 'summary',
+    },
+    alternates: {
+      canonical: `${baseUrl}/${locale}/styles/${slug}`,
+      languages: {
+        'zh-TW': `${baseUrl}/zh-TW/styles/${slug}`,
+        'en': `${baseUrl}/en/styles/${slug}`,
+      },
+    },
   }
 }
 
