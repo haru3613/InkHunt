@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'ktpckytlascxwjsivnym.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: '*.line-scdn.net',
+      },
     ],
   },
 };
