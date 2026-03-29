@@ -57,7 +57,7 @@ export function useRealtimeMessages(inquiryId: string | null) {
 
   const sendMessage = useCallback(
     async (messageType: 'text' | 'image', content: string) => {
-      if (!inquiryId) return null
+      if (!inquiryId) return
       const response = await fetch(`/api/inquiries/${inquiryId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,13 +65,8 @@ export function useRealtimeMessages(inquiryId: string | null) {
       })
 
       if (!response.ok) throw new Error('Failed to send message')
-
-      const message: Message = await response.json()
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === message.id)) return prev
-        return [...prev, message]
-      })
-      return message
+      // Supabase realtime subscription handles adding the message to state.
+      // Adding it here AND via realtime causes duplicates due to race conditions.
     },
     [inquiryId],
   )
