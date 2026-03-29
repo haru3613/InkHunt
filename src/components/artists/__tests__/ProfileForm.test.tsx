@@ -15,8 +15,9 @@ vi.mock('@/i18n/navigation', () => ({
 }))
 
 import { ProfileForm } from '../ProfileForm'
+import type { Artist, Style } from '@/types/database'
 
-const mockStyles = [
+const mockStyles: Style[] = [
   { id: 1, slug: 'fine-line', name: '極簡線條', sort_order: 1, icon: null, image_url: null, created_at: '' },
   { id: 2, slug: 'micro', name: '微刺青', sort_order: 2, icon: null, image_url: null, created_at: '' },
   { id: 3, slug: 'realism', name: '寫實', sort_order: 3, icon: null, image_url: null, created_at: '' },
@@ -40,7 +41,7 @@ describe('ProfileForm', () => {
   })
 
   it('renders style buttons when styles provided', () => {
-    render(<ProfileForm artist={null} styles={mockStyles as any} selectedStyleIds={[]} />)
+    render(<ProfileForm artist={null} styles={mockStyles} selectedStyleIds={[]} />)
 
     expect(screen.getByText('極簡線條')).toBeInTheDocument()
     expect(screen.getByText('微刺青')).toBeInTheDocument()
@@ -48,7 +49,7 @@ describe('ProfileForm', () => {
   })
 
   it('shows selected styles with accent color', () => {
-    render(<ProfileForm artist={null} styles={mockStyles as any} selectedStyleIds={[1, 3]} />)
+    render(<ProfileForm artist={null} styles={mockStyles} selectedStyleIds={[1, 3]} />)
 
     const fineLine = screen.getByText('極簡線條')
     const micro = screen.getByText('微刺青')
@@ -63,7 +64,7 @@ describe('ProfileForm', () => {
 
   it('toggles style selection on click', async () => {
     const user = userEvent.setup()
-    render(<ProfileForm artist={null} styles={mockStyles as any} selectedStyleIds={[]} />)
+    render(<ProfileForm artist={null} styles={mockStyles} selectedStyleIds={[]} />)
 
     const microButton = screen.getByText('微刺青')
     expect(microButton.className).toContain('bg-[#1F1F1F]')
@@ -81,7 +82,7 @@ describe('ProfileForm', () => {
   })
 
   it('shows submit button with correct text for existing artist', () => {
-    const existingArtist = {
+    const existingArtist: Artist = {
       id: '1', slug: 'harvey', display_name: 'Harvey', bio: null,
       city: '桃園市', district: null, address: null,
       price_min: 1000, price_max: null, ig_handle: null,
@@ -92,7 +93,7 @@ describe('ProfileForm', () => {
       deposit_amount: null, line_user_id: 'U123',
       admin_note: null, created_at: '', updated_at: '',
     }
-    render(<ProfileForm artist={existingArtist as any} styles={[]} selectedStyleIds={[]} />)
+    render(<ProfileForm artist={existingArtist} styles={[]} selectedStyleIds={[]} />)
     expect(screen.getByText('儲存')).toBeInTheDocument()
   })
 

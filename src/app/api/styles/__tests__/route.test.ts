@@ -20,7 +20,7 @@ describe('GET /api/styles', () => {
   })
 
   it('returns styles with data wrapper', async () => {
-    mockGetAllStyles.mockResolvedValue(mockStyles as any)
+    mockGetAllStyles.mockResolvedValue(mockStyles as Awaited<ReturnType<typeof getAllStyles>>)
 
     const response = await GET()
     const body = await response.json()
