@@ -2,21 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { flattenArtistStyles } from '@/lib/supabase/transforms'
-import { z } from 'zod'
-
-const updateArtistSchema = z.object({
-  display_name: z.string().min(1).max(100).optional(),
-  bio: z.string().max(1000).nullable().optional(),
-  city: z.string().min(1).optional(),
-  district: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  price_min: z.number().int().min(0).nullable().optional(),
-  price_max: z.number().int().min(0).nullable().optional(),
-  ig_handle: z.string().nullable().optional(),
-  pricing_note: z.string().nullable().optional(),
-  booking_notice: z.string().nullable().optional(),
-  style_ids: z.array(z.number()).optional(),
-})
+import { updateArtistSchema } from './schema'
 
 export async function GET(
   request: NextRequest,
