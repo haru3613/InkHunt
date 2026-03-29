@@ -64,13 +64,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="p-6 lg:p-10">
+    <div className="mx-auto max-w-4xl p-6 lg:p-10">
       <h1 className="text-2xl font-semibold text-[#F5F0EB] mb-8">
         {artist ? '編輯個人檔案' : '申請成為刺青師'}
       </h1>
       <ProfileForm artist={artist} styles={styles} selectedStyleIds={selectedStyleIds} />
 
-      <div className="border-t border-[#1F1F1F] mt-10 pt-10 max-w-2xl">
+      <div className="border-t border-[#1F1F1F] mt-10 pt-10">
         <h2 className="text-lg font-semibold text-[#F5F0EB] mb-6">快速報價模板</h2>
         <QuoteTemplateManager templates={templates} onSave={handleSaveTemplates} />
       </div>
