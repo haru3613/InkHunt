@@ -45,3 +45,17 @@ jobs:
         run: supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Verify no schema drift
+        run: |
+          # Pull remote schema and diff against local migrations
+          # If drift exists, db diff will output SQL and exit non-zero
+          DIFF=$(supabase db diff --linked 2>&1) || true
+          if [ -n "$DIFF" ] && ! echo "$DIFF" | grep -q "No schema changes found"; then
+            echo "::error::Schema drift detected between remote DB and local migrations:"
+            echo "$DIFF"
+            exit 1
+          fi
+          echo "No schema drift — remote DB matches local migrations."
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

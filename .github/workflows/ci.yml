@@ -53,6 +53,36 @@ jobs:
       - name: Unit tests
         run: npx vitest run --reporter=verbose
 
+  migration-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Check migration status
+        run: |
+          OUTPUT=$(supabase migration list 2>&1)
+          echo "$OUTPUT"
+          # Fail if any local migration is not applied remotely
+          if echo "$OUTPUT" | grep -E '^\s+[0-9]+\s+\|\s+$'; then
+            echo "::error::Local migrations exist that are not applied to remote DB."
+            echo "Run 'supabase db push' to apply pending migrations."
+            exit 1
+          fi
+          echo "All local migrations are applied remotely."
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -82,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     if: always()
-    needs: [lint-and-typecheck, test, build]
+    needs: [lint-and-typecheck, test, build, migration-check]
     steps:
       - name: Check results
         run: |

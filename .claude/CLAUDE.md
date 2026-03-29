@@ -95,6 +95,12 @@ supabase/
 - 消費者只能讀 active 狀態的刺青師
 - 管理員可讀寫所有資料
 
+### Supabase Migration 安全規則
+- **禁止** `supabase migration repair --status applied` 除非 100% 確認 SQL 已在 remote 執行過
+- `repair --status applied` 只寫 history table，**不會執行 SQL**
+- 正確做法：先 `repair --status reverted` 再 `supabase db push` 讓 CLI 真的執行
+- 新增 migration 後，一定要用 `supabase db push` 驗證，不要只看 `migration list`
+
 ### 環境變數
 
 ```env
