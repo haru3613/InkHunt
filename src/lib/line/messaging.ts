@@ -15,32 +15,92 @@ function getMessagingClient(): messagingApi.MessagingApiClient {
 }
 
 export function buildInquiryNotificationMessage(
-  description: string,
+  inquiry: Inquiry,
   baseUrl: string,
-  inquiryId: string,
 ): messagingApi.FlexMessage {
+  const consumerLabel = inquiry.consumer_name || '匿名用戶'
+  const details: messagingApi.FlexComponent[] = []
+
+  if (inquiry.body_part) {
+    details.push({
+      type: 'box',
+      layout: 'horizontal',
+      contents: [
+        { type: 'text', text: '部位', size: 'sm', color: '#999999', flex: 2 },
+        { type: 'text', text: inquiry.body_part, size: 'sm', color: '#EEEEEE', flex: 5, wrap: true },
+      ],
+    })
+  }
+
+  if (inquiry.size_estimate) {
+    details.push({
+      type: 'box',
+      layout: 'horizontal',
+      contents: [
+        { type: 'text', text: '尺寸', size: 'sm', color: '#999999', flex: 2 },
+        { type: 'text', text: inquiry.size_estimate, size: 'sm', color: '#EEEEEE', flex: 5 },
+      ],
+    })
+  }
+
+  if (inquiry.budget_min != null || inquiry.budget_max != null) {
+    const budgetText =
+      inquiry.budget_min != null && inquiry.budget_max != null
+        ? `${formatPrice(inquiry.budget_min)} ~ ${formatPrice(inquiry.budget_max)}`
+        : inquiry.budget_min != null
+          ? `${formatPrice(inquiry.budget_min)} 起`
+          : `${formatPrice(inquiry.budget_max!)} 以內`
+    details.push({
+      type: 'box',
+      layout: 'horizontal',
+      contents: [
+        { type: 'text', text: '預算', size: 'sm', color: '#999999', flex: 2 },
+        { type: 'text', text: budgetText, size: 'sm', color: '#C8A97E', flex: 5, weight: 'bold' },
+      ],
+    })
+  }
+
   return {
     type: 'flex',
-    altText: `新詢價：${truncate(description, 47)}`,
+    altText: `${consumerLabel} 的新詢價：${truncate(inquiry.description, 40)}`,
     contents: {
       type: 'bubble',
+      styles: {
+        body: { backgroundColor: '#1A1A1A' },
+        footer: { backgroundColor: '#1A1A1A' },
+      },
       body: {
         type: 'box',
         layout: 'vertical',
+        spacing: 'md',
         contents: [
           {
             type: 'text',
             text: '收到新詢價',
             weight: 'bold',
             size: 'lg',
+            color: '#F5F0EB',
           },
           {
             type: 'text',
-            text: truncate(description, 50),
+            text: `來自 ${consumerLabel}`,
             size: 'sm',
-            color: '#999999',
+            color: '#C8A97E',
+          },
+          { type: 'separator', color: '#333333' },
+          {
+            type: 'text',
+            text: truncate(inquiry.description, 80),
+            size: 'sm',
+            color: '#CCCCCC',
             wrap: true,
           },
+          ...(details.length > 0
+            ? [
+                { type: 'separator', color: '#333333' } as messagingApi.FlexComponent,
+                ...details,
+              ]
+            : []),
         ],
       },
       footer: {
@@ -52,7 +112,7 @@ export function buildInquiryNotificationMessage(
             action: {
               type: 'uri',
               label: '查看詳情',
-              uri: `${baseUrl}/artist/dashboard?inquiry=${inquiryId}`,
+              uri: `${baseUrl}/artist/dashboard?inquiry=${inquiry.id}`,
             },
             style: 'primary',
             color: '#C8A97E',
@@ -132,11 +192,7 @@ export async function pushNewInquiryNotification(
 
   const client = getMessagingClient()
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
-  const message = buildInquiryNotificationMessage(
-    inquiry.description,
-    baseUrl,
-    inquiry.id,
-  )
+  const message = buildInquiryNotificationMessage(inquiry, baseUrl)
   await client.pushMessage({ to: lineUserId, messages: [message] })
 }
 
