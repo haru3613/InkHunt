@@ -3,27 +3,8 @@ import { test, expect } from '../../fixtures'
 import { ChatPage } from '../../pages/chat.page'
 import { TEST_INQUIRY } from '../../fixtures/test-data'
 
-/**
- * E2E tests for sending an image inside the inquiry chat.
- *
- * The upload flow in ChatInput.tsx is:
- *   1. User clicks the lucide <Image> icon button.
- *   2. A hidden <input type="file" accept="image/jpeg,image/png,image/webp"> is triggered.
- *   3. onChange calls uploadFile('inquiries', file) from src/lib/upload/client.ts.
- *   4. client.ts POSTs to /api/upload/signed-url ->receives { signed_url, public_url }.
- *   5. client.ts PUTs the file bytes to signed_url.
- *   6. onSendMessage('image', public_url) is called, which POSTs to /api/inquiries/:id/messages.
- *   7. The returned message (type: "image") renders as <img> in the chat window.
- *
- * The api-mocks fixture (auto: true) already intercepts:
- *   - /api/upload/signed-url  ->but returns camelCase keys (signedUrl / publicUrl).
- *     client.ts expects snake_case (signed_url / public_url), so we override this
- *     route inside the test to return the correct shape.
- *   - /api/inquiries/*/messages (POST) ->returns a stub new message.
- *
- * We add targeted route overrides for the upload step so assertions can be made
- * on whether both network calls were attempted.
- */
+// E2E tests for sending an image inside the inquiry chat.
+// Tests the full upload flow: click image button, select file, upload, render in chat.
 
 const TEST_IMAGE_PATH = path.resolve(
   __dirname,
