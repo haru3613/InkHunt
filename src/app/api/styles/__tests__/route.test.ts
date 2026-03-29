@@ -9,6 +9,13 @@ vi.mock('@/lib/supabase/queries/styles', () => ({
   getAllStyles: vi.fn(),
 }))
 
+vi.mock('@/lib/auth/helpers', () => ({
+  handleApiError: (err: unknown) => {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return Response.json({ error: message }, { status: 500 })
+  },
+}))
+
 import { GET } from '../route'
 import { getAllStyles } from '@/lib/supabase/queries/styles'
 
