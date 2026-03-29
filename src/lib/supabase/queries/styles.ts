@@ -73,27 +73,36 @@ export async function getAllArtistCounts(): Promise<Map<string, number>> {
   if (!supabase) return new Map()
   const counts = new Map<string, number>()
 
-  const { data: artistStyles, error: asError } = await supabase
-    .from('artist_styles')
-    .select('style_id, artists!inner(status)')
-    .eq('artists.status', 'active')
-
-  if (asError || !artistStyles) return counts
-
-  const styleIdCounts = new Map<number, number>()
-  for (const row of artistStyles) {
-    styleIdCounts.set(row.style_id, (styleIdCounts.get(row.style_id) ?? 0) + 1)
-  }
-
+  // Get all styles first
   const { data: styles } = await supabase
     .from('styles')
     .select('id, slug')
 
   if (!styles) return counts
 
+  // Get all artist_style links for active artists
+  const { data: artistStyles, error: asError } = await supabase
+    .from('artist_styles')
+    .select('style_id, artists!inner(status)')
+    .eq('artists.status', 'active')
+
+  if (asError || !artistStyles) {
+    // If query fails, return all zeros
+    for (const style of styles) {
+      counts.set(style.slug, 0)
+    }
+    return counts
+  }
+
+  // Count by style_id
+  const styleIdCounts = new Map<number, number>()
+  for (const row of artistStyles) {
+    styleIdCounts.set(row.style_id, (styleIdCounts.get(row.style_id) ?? 0) + 1)
+  }
+
+  // Map style IDs to slugs
   for (const style of styles) {
-    const count = styleIdCounts.get(style.id) ?? 0
-    counts.set(style.slug, count)
+    counts.set(style.slug, styleIdCounts.get(style.id) ?? 0)
   }
 
   return counts

@@ -187,13 +187,17 @@ async function getArtistLineId(artistId: string): Promise<string | null> {
 export async function pushNewInquiryNotification(
   inquiry: Inquiry,
 ): Promise<void> {
-  const lineUserId = await getArtistLineId(inquiry.artist_id)
-  if (!lineUserId) return
+  try {
+    const lineUserId = await getArtistLineId(inquiry.artist_id)
+    if (!lineUserId) return
 
-  const client = getMessagingClient()
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
-  const message = buildInquiryNotificationMessage(inquiry, baseUrl)
-  await client.pushMessage({ to: lineUserId, messages: [message] })
+    const client = getMessagingClient()
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
+    const message = buildInquiryNotificationMessage(inquiry, baseUrl)
+    await client.pushMessage({ to: lineUserId, messages: [message] })
+  } catch {
+    // LINE notification failure is non-fatal — do not propagate to API handler
+  }
 }
 
 export async function pushQuoteNotification(
@@ -201,18 +205,22 @@ export async function pushQuoteNotification(
   quote: Quote,
   artistName: string,
 ): Promise<void> {
-  const client = getMessagingClient()
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
-  const message = buildQuoteNotificationMessage(
-    artistName,
-    quote.price,
-    baseUrl,
-    inquiry.id,
-  )
-  await client.pushMessage({
-    to: inquiry.consumer_line_id,
-    messages: [message],
-  })
+  try {
+    const client = getMessagingClient()
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
+    const message = buildQuoteNotificationMessage(
+      artistName,
+      quote.price,
+      baseUrl,
+      inquiry.id,
+    )
+    await client.pushMessage({
+      to: inquiry.consumer_line_id,
+      messages: [message],
+    })
+  } catch {
+    // LINE notification failure is non-fatal — do not propagate to API handler
+  }
 }
 
 export async function pushNewMessageNotification(
@@ -221,23 +229,27 @@ export async function pushNewMessageNotification(
   senderType: 'consumer' | 'artist',
   senderName: string,
 ): Promise<void> {
-  let recipientLineId: string
-  if (senderType === 'consumer') {
-    const lineUserId = await getArtistLineId(inquiry.artist_id)
-    if (!lineUserId) return
-    recipientLineId = lineUserId
-  } else {
-    recipientLineId = inquiry.consumer_line_id
+  try {
+    let recipientLineId: string
+    if (senderType === 'consumer') {
+      const lineUserId = await getArtistLineId(inquiry.artist_id)
+      if (!lineUserId) return
+      recipientLineId = lineUserId
+    } else {
+      recipientLineId = inquiry.consumer_line_id
+    }
+
+    const client = getMessagingClient()
+    const contentPreview =
+      chatMessage.message_type === 'image'
+        ? '傳了一張圖片'
+        : truncate(chatMessage.content ?? '', 50)
+
+    await client.pushMessage({
+      to: recipientLineId,
+      messages: [{ type: 'text', text: `${senderName}：${contentPreview}` }],
+    })
+  } catch {
+    // LINE notification failure is non-fatal — do not propagate to API handler
   }
-
-  const client = getMessagingClient()
-  const contentPreview =
-    chatMessage.message_type === 'image'
-      ? '傳了一張圖片'
-      : truncate(chatMessage.content ?? '', 50)
-
-  await client.pushMessage({
-    to: recipientLineId,
-    messages: [{ type: 'text', text: `${senderName}：${contentPreview}` }],
-  })
 }

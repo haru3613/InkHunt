@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { Badge } from '@/components/ui/badge'
@@ -66,6 +67,22 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
                 </Badge>
               )}
             </div>
+
+            {artist.portfolio_items.length > 0 && (
+              <div className="flex gap-1">
+                {artist.portfolio_items.slice(0, 3).map((item) => (
+                  <div key={item.id} className="relative aspect-square w-1/3 overflow-hidden">
+                    <Image
+                      src={item.thumbnail_url ?? item.image_url}
+                      alt={item.description ?? `${artist.display_name} work`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 33vw, 120px"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             <PriceRange min={artist.price_min} max={artist.price_max} />
           </CardContent>

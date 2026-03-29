@@ -32,7 +32,14 @@
     "selectRegion": "選擇地區",
     "allStyles": "全部",
     "recommended": "推薦",
-    "priceFrom": "{price} 起"
+    "priceFrom": "{price} 起",
+    "cityTaipei": "台北市",
+    "cityNewTaipei": "新北市",
+    "cityTaoyuan": "桃園市",
+    "cityTaichung": "台中市",
+    "cityKaohsiung": "高雄市",
+    "cityTainan": "台南市",
+    "cityPingtung": "屏東縣"
   },
   "artistProfile": {
     "portfolio": "作品集",
