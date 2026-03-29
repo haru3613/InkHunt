@@ -72,29 +72,34 @@ export default async function ArtistProfilePage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <div className="mx-auto max-w-4xl px-4 py-6">
+      <div className="mx-auto max-w-6xl px-4 py-6">
         <BackButton />
 
-        <div className="mt-4">
-          <ArtistProfile artist={artist} />
-          <div className="mt-3">
-            <ArtistCompareAction
-              artist={{
-                id: artist.id,
-                display_name: artist.display_name,
-                slug: artist.slug,
-                avatar_url: artist.avatar_url ?? null,
-              }}
-            />
+        <div className="mt-4 lg:flex lg:gap-8">
+          {/* Left column — artist info (sticky on desktop) */}
+          <div className="lg:w-[340px] lg:shrink-0">
+            <div className="lg:sticky lg:top-20">
+              <ArtistProfile artist={artist} />
+              <div className="mt-3">
+                <ArtistCompareAction
+                  artist={{
+                    id: artist.id,
+                    display_name: artist.display_name,
+                    slug: artist.slug,
+                    avatar_url: artist.avatar_url ?? null,
+                  }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Portfolio */}
-        <div className="mt-6">
-          <h2 className="font-display mb-4 text-lg font-bold text-foreground">
-            {t("portfolio")}
-          </h2>
-          <PortfolioSection items={artist.portfolio_items} />
+          {/* Right column — portfolio */}
+          <div className="mt-6 min-w-0 flex-1 lg:mt-0">
+            <h2 className="font-display mb-4 text-lg font-bold text-foreground">
+              {t("portfolio")}
+            </h2>
+            <PortfolioSection items={artist.portfolio_items} />
+          </div>
         </div>
       </div>
 

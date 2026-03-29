@@ -24,7 +24,7 @@ export function CompareFloatingBar({ artists, onRemove, onClear }: CompareFloati
     <div
       role="region"
       aria-label={t('selected', { count: artists.length })}
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-xl"
+      className="fixed inset-x-0 bottom-14 z-50 border-t border-border bg-card pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-xl lg:bottom-0"
     >
       <div className="container mx-auto flex flex-wrap items-center gap-3 px-4">
         <span className="shrink-0 text-sm font-medium text-foreground">

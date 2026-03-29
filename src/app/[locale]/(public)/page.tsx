@@ -34,7 +34,7 @@ export default async function HomePage({
       <JsonLd data={websiteJsonLd} />
 
       {/* Hero — full-bleed poster */}
-      <section className="relative flex min-h-svh items-end">
+      <section className="relative z-0 flex min-h-svh items-end">
         <Image
           src={HERO_BG_URL}
           alt=""
