@@ -10,7 +10,17 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('inquiries', 'inquiries', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Allow public read access to both buckets
+-- Drop existing policies if any (idempotent)
+DROP POLICY IF EXISTS "Public read access for portfolio" ON storage.objects;
+DROP POLICY IF EXISTS "Public read access for inquiries" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload to portfolio" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload to inquiries" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update own portfolio uploads" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update own inquiry uploads" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete own portfolio uploads" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete own inquiry uploads" ON storage.objects;
+
+-- Public read access
 CREATE POLICY "Public read access for portfolio" ON storage.objects
   FOR SELECT
   USING (bucket_id = 'portfolio');
@@ -19,19 +29,37 @@ CREATE POLICY "Public read access for inquiries" ON storage.objects
   FOR SELECT
   USING (bucket_id = 'inquiries');
 
--- Allow authenticated users to upload to portfolio (artists)
+-- Upload: scoped to user's own folder (userId/filename pattern)
 CREATE POLICY "Authenticated users can upload to portfolio" ON storage.objects
   FOR INSERT
   TO authenticated
-  WITH CHECK (bucket_id = 'portfolio');
+  WITH CHECK (
+    bucket_id = 'portfolio'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
 
--- Allow authenticated users to upload to inquiries (consumers)
 CREATE POLICY "Authenticated users can upload to inquiries" ON storage.objects
   FOR INSERT
   TO authenticated
-  WITH CHECK (bucket_id = 'inquiries');
+  WITH CHECK (
+    bucket_id = 'inquiries'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
 
--- Allow users to delete their own uploads
+-- Update: scoped to user's own uploads
+CREATE POLICY "Users can update own portfolio uploads" ON storage.objects
+  FOR UPDATE
+  TO authenticated
+  USING (bucket_id = 'portfolio' AND (storage.foldername(name))[1] = auth.uid()::text)
+  WITH CHECK (bucket_id = 'portfolio' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users can update own inquiry uploads" ON storage.objects
+  FOR UPDATE
+  TO authenticated
+  USING (bucket_id = 'inquiries' AND (storage.foldername(name))[1] = auth.uid()::text)
+  WITH CHECK (bucket_id = 'inquiries' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Delete: scoped to user's own uploads
 CREATE POLICY "Users can delete own portfolio uploads" ON storage.objects
   FOR DELETE
   TO authenticated
