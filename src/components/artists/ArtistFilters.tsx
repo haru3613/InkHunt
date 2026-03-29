@@ -18,14 +18,14 @@ interface ArtistFiltersProps {
   styles: Style[]
 }
 
-const CITIES = [
-  '台北市',
-  '新北市',
-  '桃園市',
-  '台中市',
-  '高雄市',
-  '台南市',
-  '屏東縣',
+const CITY_KEYS = [
+  { key: 'cityTaipei', value: '台北市' },
+  { key: 'cityNewTaipei', value: '新北市' },
+  { key: 'cityTaoyuan', value: '桃園市' },
+  { key: 'cityTaichung', value: '台中市' },
+  { key: 'cityKaohsiung', value: '高雄市' },
+  { key: 'cityTainan', value: '台南市' },
+  { key: 'cityPingtung', value: '屏東縣' },
 ] as const
 
 export function ArtistFilters({ styles }: ArtistFiltersProps) {
@@ -76,9 +76,9 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('allRegions')}</SelectItem>
-            {CITIES.map((city) => (
-              <SelectItem key={city} value={city}>
-                {city}
+            {CITY_KEYS.map(({ key, value }) => (
+              <SelectItem key={value} value={value}>
+                {t(key)}
               </SelectItem>
             ))}
           </SelectContent>

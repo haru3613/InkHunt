@@ -32,7 +32,14 @@
     "selectRegion": "Select region",
     "allStyles": "All",
     "recommended": "Featured",
-    "priceFrom": "From {price}"
+    "priceFrom": "From {price}",
+    "cityTaipei": "Taipei",
+    "cityNewTaipei": "New Taipei",
+    "cityTaoyuan": "Taoyuan",
+    "cityTaichung": "Taichung",
+    "cityKaohsiung": "Kaohsiung",
+    "cityTainan": "Tainan",
+    "cityPingtung": "Pingtung"
   },
   "artistProfile": {
     "portfolio": "Portfolio",
