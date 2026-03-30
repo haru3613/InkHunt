@@ -22,7 +22,7 @@ describe('createServerClient', () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://test.supabase.co')
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'test-anon-key')
 
-    mockCreateSSRServerClient.mockReturnValue('ssr-client' as ReturnType<typeof createSSRServerClient>)
+    mockCreateSSRServerClient.mockReturnValue('ssr-client' as unknown as ReturnType<typeof createSSRServerClient>)
     mockCookies.mockResolvedValue({
       getAll: vi.fn(() => []),
       set: vi.fn(),
@@ -115,7 +115,7 @@ describe('createAdminClient', () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://test.supabase.co')
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key')
 
-    mockCreateClient.mockReturnValue('admin-client' as ReturnType<typeof createClient>)
+    mockCreateClient.mockReturnValue('admin-client' as unknown as ReturnType<typeof createClient>)
   })
 
   it('calls createClient with the correct URL and service role key', async () => {
