@@ -4,8 +4,11 @@ const mockFrom = vi.fn()
 const mockClient = { from: mockFrom }
 
 vi.mock('@/lib/supabase/server', () => ({
-  createAdminClient: () => mockClient,
+  createAdminClient: vi.fn(() => mockClient),
 }))
+
+import { createAdminClient } from '@/lib/supabase/server'
+import { getAllStyles, getStyleBySlug, getArtistCountByStyle, getAllArtistCounts } from '../styles'
 
 function chainQuery(data: unknown, error: unknown = null) {
   const chain: Record<string, unknown> = {}
@@ -31,8 +34,6 @@ function chainQueryList(data: unknown[], error: unknown = null) {
   chain.order = vi.fn().mockResolvedValue({ data, error })
   return chain
 }
-
-import { getAllStyles, getStyleBySlug, getArtistCountByStyle, getAllArtistCounts } from '../styles'
 
 describe('getAllStyles', () => {
   beforeEach(() => {
@@ -66,6 +67,14 @@ describe('getAllStyles', () => {
 
     expect(result).toEqual([])
   })
+
+  it('returns [] when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getAllStyles()
+
+    expect(result).toEqual([])
+  })
 })
 
 describe('getStyleBySlug', () => {
@@ -89,6 +98,14 @@ describe('getStyleBySlug', () => {
     mockFrom.mockReturnValue(chain)
 
     const result = await getStyleBySlug('nonexistent')
+
+    expect(result).toBeNull()
+  })
+
+  it('returns null when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getStyleBySlug('fine-line')
 
     expect(result).toBeNull()
   })
@@ -132,6 +149,14 @@ describe('getArtistCountByStyle', () => {
     })
 
     const result = await getArtistCountByStyle('nonexistent')
+
+    expect(result).toBe(0)
+  })
+
+  it('returns 0 when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getArtistCountByStyle('fine-line')
 
     expect(result).toBe(0)
   })
@@ -195,6 +220,15 @@ describe('getAllArtistCounts', () => {
 
     const result = await getAllArtistCounts()
 
+    expect(result.size).toBe(0)
+  })
+
+  it('returns empty Map when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getAllArtistCounts()
+
+    expect(result).toBeInstanceOf(Map)
     expect(result.size).toBe(0)
   })
 })

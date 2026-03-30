@@ -4,10 +4,11 @@ const mockFrom = vi.fn()
 const mockClient = { from: mockFrom }
 
 vi.mock('@/lib/supabase/server', () => ({
-  createAdminClient: () => mockClient,
+  createAdminClient: vi.fn(() => mockClient),
 }))
 
-import { transformArtistRow, getArtistBySlug, getFeaturedArtists, getArtists } from '../artists'
+import { createAdminClient } from '@/lib/supabase/server'
+import { transformArtistRow, getArtistBySlug, getFeaturedArtists, getArtists, getAllArtistSlugs } from '../artists'
 
 const BASE_ARTIST = {
   id: 'a1',
@@ -146,6 +147,14 @@ describe('getArtistBySlug', () => {
 
     expect(result).toBeNull()
   })
+
+  it('returns null when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getArtistBySlug('test-artist')
+
+    expect(result).toBeNull()
+  })
 })
 
 describe('getFeaturedArtists', () => {
@@ -164,6 +173,14 @@ describe('getFeaturedArtists', () => {
 
   it('returns empty array on error', async () => {
     mockFrom.mockReturnValue(makeThenable({ data: null, error: { message: 'fail' } }))
+
+    const result = await getFeaturedArtists()
+
+    expect(result).toEqual([])
+  })
+
+  it('returns [] when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
 
     const result = await getFeaturedArtists()
 
@@ -223,5 +240,58 @@ describe('getArtists', () => {
 
     expect(result.total).toBe(1)
     expect(result.data[0].city).toBe('台北市')
+  })
+
+  it('returns { data: [], total: 0 } when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getArtists({ page: 1, pageSize: 12 })
+
+    expect(result.data).toEqual([])
+    expect(result.total).toBe(0)
+  })
+})
+
+describe('getAllArtistSlugs', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('returns slugs with updated_at for active artists', async () => {
+    const slugData = [
+      { slug: 'artist-one', updated_at: '2025-01-01T00:00:00Z' },
+      { slug: 'artist-two', updated_at: '2025-02-01T00:00:00Z' },
+    ]
+
+    mockFrom.mockReturnValue(makeThenable({ data: slugData, error: null }))
+
+    const result = await getAllArtistSlugs()
+
+    expect(result).toHaveLength(2)
+    expect(result[0].slug).toBe('artist-one')
+    expect(result[0].updated_at).toBe('2025-01-01T00:00:00Z')
+    expect(result[1].slug).toBe('artist-two')
+  })
+
+  it('returns empty array on error', async () => {
+    mockFrom.mockReturnValue(makeThenable({ data: null, error: { message: 'query failed' } }))
+
+    const result = await getAllArtistSlugs()
+
+    expect(result).toEqual([])
+  })
+
+  it('returns empty array when data is null', async () => {
+    mockFrom.mockReturnValue(makeThenable({ data: null, error: null }))
+
+    const result = await getAllArtistSlugs()
+
+    expect(result).toEqual([])
+  })
+
+  it('returns [] when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getAllArtistSlugs()
+
+    expect(result).toEqual([])
   })
 })
