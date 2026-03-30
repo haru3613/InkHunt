@@ -13,6 +13,10 @@
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "staging:up": "npx supabase start",
+    "staging:seed": "SUPABASE_URL=http://127.0.0.1:54321 npx tsx scripts/seed-staging.ts",
+    "staging:reset": "npx supabase db reset",
+    "staging:down": "npx supabase stop",
     "prepare": "husky"
   },
   "dependencies": {
@@ -49,6 +53,7 @@
     "jsdom": "^29.0.1",
     "lint-staged": "^16.4.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.1.2"
   },
