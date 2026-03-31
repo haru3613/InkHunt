@@ -32,16 +32,18 @@ const dataWithImages: PortfolioData = {
 }
 
 describe('StepPortfolio', () => {
-  let onChange: ReturnType<typeof vi.fn>
-  let onSubmit: ReturnType<typeof vi.fn>
-  let onSkip: ReturnType<typeof vi.fn>
-  let onBack: ReturnType<typeof vi.fn>
+  let onChangeMock: ReturnType<typeof vi.fn>
+  let onChange: (data: PortfolioData) => void
+  let onSubmit: () => void
+  let onSkip: () => void
+  let onBack: () => void
 
   beforeEach(() => {
-    onChange = vi.fn()
-    onSubmit = vi.fn()
-    onSkip = vi.fn()
-    onBack = vi.fn()
+    onChangeMock = vi.fn()
+    onChange = onChangeMock as unknown as (data: PortfolioData) => void
+    onSubmit = vi.fn() as unknown as () => void
+    onSkip = vi.fn() as unknown as () => void
+    onBack = vi.fn() as unknown as () => void
   })
 
   it('renders drop zone area', () => {
@@ -228,7 +230,7 @@ describe('StepPortfolio', () => {
     fireEvent.change(fileInput, { target: { files: [file] } })
 
     expect(onChange).toHaveBeenCalledOnce()
-    const callArg = onChange.mock.calls[0][0] as PortfolioData
+    const callArg = onChangeMock.mock.calls[0][0] as PortfolioData
     expect(callArg.files).toHaveLength(1)
     expect(callArg.files[0]).toBe(file)
     expect(callArg.previewUrls).toHaveLength(1)
@@ -291,7 +293,7 @@ describe('StepPortfolio', () => {
     fireEvent.click(removeButtons[0])
 
     expect(onChange).toHaveBeenCalledOnce()
-    const callArg = onChange.mock.calls[0][0] as PortfolioData
+    const callArg = onChangeMock.mock.calls[0][0] as PortfolioData
     expect(callArg.files).toHaveLength(1)
     expect(callArg.files[0]).toBe(dataWithImages.files[1])
     expect(callArg.previewUrls).toHaveLength(1)
@@ -315,7 +317,7 @@ describe('StepPortfolio', () => {
     fireEvent.click(removeButtons[1])
 
     expect(onChange).toHaveBeenCalledOnce()
-    const callArg = onChange.mock.calls[0][0] as PortfolioData
+    const callArg = onChangeMock.mock.calls[0][0] as PortfolioData
     expect(callArg.files).toHaveLength(1)
     expect(callArg.files[0]).toBe(dataWithImages.files[0])
     expect(callArg.previewUrls).toHaveLength(1)

@@ -136,7 +136,7 @@ describe('InquiryForm', () => {
     makeAuthGuest()
     // Default router push spy
     const pushMock = vi.fn()
-    mockedUseRouter.mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>)
+    mockedUseRouter.mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>)
   })
 
   describe('visibility', () => {
@@ -322,7 +322,7 @@ describe('InquiryForm', () => {
 
     it('POSTs to /api/inquiries with artist_id and form data', async () => {
       const pushMock = vi.fn()
-      mockedUseRouter.mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>)
+      mockedUseRouter.mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>)
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -355,7 +355,7 @@ describe('InquiryForm', () => {
 
     it('redirects to /inquiries/:id after successful submission', async () => {
       const pushMock = vi.fn()
-      mockedUseRouter.mockReturnValue({ push: pushMock } as ReturnType<typeof useRouter>)
+      mockedUseRouter.mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>)
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,

@@ -8,7 +8,7 @@ import type { Inquiry } from '@/types/database'
 // Stub utils so tests are not sensitive to timestamp formatting or initials logic
 vi.mock('@/lib/utils', () => ({
   cn: (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' '),
-  formatRelativeTime: (_ts: string) => '剛才',
+  formatRelativeTime: () => '剛才',
   getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
 }))
 

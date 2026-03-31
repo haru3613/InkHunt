@@ -19,14 +19,14 @@ const validData: PriceLocationData = {
 }
 
 describe('StepPriceLocation', () => {
-  let onChange: ReturnType<typeof vi.fn>
-  let onNext: ReturnType<typeof vi.fn>
-  let onBack: ReturnType<typeof vi.fn>
+  let onChange: (data: PriceLocationData) => void
+  let onNext: () => void
+  let onBack: () => void
 
   beforeEach(() => {
-    onChange = vi.fn()
-    onNext = vi.fn()
-    onBack = vi.fn()
+    onChange = vi.fn() as unknown as (data: PriceLocationData) => void
+    onNext = vi.fn() as unknown as () => void
+    onBack = vi.fn() as unknown as () => void
   })
 
   it('renders city buttons for all groups', () => {

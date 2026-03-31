@@ -19,10 +19,10 @@ const SAMPLE_TEMPLATES: QuoteTemplate[] = [
 ]
 
 describe('QuoteTemplateManager', () => {
-  let onSave: ReturnType<typeof vi.fn>
+  let onSave: ReturnType<typeof vi.fn<(templates: QuoteTemplate[]) => Promise<void>>>
 
   beforeEach(() => {
-    onSave = vi.fn().mockResolvedValue(undefined)
+    onSave = vi.fn<(templates: QuoteTemplate[]) => Promise<void>>().mockResolvedValue(undefined)
   })
 
   it('renders empty state when no templates', () => {

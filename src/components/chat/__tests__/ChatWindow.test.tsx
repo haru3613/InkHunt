@@ -14,7 +14,7 @@ vi.mock('../MessageBubble', () => ({
 }))
 
 vi.mock('../ChatInput', () => ({
-  ChatInput: (_props: Record<string, unknown>) => <div data-testid="chat-input" />,
+  ChatInput: () => <div data-testid="chat-input" />,
 }))
 
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'

@@ -15,12 +15,12 @@ const filledData: BasicInfoData = {
 }
 
 describe('StepBasicInfo', () => {
-  let onChange: ReturnType<typeof vi.fn>
-  let onNext: ReturnType<typeof vi.fn>
+  let onChange: (data: BasicInfoData) => void
+  let onNext: () => void
 
   beforeEach(() => {
-    onChange = vi.fn()
-    onNext = vi.fn()
+    onChange = vi.fn() as unknown as (data: BasicInfoData) => void
+    onNext = vi.fn() as unknown as () => void
   })
 
   it('renders all three input fields', () => {

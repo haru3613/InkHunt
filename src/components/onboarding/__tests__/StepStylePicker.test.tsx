@@ -36,14 +36,14 @@ const fiveSelectedData: StylePickerData = {
 }
 
 describe('StepStylePicker', () => {
-  let onChange: ReturnType<typeof vi.fn>
-  let onNext: ReturnType<typeof vi.fn>
-  let onBack: ReturnType<typeof vi.fn>
+  let onChange: (data: StylePickerData) => void
+  let onNext: () => void
+  let onBack: () => void
 
   beforeEach(() => {
-    onChange = vi.fn()
-    onNext = vi.fn()
-    onBack = vi.fn()
+    onChange = vi.fn() as unknown as (data: StylePickerData) => void
+    onNext = vi.fn() as unknown as () => void
+    onBack = vi.fn() as unknown as () => void
   })
 
   it('renders all style groups', () => {
