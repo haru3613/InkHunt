@@ -460,7 +460,7 @@ describe('InquiryForm', () => {
       makeAuthLoggedIn()
       // Use a stateful wrapper so open prop changes propagate correctly
       const onOpenChange = vi.fn()
-      let currentOpen = true
+      const currentOpen = true
 
       const { rerender } = render(
         <InquiryForm {...defaultProps} open={true} onOpenChange={onOpenChange} />,
