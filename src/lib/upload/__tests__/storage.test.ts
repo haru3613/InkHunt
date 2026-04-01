@@ -1,5 +1,17 @@
-import { describe, it, expect } from 'vitest'
-import { validateUploadRequest } from '../storage'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { validateUploadRequest, createSignedUploadUrl } from '../storage'
+
+const mockCreateSignedUploadUrl = vi.fn()
+const mockGetPublicUrl = vi.fn()
+const mockStorageFrom = vi.fn(() => ({
+  createSignedUploadUrl: mockCreateSignedUploadUrl,
+  getPublicUrl: mockGetPublicUrl,
+}))
+const mockServerClient = { storage: { from: mockStorageFrom } }
+
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(async () => mockServerClient),
+}))
 
 describe('validateUploadRequest', () => {
   it('accepts valid image/jpeg', () => {
@@ -75,5 +87,72 @@ describe('validateUploadRequest', () => {
         content_type: 'image/jpeg',
       })
     }
+  })
+})
+
+describe('createSignedUploadUrl', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetPublicUrl.mockReturnValue({
+      data: { publicUrl: 'https://cdn.example.com/portfolio/user1/file.jpg' },
+    })
+  })
+
+  it('returns signed_url, public_url, and path', async () => {
+    mockCreateSignedUploadUrl.mockResolvedValue({
+      data: { signedUrl: 'https://storage.example.com/signed?token=abc' },
+      error: null,
+    })
+
+    const result = await createSignedUploadUrl('portfolio', 'user1', 'tattoo.jpg', 'image/jpeg')
+
+    expect(result.signed_url).toBe('https://storage.example.com/signed?token=abc')
+    expect(result.public_url).toBe('https://cdn.example.com/portfolio/user1/file.jpg')
+    expect(result.path).toBeTruthy()
+  })
+
+  it('path contains userId and correct extension', async () => {
+    mockCreateSignedUploadUrl.mockResolvedValue({
+      data: { signedUrl: 'https://storage.example.com/signed?token=xyz' },
+      error: null,
+    })
+
+    const result = await createSignedUploadUrl('portfolio', 'user42', 'artwork.png', 'image/png')
+
+    expect(result.path).toMatch(/^user42\//)
+    expect(result.path).toMatch(/\.png$/)
+  })
+
+  it('throws when createSignedUploadUrl fails with error message', async () => {
+    mockCreateSignedUploadUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'bucket not found' },
+    })
+
+    await expect(
+      createSignedUploadUrl('portfolio', 'user1', 'photo.jpg', 'image/jpeg')
+    ).rejects.toThrow('Failed to create signed URL: bucket not found')
+  })
+
+  it("throws with 'unknown' when error has no message", async () => {
+    mockCreateSignedUploadUrl.mockResolvedValue({
+      data: null,
+      error: {},
+    })
+
+    await expect(
+      createSignedUploadUrl('portfolio', 'user1', 'photo.jpg', 'image/jpeg')
+    ).rejects.toThrow('Failed to create signed URL: unknown')
+  })
+
+  it('uses the extension from the filename for the generated path', async () => {
+    mockCreateSignedUploadUrl.mockResolvedValue({
+      data: { signedUrl: 'https://storage.example.com/signed?token=def' },
+      error: null,
+    })
+
+    const result = await createSignedUploadUrl('portfolio', 'user1', 'design.webp', 'image/webp')
+
+    expect(result.path).toMatch(/\.webp$/)
   })
 })
