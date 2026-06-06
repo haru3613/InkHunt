@@ -1,19 +1,48 @@
 import { formatPriceRange, formatIgUrl } from '@/lib/utils'
+import type { ReviewSummary } from '@/lib/reviews'
 
 const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://inkhunt.tw'
 
-export function generateArtistJsonLd(artist: {
-  display_name: string
-  bio?: string | null
-  avatar_url?: string | null
-  city: string
-  district?: string | null
-  slug: string
-  price_min?: number | null
-  price_max?: number | null
-  ig_handle?: string | null
-}) {
+/**
+ * The slice of {@link ReviewSummary} the artist JSON-LD needs. Accepting a
+ * structural subset (rather than the full `ReviewSummary`) lets callers pass
+ * either `{ average, count }` or a complete summary object; the optional
+ * `distribution` field is tolerated but unused.
+ */
+type ArtistReviewSummary = Pick<ReviewSummary, 'average' | 'count'> & {
+  distribution?: ReviewSummary['distribution']
+}
+
+export function generateArtistJsonLd(
+  artist: {
+    display_name: string
+    bio?: string | null
+    avatar_url?: string | null
+    city: string
+    district?: string | null
+    slug: string
+    price_min?: number | null
+    price_max?: number | null
+    ig_handle?: string | null
+  },
+  reviewSummary?: ArtistReviewSummary,
+) {
   const igUrl = artist.ig_handle ? formatIgUrl(artist.ig_handle) : null
+
+  // Google forbids `aggregateRating` with zero reviews, so emit it only when a
+  // summary with at least one review is supplied. Leaving the value `undefined`
+  // otherwise keeps the serialized output byte-identical to the no-summary case,
+  // mirroring the `image` / `sameAs` conditional-omission pattern above.
+  const aggregateRating =
+    reviewSummary && reviewSummary.count > 0
+      ? {
+          '@type': 'AggregateRating',
+          ratingValue: reviewSummary.average,
+          reviewCount: reviewSummary.count,
+          bestRating: 5,
+          worstRating: 1,
+        }
+      : undefined
 
   return {
     '@context': 'https://schema.org',
@@ -30,6 +59,7 @@ export function generateArtistJsonLd(artist: {
     priceRange: formatPriceRange(artist.price_min, artist.price_max) ?? undefined,
     url: `${SITE_URL}/artists/${artist.slug}`,
     sameAs: igUrl ? [igUrl] : undefined,
+    aggregateRating,
   }
 }
 
