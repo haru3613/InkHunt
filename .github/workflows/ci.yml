@@ -59,17 +59,41 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The remote drift-check steps below run only when BOTH are true:
+      #   1. this PR actually changes supabase/migrations/** (detected here), AND
+      #   2. the repo variable SUPABASE_REMOTE_ENABLED == 'true'.
+      # The remote DB is intentionally OFF for now, so the variable is unset and
+      # the remote steps are skipped — this job passes with no secret. To resume
+      # drift checking once the remote DB is back: set repo variable
+      # SUPABASE_REMOTE_ENABLED=true and ensure SUPABASE_ACCESS_TOKEN is valid.
+      - name: Detect migration changes
+        id: detect
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}" >/dev/null 2>&1 || true
+          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- 'supabase/migrations/**' | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Migration files changed in this PR."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No supabase/migrations/** changes in this PR — skipping the remote check."
+          fi
 
       - uses: supabase/setup-cli@v1
+        if: steps.detect.outputs.changed == 'true' && vars.SUPABASE_REMOTE_ENABLED == 'true'
         with:
           version: latest
 
       - name: Link Supabase project
+        if: steps.detect.outputs.changed == 'true' && vars.SUPABASE_REMOTE_ENABLED == 'true'
         run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Check migration status
+        if: steps.detect.outputs.changed == 'true' && vars.SUPABASE_REMOTE_ENABLED == 'true'
         run: |
           OUTPUT=$(supabase migration list 2>&1)
           echo "$OUTPUT"
