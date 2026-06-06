@@ -23,12 +23,16 @@ migration and land in parallel; the write-path waits on the reviews table.
 |------|------------|---------|-----|
 | 1 | 2026-06-06 | HAR-373 review validation schema (`src/lib/validations/review.ts`), HAR-374 StarRating component (`src/components/shared/StarRating.tsx`), HAR-375 review aggregation util (`src/lib/reviews.ts`) | #77, #78, #76 — all squash-merged to `staging`, `ci-passed` green |
 | 2 | 2026-06-06 | HAR-380 `aggregateRating` in artist JSON-LD (`src/lib/seo.ts`, self-ideated), HAR-381 `ArtistReviewSummary` display component (`src/components/artist/ArtistReviewSummary.tsx`, self-ideated) | #80, #79 — squash-merged to `staging`, `ci-passed` green. v0.2 client-side display surface now complete (StarRating + aggregation + aggregateRating + summary). |
+| 3 | 2026-06-06 | HAR-382 `ReviewForm` presentational component (`src/components/artist/ReviewForm.tsx`, composes StarRating + Zod schema; self-ideated R2), HAR-383 `ReviewCard` presentational component (`src/components/artist/ReviewCard.tsx`, reuses StarRating; self-ideated R2) | #82, #81 — squash-merged to `staging`, `ci-passed` green. v0.2 client-side **input + single-card** surface now complete. |
 
-With Round 2 the v0.2 **client-side display** pillars are all shipped. What
-remains client-side is the **input** surface (a review form) and a **single
-review card** — both presentational, props-driven, gate-verifiable, and
-independent of the DB. They are queued as HAR-382 / HAR-383. The persisted
-write-path + API route (Wave 3) stays blocked on the reviews table (HAR-372).
+With Round 3 the v0.2 **client-side display + input** surface is essentially
+complete: validation schema, StarRating, aggregation util (incl. per-star
+`distribution`), `aggregateRating` JSON-LD, `ArtistReviewSummary`, `ReviewForm`,
+and `ReviewCard` are all shipped. The remaining genuinely-presentational slices
+are a `ReviewList` (maps `ReviewCard` + empty state) and a `RatingBreakdown`
+(renders the already-computed per-star `distribution` as bars) — queued as
+HAR-386 / HAR-387. The persisted write-path + API route (Wave 3) stays blocked
+on the reviews table (HAR-372, `needs-human`).
 
 ### Open / awaiting human
 
@@ -42,12 +46,15 @@ write-path + API route (Wave 3) stays blocked on the reviews table (HAR-372).
   Labeled so future rounds skip re-triage. Harvey: (1) decide flag vs ticket;
   (2) rotate `SUPABASE_ACCESS_TOKEN`; then remove `needs-human`.
 
-### Queued auto-eligible (Round 2 ideation, for a future round)
+### Queued auto-eligible (Round 3 ideation, for a future round)
 
-- **HAR-382 — `ReviewForm` presentational component** (rating + comment + client
-  validation, composes StarRating + the Zod schema; `onSubmit` prop, no
-  DB/network). **HAR-383 — `ReviewCard` presentational component** (single review
-  row, reuses StarRating). Both `auto-claude`, gate-verifiable by `npm test`.
+- **HAR-386 — `ReviewList` presentational component** (maps `ReviewCard` over a
+  `reviews` prop, empty state, optional sort; no DB/network). **HAR-387 —
+  `RatingBreakdown` presentational component** (renders the per-star
+  `distribution` already produced by `computeReviewSummary` as proportion bars;
+  no util/DB work). Both `auto-claude`, gate-verifiable by `npm test`. These are
+  the last client-side presentational slices before Wave 3 (HAR-372-blocked).
+- _(Round 2's queued HAR-382 / HAR-383 shipped in Round 3 — see Shipped table.)_
 
 ### Resolved / closed (Round 2)
 
@@ -83,14 +90,18 @@ write-path + API route (Wave 3) stays blocked on the reviews table (HAR-372).
   This matters: the autonomous-merge safety model assumes a server-side gate
   rejects red CI. **Action: confirm a branch ruleset (or protection) on
   `staging` actually requires `ci-passed` before merge** — if not, the bot is
-  relying on luck, not a gate.
+  relying on luck, not a gate. **Round 3 re-confirmed** the same: PRs #81/#82
+  squash-merged immediately with no ruleset queueing (the non-required
+  `migration-check` job was RED — Supabase `link` Unauthorized — yet did not
+  block, as expected for a code-only PR; required `ci-passed` was green). The
+  empty-ruleset / immediate-merge behaviour is now observed across Rounds 2+3.
 - Harness `wt end` has a known bug (`mc/harness/cli.py:436` calls
   `git.pr_view` without `repo_root`), worked around by the merge subagents;
   tracked for a mission-control fix.
 
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
-mc-round-bl: 2026-06-06T17:39:09.636Z
+mc-round-bl: 2026-06-06T23:41:46.957Z
 mc-round-pick: 2
 mc-round-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
 mc-round-outcome: drained-2
