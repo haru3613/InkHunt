@@ -24,15 +24,17 @@ migration and land in parallel; the write-path waits on the reviews table.
 | 1 | 2026-06-06 | HAR-373 review validation schema (`src/lib/validations/review.ts`), HAR-374 StarRating component (`src/components/shared/StarRating.tsx`), HAR-375 review aggregation util (`src/lib/reviews.ts`) | #77, #78, #76 — all squash-merged to `staging`, `ci-passed` green |
 | 2 | 2026-06-06 | HAR-380 `aggregateRating` in artist JSON-LD (`src/lib/seo.ts`, self-ideated), HAR-381 `ArtistReviewSummary` display component (`src/components/artist/ArtistReviewSummary.tsx`, self-ideated) | #80, #79 — squash-merged to `staging`, `ci-passed` green. v0.2 client-side display surface now complete (StarRating + aggregation + aggregateRating + summary). |
 | 3 | 2026-06-06 | HAR-382 `ReviewForm` presentational component (`src/components/artist/ReviewForm.tsx`, composes StarRating + Zod schema; self-ideated R2), HAR-383 `ReviewCard` presentational component (`src/components/artist/ReviewCard.tsx`, reuses StarRating; self-ideated R2) | #82, #81 — squash-merged to `staging`, `ci-passed` green. v0.2 client-side **input + single-card** surface now complete. |
+| 4 | 2026-06-08 | HAR-386 `ReviewList` presentational component (`src/components/artist/ReviewList.tsx`, maps `ReviewCard` + empty state; self-ideated R3), HAR-387 `RatingBreakdown` presentational component (`src/components/artist/RatingBreakdown.tsx`, renders per-star `distribution` bars; self-ideated R3) | #84, #85 — squash-merged to `staging` (merge commit `48a095b`), `ci-passed` green. v0.2 client-side presentational surface now **complete**. |
 
-With Round 3 the v0.2 **client-side display + input** surface is essentially
-complete: validation schema, StarRating, aggregation util (incl. per-star
-`distribution`), `aggregateRating` JSON-LD, `ArtistReviewSummary`, `ReviewForm`,
-and `ReviewCard` are all shipped. The remaining genuinely-presentational slices
-are a `ReviewList` (maps `ReviewCard` + empty state) and a `RatingBreakdown`
-(renders the already-computed per-star `distribution` as bars) — queued as
-HAR-386 / HAR-387. The persisted write-path + API route (Wave 3) stays blocked
-on the reviews table (HAR-372, `needs-human`).
+With Round 4 the v0.2 **client-side presentational surface is complete**:
+validation schema, StarRating, aggregation util (incl. per-star `distribution`),
+`aggregateRating` JSON-LD, and the full component set — `ArtistReviewSummary`,
+`ReviewForm`, `ReviewCard`, `ReviewList`, `RatingBreakdown` — are all shipped.
+The one remaining presentational slice is an `ArtistReviewsSection` that composes
+summary + breakdown + list into the final section layout (props-driven, no
+DB/network) — queued as HAR-389. After that, the remaining milestone work
+(Wave 3: persisted write-path + API route + page data-wiring) is genuinely
+blocked on the reviews table (HAR-372, `needs-human`).
 
 ### Open / awaiting human
 
@@ -46,15 +48,16 @@ on the reviews table (HAR-372, `needs-human`).
   Labeled so future rounds skip re-triage. Harvey: (1) decide flag vs ticket;
   (2) rotate `SUPABASE_ACCESS_TOKEN`; then remove `needs-human`.
 
-### Queued auto-eligible (Round 3 ideation, for a future round)
+### Queued auto-eligible (Round 4 ideation, for a future round)
 
-- **HAR-386 — `ReviewList` presentational component** (maps `ReviewCard` over a
-  `reviews` prop, empty state, optional sort; no DB/network). **HAR-387 —
-  `RatingBreakdown` presentational component** (renders the per-star
-  `distribution` already produced by `computeReviewSummary` as proportion bars;
-  no util/DB work). Both `auto-claude`, gate-verifiable by `npm test`. These are
-  the last client-side presentational slices before Wave 3 (HAR-372-blocked).
-- _(Round 2's queued HAR-382 / HAR-383 shipped in Round 3 — see Shipped table.)_
+- **HAR-389 — `ArtistReviewsSection` presentational composition** (assembles the
+  already-shipped `ArtistReviewSummary` + `RatingBreakdown` + `ReviewList` into
+  one props-driven section container; no DB/network, gate-verifiable by
+  `npm test`). `auto-claude`. This is the LAST presentational slice of v0.2 —
+  once it ships, every remaining slice needs the reviews table (Wave 3,
+  HAR-372-blocked), so the next round will likely hit genuine milestone
+  exhaustion and email Harvey for direction.
+- _(Round 3's queued HAR-386 / HAR-387 shipped in Round 4 — see Shipped table.)_
 
 ### Resolved / closed (Round 2)
 
@@ -94,14 +97,22 @@ on the reviews table (HAR-372, `needs-human`).
   squash-merged immediately with no ruleset queueing (the non-required
   `migration-check` job was RED — Supabase `link` Unauthorized — yet did not
   block, as expected for a code-only PR; required `ci-passed` was green). The
-  empty-ruleset / immediate-merge behaviour is now observed across Rounds 2+3.
+  empty-ruleset / immediate-merge behaviour is now observed across Rounds 2+3+4
+  (Round 4: PRs #84/#85 squash-merged immediately, required `ci-passed` green).
+  NOTE (Round 4): the merge subagents reported the `migration-check` job as
+  **PASS**, not RED — a divergence from the "permanently RED" flag above. Cause
+  unconfirmed: either `SUPABASE_ACCESS_TOKEN` was rotated, or the job is
+  trivially green on code-only PRs that change no migration files. Harvey: the
+  Supabase-token flag above may now be stale — verify before relying on it for
+  the HAR-372 migration.
 - Harness `wt end` has a known bug (`mc/harness/cli.py:436` calls
-  `git.pr_view` without `repo_root`), worked around by the merge subagents;
+  `git.pr_view` without `repo_root`), worked around by the merge subagents
+  again in Round 4 (cwd inside InkHunt + `PYTHONPATH=…/mission-control`);
   tracked for a mission-control fix.
 
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
-mc-round-bl: 2026-06-06T23:41:46.957Z
-mc-round-pick: 2
+mc-round-bl: 2026-06-08T05:30:42.090Z
+mc-round-pick: 1
 mc-round-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
 mc-round-outcome: drained-2
