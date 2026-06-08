@@ -36,10 +36,13 @@ shipped. **There is no auto-eligible presentational work left.** Every remaining
 v0.2 slice (Wave 3: persisted write-path + API route + page data-wiring) is
 genuinely blocked on the reviews table (HAR-372, `needs-human`) — it needs the DB
 schema + a human Supabase apply, so the bot cannot proceed without Harvey.
-The milestone is therefore **exhausted of auto-eligible work as of Round 5**;
-the next fire is the designated exhaustion-detection round (Todo set = HAR-372
-only, `PICK=0`) and will email Harvey for direction, then settle into the
-no-op early-exit. Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
+The milestone is therefore **exhausted of auto-eligible work as of Round 5**.
+**Round 6 (2026-06-09) was the designated exhaustion-detection round**: Todo set =
+HAR-372 only (`PICK=0`), nothing auto-eligible to ideate (every remaining slice is
+Wave-3 DB-blocked), so it emailed Harvey for direction and recorded
+`mc-round-outcome: noop`. From here the dispatcher settles into the no-op
+early-exit — later identical fires end at Step 1b without re-triage or re-email.
+Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
 `allow_additive_migrations` flag vs the ticket text, rotate
 `SUPABASE_ACCESS_TOKEN`, then remove `needs-human`) — or set a new milestone.
 
@@ -124,4 +127,4 @@ mc-sync-flagged-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
 mc-round-bl: 2026-06-06T17:20:57.747Z
 mc-round-pick: 0
 mc-round-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
-mc-round-outcome: drained-1
+mc-round-outcome: noop
