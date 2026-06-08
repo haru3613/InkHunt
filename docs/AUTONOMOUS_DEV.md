@@ -25,16 +25,23 @@ migration and land in parallel; the write-path waits on the reviews table.
 | 2 | 2026-06-06 | HAR-380 `aggregateRating` in artist JSON-LD (`src/lib/seo.ts`, self-ideated), HAR-381 `ArtistReviewSummary` display component (`src/components/artist/ArtistReviewSummary.tsx`, self-ideated) | #80, #79 — squash-merged to `staging`, `ci-passed` green. v0.2 client-side display surface now complete (StarRating + aggregation + aggregateRating + summary). |
 | 3 | 2026-06-06 | HAR-382 `ReviewForm` presentational component (`src/components/artist/ReviewForm.tsx`, composes StarRating + Zod schema; self-ideated R2), HAR-383 `ReviewCard` presentational component (`src/components/artist/ReviewCard.tsx`, reuses StarRating; self-ideated R2) | #82, #81 — squash-merged to `staging`, `ci-passed` green. v0.2 client-side **input + single-card** surface now complete. |
 | 4 | 2026-06-08 | HAR-386 `ReviewList` presentational component (`src/components/artist/ReviewList.tsx`, maps `ReviewCard` + empty state; self-ideated R3), HAR-387 `RatingBreakdown` presentational component (`src/components/artist/RatingBreakdown.tsx`, renders per-star `distribution` bars; self-ideated R3) | #84, #85 — squash-merged to `staging` (merge commit `48a095b`), `ci-passed` green. v0.2 client-side presentational surface now **complete**. |
+| 5 | 2026-06-08 | HAR-389 `ArtistReviewsSection` presentational composition (`src/components/artist/ArtistReviewsSection.tsx`, assembles `ArtistReviewSummary` + `RatingBreakdown` + `ReviewList` into one props-driven section; no DB/network; queued R4) | #86 — squash-merged to `staging` (merge commit `b8dde9e`), required `ci-passed` green (lint-and-typecheck, test, migration-check, build all passed). **LAST presentational slice of v0.2 — client-side surface is now 100% complete.** |
 
-With Round 4 the v0.2 **client-side presentational surface is complete**:
+With Round 5 the v0.2 **client-side presentational surface is 100% complete**:
 validation schema, StarRating, aggregation util (incl. per-star `distribution`),
-`aggregateRating` JSON-LD, and the full component set — `ArtistReviewSummary`,
-`ReviewForm`, `ReviewCard`, `ReviewList`, `RatingBreakdown` — are all shipped.
-The one remaining presentational slice is an `ArtistReviewsSection` that composes
-summary + breakdown + list into the final section layout (props-driven, no
-DB/network) — queued as HAR-389. After that, the remaining milestone work
-(Wave 3: persisted write-path + API route + page data-wiring) is genuinely
-blocked on the reviews table (HAR-372, `needs-human`).
+`aggregateRating` JSON-LD, the full component set — `ArtistReviewSummary`,
+`ReviewForm`, `ReviewCard`, `ReviewList`, `RatingBreakdown` — and now the
+`ArtistReviewsSection` container that composes summary + breakdown + list are all
+shipped. **There is no auto-eligible presentational work left.** Every remaining
+v0.2 slice (Wave 3: persisted write-path + API route + page data-wiring) is
+genuinely blocked on the reviews table (HAR-372, `needs-human`) — it needs the DB
+schema + a human Supabase apply, so the bot cannot proceed without Harvey.
+The milestone is therefore **exhausted of auto-eligible work as of Round 5**;
+the next fire is the designated exhaustion-detection round (Todo set = HAR-372
+only, `PICK=0`) and will email Harvey for direction, then settle into the
+no-op early-exit. Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
+`allow_additive_migrations` flag vs the ticket text, rotate
+`SUPABASE_ACCESS_TOKEN`, then remove `needs-human`) — or set a new milestone.
 
 ### Open / awaiting human
 
@@ -48,16 +55,13 @@ blocked on the reviews table (HAR-372, `needs-human`).
   Labeled so future rounds skip re-triage. Harvey: (1) decide flag vs ticket;
   (2) rotate `SUPABASE_ACCESS_TOKEN`; then remove `needs-human`.
 
-### Queued auto-eligible (Round 4 ideation, for a future round)
+### Queued auto-eligible
 
-- **HAR-389 — `ArtistReviewsSection` presentational composition** (assembles the
-  already-shipped `ArtistReviewSummary` + `RatingBreakdown` + `ReviewList` into
-  one props-driven section container; no DB/network, gate-verifiable by
-  `npm test`). `auto-claude`. This is the LAST presentational slice of v0.2 —
-  once it ships, every remaining slice needs the reviews table (Wave 3,
-  HAR-372-blocked), so the next round will likely hit genuine milestone
-  exhaustion and email Harvey for direction.
-- _(Round 3's queued HAR-386 / HAR-387 shipped in Round 4 — see Shipped table.)_
+- _(empty — Round 4's queued HAR-389 shipped in Round 5; see Shipped table.)_
+  No further auto-eligible slices can be ideated: all remaining v0.2 work is
+  Wave 3 and blocked on HAR-372 (`needs-human`). Forcing filler tickets here
+  would just create DB-blocked work, so the queue is intentionally empty pending
+  Harvey's direction on HAR-372 / the next milestone.
 
 ### Resolved / closed (Round 2)
 
@@ -106,13 +110,18 @@ blocked on the reviews table (HAR-372, `needs-human`).
   Supabase-token flag above may now be stale — verify before relying on it for
   the HAR-372 migration.
 - Harness `wt end` has a known bug (`mc/harness/cli.py:436` calls
-  `git.pr_view` without `repo_root`), worked around by the merge subagents
-  again in Round 4 (cwd inside InkHunt + `PYTHONPATH=…/mission-control`);
-  tracked for a mission-control fix.
+  `git.pr_view(effective_pr)` WITHOUT `repo_root`, so the inner `gh pr view`
+  subprocess inherits the harness cwd — mission-control, which has no default gh
+  repo — and exits non-zero → `PrNotFound`). Worked around by the merge subagents
+  again in Round 5 (run harness from mission-control cwd with `GH_REPO=haru3613/InkHunt`,
+  which `gh` honors regardless of cwd; worktree removal still uses the correct
+  `repo_root` from `--repo`). Suggested real fix: compute `repo_root` before
+  line 436 and call `git.pr_view(effective_pr, repo_root=repo_root)`. Tracked for
+  a mission-control fix (out of scope for the per-ticket merge task).
 
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
-mc-round-bl: 2026-06-08T05:30:42.090Z
-mc-round-pick: 1
+mc-round-bl: 2026-06-06T17:20:57.747Z
+mc-round-pick: 0
 mc-round-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
-mc-round-outcome: drained-2
+mc-round-outcome: drained-1
