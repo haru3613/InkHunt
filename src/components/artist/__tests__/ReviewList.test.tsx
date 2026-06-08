@@ -46,12 +46,34 @@ describe('ReviewList', () => {
     expect(comments).toEqual(['非常滿意', '普通', '不推薦'])
   })
 
-  it('sorts by highest rating first when sort="highest"', () => {
-    render(<ReviewList reviews={THREE_REVIEWS} sort="highest" />)
+  it('sorts by highest rating first when sort="highest" (independent of date order)', () => {
+    // Rating order and date order deliberately DISAGREE here so this assertion
+    // can only pass if the component sorts by `rating`, not by `created_at`.
+    // The newest item has the lowest rating; the oldest has the highest.
+    const ratingNeqDate: ReviewListItem[] = [
+      { rating: 1, comment: '差', created_at: NEWEST },
+      { rating: 5, comment: '優', created_at: OLDEST },
+      { rating: 3, comment: '中', created_at: MIDDLE },
+    ]
+    render(<ReviewList reviews={ratingNeqDate} sort="highest" />)
     const comments = screen
       .getAllByTestId('review-card-comment')
       .map((el) => el.textContent)
-    expect(comments).toEqual(['非常滿意', '普通', '不推薦'])
+    expect(comments).toEqual(['優', '中', '差'])
+  })
+
+  it('breaks rating ties by newest created_at first when sort="highest"', () => {
+    // Two reviews share rating 5: the tie must resolve newest-first.
+    const tied: ReviewListItem[] = [
+      { rating: 5, comment: '五星-舊', created_at: OLDEST },
+      { rating: 2, comment: '兩星', created_at: MIDDLE },
+      { rating: 5, comment: '五星-新', created_at: NEWEST },
+    ]
+    render(<ReviewList reviews={tied} sort="highest" />)
+    const comments = screen
+      .getAllByTestId('review-card-comment')
+      .map((el) => el.textContent)
+    expect(comments).toEqual(['五星-新', '五星-舊', '兩星'])
   })
 
   it('does not mutate the input reviews array when sorting', () => {
