@@ -122,9 +122,24 @@ Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
   line 436 and call `git.pr_view(effective_pr, repo_root=repo_root)`. Tracked for
   a mission-control fix (out of scope for the per-ticket merge task).
 
+### Round 7 (2026-06-10) — no-op; main divergence re-flagged
+
+- Wake cause: `MAIN` moved (`8b07abb` → `f6331bb`) and `BL` moved
+  (2026-06-10T03:41 — the autonomous-PM cron's status comment on HAR-372, not a
+  human unlock). No drain ran.
+- HAR-372 unchanged: still `needs-human`, `allow_additive_migrations` still
+  `false` in `projects.toml`, PM pass explicitly declined to relax the tenant
+  config. v0.2 Wave 3 remains parked on Harvey's decision (flip the flag or
+  apply the migration manually; see HAR-372 comments).
+- `origin/main` is now **13** commits ahead of `origin/staging` — one NEW
+  commit since the Round-1 flag: `f6331bb` "ci: Gate-2 failure alert for the
+  deploy/migration workflow (#87)" (landed on main out-of-band). Re-flagged +
+  re-emailed below, debounced on the new SHA. main → staging reconciliation
+  stays Harvey's manual call.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
-mc-sync-flagged-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
-mc-round-bl: 2026-06-06T17:20:57.747Z
+mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
+mc-round-bl: 2026-06-10T03:41:06.412Z
 mc-round-pick: 0
-mc-round-main: 8b07abbcc7a3a7fc3ca048f6cf702a9d7a6f2d8d
+mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: noop
