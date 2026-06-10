@@ -1,0 +1,34 @@
+# mission-control project manifest (read by mc.manifest / the auto-dev drain).
+# Declares InkHunt's behavioral surface so the pipeline's Product-QA phase
+# knows this is a user-facing web UI and gates accordingly.
+#
+# Tracker binding stays in mission-control's projects.toml (linear_team_id /
+# linear_project_id) — not duplicated here.
+schema_version = 1
+
+[surface]
+# web-ui → the drain's Product-QA 'wired' gate applies: a change to the
+# Next.js frontend with no accompanying component test is qa_blocked.
+kind = "web-ui"
+# consumer marketplace — staging→main promotion carries the human taste gate.
+sales_facing = true
+
+[qa]
+# Next.js layout (src/ at the repo root, not frontend/src/): the wired gate's
+# defaults would never match.
+ui_globs = [
+  "src/app/*",
+  "src/components/*",
+  "src/hooks/*",
+  "src/contexts/*",
+]
+test_globs = ["*.test.ts", "*.test.tsx", "*.spec.ts", "*.spec.tsx"]
+ui_exclude_globs = ["src/__tests__/*"]
+
+[scope]
+out_of_scope = ["frontend-only-browser-verify"]
+
+# [design] intentionally absent: no declared design system yet — run
+# `mc genesis InkHunt` to bootstrap design-system/ as a taste-review PR.
+# [preview] lands after an InkHunt-specific spike (next build needs env /
+# Supabase keys headlessly). [test] omitted — CI already enforces `npm test`.
