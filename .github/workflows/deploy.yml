@@ -59,3 +59,20 @@ jobs:
           echo "No schema drift — remote DB matches local migrations."
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      # Gate-2 (data-mutating-cron-safety): a failed db-mutating run must alert
+      # loudly — a red Actions badge is monitored by nobody. Uses the fleet's
+      # Resend alert channel (same one mission-control's digest emails use).
+      - name: Alert on failure
+        if: failure()
+        run: |
+          curl -sS -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg from "${{ secrets.AUTONOMY_ALERT_FROM }}" \
+              --arg to "${{ secrets.AUTONOMY_ALERT_TO }}" \
+              --arg subject "[${{ github.repository }}] ${{ github.workflow }} FAILED" \
+              --arg text "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+              '{from: $from, to: [$to], subject: $subject, text: $text}')" \
+            || echo "::warning::failure alert could not be sent"
