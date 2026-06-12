@@ -3,9 +3,11 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { setRequestLocale, getTranslations } from "next-intl/server"
 import { getArtistBySlug, getArtists } from "@/lib/supabase/queries/artists"
+import { getReviewsByArtistId } from "@/lib/supabase/queries/reviews"
 
 const getCachedArtist = cache(getArtistBySlug)
 import { formatPriceRange } from "@/lib/utils"
+import { computeReviewSummary } from "@/lib/reviews"
 import { generateArtistJsonLd } from "@/lib/seo"
 import { JsonLd } from "@/components/shared/JsonLd"
 import { BackButton } from "@/components/artists/BackButton"
@@ -13,6 +15,7 @@ import { ArtistProfile } from "@/components/artists/ArtistProfile"
 import { ArtistCompareAction } from "@/components/artists/ArtistCompareAction"
 import { ArtistProfileTracker } from "@/components/artists/ArtistProfileTracker"
 import { PortfolioSection } from "@/components/artists/PortfolioSection"
+import { ArtistReviewsSection } from "@/components/artist/ArtistReviewsSection"
 import { MobileCTA } from "@/components/artists/MobileCTA"
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
@@ -85,7 +88,19 @@ export default async function ArtistProfilePage({ params }: PageProps) {
     notFound()
   }
 
-  const jsonLd = generateArtistJsonLd(artist)
+  // Pure public read. Degrade gracefully: a reviews failure must not 500 the
+  // artist page, so fall back to an empty list (the query already returns []
+  // on error; the try/catch guards any unexpected throw too). The section
+  // renders a clean empty state when count === 0.
+  let reviews: Awaited<ReturnType<typeof getReviewsByArtistId>> = []
+  try {
+    reviews = await getReviewsByArtistId(artist.id)
+  } catch {
+    reviews = []
+  }
+  const reviewSummary = computeReviewSummary(reviews)
+
+  const jsonLd = generateArtistJsonLd(artist, reviewSummary)
   const stylesText = artist.styles.map((s) => s.name).join(',')
   const cityText = [artist.city, artist.district].filter(Boolean).join(' ')
 
@@ -124,6 +139,10 @@ export default async function ArtistProfilePage({ params }: PageProps) {
               {t("portfolio")}
             </h2>
             <PortfolioSection items={artist.portfolio_items} />
+
+            <div className="mt-10">
+              <ArtistReviewsSection summary={reviewSummary} reviews={reviews} />
+            </div>
           </div>
         </div>
       </div>
