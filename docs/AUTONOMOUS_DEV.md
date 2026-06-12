@@ -26,6 +26,7 @@ migration and land in parallel; the write-path waits on the reviews table.
 | 3 | 2026-06-06 | HAR-382 `ReviewForm` presentational component (`src/components/artist/ReviewForm.tsx`, composes StarRating + Zod schema; self-ideated R2), HAR-383 `ReviewCard` presentational component (`src/components/artist/ReviewCard.tsx`, reuses StarRating; self-ideated R2) | #82, #81 — squash-merged to `staging`, `ci-passed` green. v0.2 client-side **input + single-card** surface now complete. |
 | 4 | 2026-06-08 | HAR-386 `ReviewList` presentational component (`src/components/artist/ReviewList.tsx`, maps `ReviewCard` + empty state; self-ideated R3), HAR-387 `RatingBreakdown` presentational component (`src/components/artist/RatingBreakdown.tsx`, renders per-star `distribution` bars; self-ideated R3) | #84, #85 — squash-merged to `staging` (merge commit `48a095b`), `ci-passed` green. v0.2 client-side presentational surface now **complete**. |
 | 5 | 2026-06-08 | HAR-389 `ArtistReviewsSection` presentational composition (`src/components/artist/ArtistReviewsSection.tsx`, assembles `ArtistReviewSummary` + `RatingBreakdown` + `ReviewList` into one props-driven section; no DB/network; queued R4) | #86 — squash-merged to `staging` (merge commit `b8dde9e`), required `ci-passed` green (lint-and-typecheck, test, migration-check, build all passed). **LAST presentational slice of v0.2 — client-side surface is now 100% complete.** |
+| 9 | 2026-06-12 | HAR-415 Wave 3 **read-path** — `getReviewsByArtistId` (`src/lib/supabase/queries/reviews.ts`, admin-client read pattern) + mounted `ArtistReviewsSection` on the public artist page (`…/artists/[slug]/page.tsx`) + the consuming test `…/artists/[slug]/__tests__/page.reviews.test.tsx` that asserts the section displays (cleared the Round-8 QA bounce) | #91 — squash-merged to `staging` (merge commit `1232e22`), required `ci-passed` (strict branch protection) + all 4 checks (lint-and-typecheck, test, migration-check, build) green. **First user-visible Wave 3 slice — reviews now render on artist detail pages.** Product-QA: `promotion_review` (sales-facing UI). |
 
 With Round 5 the v0.2 **client-side presentational surface is 100% complete**:
 validation schema, StarRating, aggregation util (incl. per-star `distribution`),
@@ -75,11 +76,19 @@ Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
 
 ### Queued auto-eligible
 
-- _(empty — Round 4's queued HAR-389 shipped in Round 5; see Shipped table.)_
-  No further auto-eligible slices can be ideated: all remaining v0.2 work is
-  Wave 3 and blocked on HAR-372 (`needs-human`). Forcing filler tickets here
-  would just create DB-blocked work, so the queue is intentionally empty pending
-  Harvey's direction on HAR-372 / the next milestone.
+Two independent Wave-3 read/write slices in flight (no shared files → a future
+round may drain them in parallel):
+
+- **HAR-416 — Wave 3 write-path** (`auto-claude` + `Feature`): authed POST submit
+  route (`src/app/api/artists/[slug]/reviews/route.ts`) + wire `ReviewForm` on the
+  artist detail page via a small client wrapper. Single authed INSERT, author id
+  server-derived — app-code + auth, **NOT** needs-human. Edits `…/[slug]/page.tsx`;
+  now un-sequenced (HAR-415 has merged) and pickable next round.
+- **HAR-417 — Wave 3 discovery surface** (`auto-claude` + `Feature`, self-ideated
+  Round 9): show a compact rating summary (avg stars + count) on `ArtistCard` in the
+  artists listing, via one bounded aggregate read on `reviews` (no N+1) + reuse of
+  `StarRating`. Pure public read. Touches the listing query + `ArtistCard.tsx` only —
+  **zero file overlap with HAR-416** (which edits the detail page + submit route).
 
 ### Resolved / closed (Round 2)
 
@@ -183,9 +192,43 @@ Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
   remain (HAR-415 retry + HAR-416), so Step 1b must NOT early-exit next round —
   there is real auto-eligible work waiting.
 
+### Round 9 (2026-06-12) — HAR-415 qa-blocked retry SHIPPED; backlog refilled
+
+- **Wake cause:** last round's outcome was `deferred-1` (not `noop`), so Step 1b
+  correctly did NOT early-exit — HAR-415 (qa-blocked retry) + HAR-416 were waiting.
+- **Pre-dispatch cleanup (clean-slate retry).** Round 8 left a stranded HAR-415
+  worktree (`InkHunt-feature-wire-artist-reviews-section`), its local branch, and
+  the QA-bounced **PR #90** OPEN on branch `feature/wire-artist-reviews-section`.
+  Because `mc-drain` re-implements fresh off `origin/staging` (new worktree → new
+  PR), keeping those would have collided on `wt start` (same slug) or orphaned a
+  duplicate PR. Resolved by removing the worktree + local branch, abandoning the
+  harness entry, and **closing PR #90 + deleting its remote branch** (commented as
+  superseded). The read-path impl was small and fully re-derivable from the ticket
+  + QA comment.
+- **Drain: 1/1 merged. HAR-415 shipped via PR #91** (squash-merged to `staging`,
+  merge commit `1232e22`). The retry's first task — the missing **consuming test**
+  (`…/artists/[slug]/__tests__/page.reviews.test.tsx`, renders the page surface and
+  asserts `<ArtistReviewsSection>` mounts) — cleared the Product-QA wired gate.
+  Required `ci-passed` + all 4 checks green. Product-QA classified it
+  `promotion_review` (sales-facing UI; informational, not a block). 0 deferred,
+  0 needs-human, 0 tier-2 advisories.
+- **`ci-passed` enforcement CONFIRMED.** The merge agent reported `ci-passed` is a
+  **strict branch-protection** required check on `staging`, with auto-merge gating
+  on it — this resolves the Round 1–4 "enforcement uncertain" flag: the gate is
+  real, not luck.
+- **Backlog refilled to 2 (ideation policy).** After HAR-415 left the Todo set,
+  only HAR-416 remained (< 2) and the v0.2 milestone still has work, so ideated
+  **HAR-417** (rating summary on `ArtistCard` in the listing — pure read, an
+  independent slice with zero file overlap with HAR-416). Queue is now HAR-416 +
+  HAR-417, both `auto-claude`, both pickable next round.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome marker `drained-1`; `PICK=2` (HAR-416 + HAR-417), so Step 1b must NOT
+  early-exit next round.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-12T18:03:46.094Z
+mc-round-bl: 2026-06-12T22:52:19.811Z
 mc-round-pick: 2
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: deferred-1
+mc-round-outcome: drained-1
