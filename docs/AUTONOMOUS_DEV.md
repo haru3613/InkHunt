@@ -46,10 +46,25 @@ Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
 `allow_additive_migrations` flag vs the ticket text, rotate
 `SUPABASE_ACCESS_TOKEN`, then remove `needs-human`) — or set a new milestone.
 
+> **⚠️ SUPERSEDED by Round 8 (2026-06-12):** Harvey resolved HAR-372 — the
+> additive reviews-table + RLS migration merged to `staging` via **PR #89**
+> (`supabase/migrations/011_reviews.sql`; `reviews` row type + `export type
+> Review` in `src/types/database.ts`). **v0.2 Wave 3 is now UN-blocked and the
+> milestone is no longer exhausted.** The "exhausted as of Round 5 / Round 6
+> noop / Round 7 parked" narrative above is historical. See the Round 8 section.
+
 ### Open / awaiting human
 
-- **HAR-372 — reviews table migration (`010_reviews.sql`). Labeled `needs-human`
-  (Round 2).** Durable policy conflict: `projects.toml` sets
+- _(none currently — HAR-372 was resolved by Harvey; see "Resolved (Round 8)" below.)_
+
+### Resolved (Round 8, 2026-06-12) — HAR-372 unblocked Wave 3
+
+- **HAR-372 — reviews table migration. ✅ RESOLVED (PR #89, squash-merged to
+  `staging` as `da2d859`).** Harvey landed the additive reviews-table + RLS
+  migration: `supabase/migrations/011_reviews.sql` + the `reviews` row type /
+  `export type Review` in `src/types/database.ts`. HAR-372 is now **Done**,
+  un-blocking all remaining v0.2 Wave 3 work. Original blocker context (kept for
+  history): Durable policy conflict: `projects.toml` sets
   `allow_additive_migrations=false` for InkHunt, while the ticket text + the
   dispatch prompt classify additive migrations as bot-eligible — only Harvey can
   reconcile (flip the registry flag, or keep it human-owned). Independently, the
@@ -137,9 +152,40 @@ Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
   re-emailed below, debounced on the new SHA. main → staging reconciliation
   stays Harvey's manual call.
 
+### Round 8 (2026-06-12) — HAR-372 unblocked; Wave 3 read-path dispatched, QA-bounced
+
+- **Wake cause:** `BL` moved — HAR-372 left the Todo set (Harvey set it **Done**
+  after merging the reviews migration, PR #89). State transition: v0.2 Wave 3 is
+  no longer DB-blocked.
+- **Ideated 2 Wave-3 tickets** (both `auto-claude` + `Feature`, anchored to v0.2),
+  split so a parallel drain can't self-conflict on the shared artist page:
+  - **HAR-415 — Wave 3 read-path:** server query `getReviewsByArtistId` + mount
+    `ArtistReviewsSection` on `src/app/[locale]/(public)/artists/[slug]/page.tsx`
+    to DISPLAY reviews (pure read, no write/auth/money). **Dispatched this round.**
+  - **HAR-416 — Wave 3 write-path:** authed POST submit route + `ReviewForm`
+    wiring (single interactive INSERT; app-code + auth, **NOT** needs-human).
+    **Queued Todo** for a later round — depends on HAR-415 landing first (both
+    edit `page.tsx`).
+- **Drain result: 0/1 merged. HAR-415 bounced by Product-QA as `qa_blocked`** —
+  the co-changed test (`reviews.test.ts`) is data-layer only and does not
+  render/import the changed UI (`page.tsx`); the vertical-slice gate requires a
+  consuming test asserting the page actually displays reviews. The workflow
+  applied the `mc-qa-blocked` label, posted a tracker comment, moved HAR-415 back
+  to Todo, persisted `state/qa/InkHunt/pr90.json`; **PR #90 left OPEN** for the
+  retry. This is a QA wiring failure, **not** `needs-human` (no money / no
+  irreversible-data).
+- **Next round:** HAR-415 is picked FIRST (qa-blocked retry) — its first task is
+  the missing consuming test (read the QA comment on the ticket). HAR-416 follows
+  once HAR-415 lands.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome marker is `deferred-1` (deliberately **not** `noop`): 2 pickable Todos
+  remain (HAR-415 retry + HAR-416), so Step 1b must NOT early-exit next round —
+  there is real auto-eligible work waiting.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-10T03:41:06.412Z
-mc-round-pick: 0
+mc-round-bl: 2026-06-12T18:03:46.094Z
+mc-round-pick: 2
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: noop
+mc-round-outcome: deferred-1
