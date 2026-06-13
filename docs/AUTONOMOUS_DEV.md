@@ -271,9 +271,38 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
   `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
 
+### Round 11 (2026-06-13) — milestone exhausted (designated detection round); Harvey emailed
+
+- **Wake cause:** last round's outcome was `drained-2` (not `noop`), so Step 1b
+  correctly did NOT early-exit — this is the designated exhaustion-detection round
+  the Round 10 plan scheduled. `BL`/`PICK`/`MAIN` are unchanged from Round 10
+  (`none` / `0` / `f6331bb`), but the productive prior outcome forces a re-scout.
+- **Scout result: nothing actionable.** Project `Todo` set is **empty**
+  (`PICK=0`); no `In Progress` / `In Review` / `Backlog` issues either. No
+  `needs-human`-labelled tickets open (HAR-372 was resolved in Round 8).
+- **v0.2 Reviews milestone is COMPLETE end-to-end** — Round 10 shipped the last
+  two slices (HAR-416 write-path submit + HAR-417 browse-surface rating). Every
+  deliverable named in the milestone definition (validation, StarRating,
+  aggregation, `aggregateRating` JSON-LD, the full presentational set, read-path
+  display, write-path submit, discovery-surface rating) has shipped.
+- **No ideation (deliberate, same call as Round 10).** The remaining
+  review-adjacent ideas — sort/filter listing BY rating, edit/delete a review,
+  admin moderation, rate-limiting — are genuinely NEW product scope beyond the
+  v0.2 definition: a v0.3 / milestone-expansion decision that belongs to Harvey /
+  the PM pass, not drain-dispatcher scope-creep. The milestone is therefore
+  **genuinely exhausted**, not merely "today's Todo list is short."
+- **Emailed Harvey for direction** (set v0.3 / extend reviews / new milestone).
+  This is the first no-op after Round 10's completion → a fresh state transition,
+  so it records once here; later identical fires early-exit at Step 1b (markers
+  match AND `mc-round-outcome: noop`) without re-triage or re-email.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome marker `noop`; `PICK=0`, `BL=none`, `MAIN=f6331bb` — all unchanged, so
+  Step 1b WILL early-exit the next fire until new tickets/hotfixes appear.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-bl: none
 mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: drained-2
+mc-round-outcome: noop
