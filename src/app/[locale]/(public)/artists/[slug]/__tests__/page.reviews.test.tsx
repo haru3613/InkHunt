@@ -79,6 +79,14 @@ vi.mock('@/components/artists/PortfolioSection', () => ({
 }))
 vi.mock('@/components/artists/MobileCTA', () => ({ MobileCTA: () => null }))
 
+// The write-path wrapper is a client component (useAuth/useRouter) — stub it to
+// a marker that echoes its wiring props so the page test stays a server render.
+vi.mock('@/components/artist/ArtistReviewFormSection', () => ({
+  ArtistReviewFormSection: ({ artistId, artistSlug }: { artistId: string; artistSlug: string }) => (
+    <div data-testid="review-form-section" data-artist-id={artistId} data-artist-slug={artistSlug} />
+  ),
+}))
+
 import ArtistProfilePage from '../page'
 
 async function renderPage() {
@@ -109,6 +117,16 @@ describe('ArtistProfilePage — reviews wiring', () => {
     expect(within(section).getByText('非常滿意')).toBeInTheDocument()
     expect(within(section).getByText('普通')).toBeInTheDocument()
     expect(within(section).getAllByTestId('review-card')).toHaveLength(2)
+  })
+
+  it('mounts the write-path <ArtistReviewFormSection> wired to the artist id + slug', async () => {
+    await renderPage()
+    const formSection = screen.getByTestId('review-form-section')
+    expect(formSection).toBeInTheDocument()
+    // The wrapper receives the loaded artist's id (for the schema payload) and
+    // slug (the POST target) — never a client-supplied value.
+    expect(formSection).toHaveAttribute('data-artist-id', 'artist-1')
+    expect(formSection).toHaveAttribute('data-artist-slug', 'test-artist')
   })
 
   it('feeds computeReviewSummary into the section (average + count from real data)', async () => {
