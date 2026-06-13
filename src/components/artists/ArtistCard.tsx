@@ -8,6 +8,7 @@ import { ArtistAvatar } from './ArtistAvatar'
 import { StyleBadge } from './StyleBadge'
 import { PriceRange } from './PriceRange'
 import { ArtistCompareAction } from './ArtistCompareAction'
+import { StarRating } from '@/components/shared/StarRating'
 import { formatPrice } from '@/lib/utils'
 
 interface ArtistCardProps {
@@ -17,9 +18,39 @@ interface ArtistCardProps {
 
 const MAX_VISIBLE_STYLES = 3
 
+/** Star size (px) for the compact rating summary shown on listing cards. */
+const RATING_STAR_SIZE = 14
+
+/**
+ * Compact rating summary for the listing/browse surface (HAR-417): a small
+ * read-only StarRating + the numeric average (1 decimal) + `(count)`. Renders
+ * nothing when the artist has no reviews so unreviewed cards stay clean.
+ */
+function CardReviewSummary({
+  summary,
+}: {
+  readonly summary: ArtistWithDetails['reviewSummary']
+}) {
+  if (!summary || summary.count === 0) return null
+
+  return (
+    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <StarRating value={summary.average} size={RATING_STAR_SIZE} readOnly />
+      <span className="font-medium tabular-nums text-foreground">
+        {summary.average.toFixed(1)}
+      </span>
+      <span className="tabular-nums">({summary.count})</span>
+    </div>
+  )
+}
+
 export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
   if (variant === 'compact') {
-    return <CompactCard artist={artist} />
+    // Await the (async) compact card so the resolved tree is returned directly;
+    // this keeps a single top-level `await ArtistCard(...)` enough to render the
+    // whole card (incl. the review summary) — RSC awaits nested async children
+    // anyway, so behavior is unchanged in production.
+    return CompactCard({ artist })
   }
 
   const t = await getTranslations('artists')
@@ -52,6 +83,8 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
                 <p className="text-sm text-muted-foreground">{artist.city}</p>
               </div>
             </div>
+
+            <CardReviewSummary summary={artist.reviewSummary} />
 
             <div className="flex flex-wrap gap-1.5">
               {visibleStyles.map((style) => (
@@ -133,6 +166,11 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
           {artist.styles.slice(0, MAX_VISIBLE_STYLES).map((s) => (
             <StyleBadge key={s.id} name={s.name} icon={s.icon} />
           ))}
+        </div>
+      )}
+      {artist.reviewSummary && artist.reviewSummary.count > 0 && (
+        <div className="mt-2">
+          <CardReviewSummary summary={artist.reviewSummary} />
         </div>
       )}
       {artist.price_min !== null && artist.price_min !== undefined && (

@@ -1,6 +1,7 @@
 import type { Database } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { computeReviewSummary } from '@/lib/reviews'
 
 function safeAdminClient(): SupabaseClient<Database> | null {
   try {
@@ -13,10 +14,25 @@ function safeAdminClient(): SupabaseClient<Database> | null {
 type ArtistRow = Database['public']['Tables']['artists']['Row']
 type StyleRow = Database['public']['Tables']['styles']['Row']
 type PortfolioItemRow = Database['public']['Tables']['portfolio_items']['Row']
+type ReviewRow = Database['public']['Tables']['reviews']['Row']
+
+/** Compact, listing-surface rating summary attached to each card (HAR-417). */
+export interface ArtistReviewSummary {
+  /** Mean rating, rounded to 1 decimal place. */
+  average: number
+  /** Number of reviews. `0` when the artist has none. */
+  count: number
+}
 
 export type ArtistWithDetails = Omit<ArtistRow, 'admin_note' | 'line_user_id'> & {
   styles: StyleRow[]
   portfolio_items: PortfolioItemRow[]
+  /**
+   * Per-artist review rating summary for the browse/compare surface (HAR-417).
+   * Omitted (or `count === 0`) when the artist has no reviews so the card stays
+   * clean for unreviewed artists.
+   */
+  reviewSummary?: ArtistReviewSummary
 }
 
 export interface ArtistFilters {
@@ -54,6 +70,45 @@ export function transformArtistRow(row: SupabaseArtistRow): ArtistWithDetails {
       (a, b) => a.sort_order - b.sort_order,
     ),
   }
+}
+
+/** Columns of the `reviews` table the listing aggregation needs. */
+type ReviewRatingRow = Pick<ReviewRow, 'artist_id' | 'rating'>
+
+/**
+ * Fetch review ratings for a page of artists in a SINGLE bounded query and
+ * aggregate `{ average, count }` per artist (no N+1 — one `.in('artist_id', …)`
+ * select for the whole page). Always resolves: degrades to an empty map on a
+ * missing client, a query error, or a null result so the listing still renders
+ * cards without a rating instead of throwing.
+ */
+async function getReviewSummariesByArtistIds(
+  supabase: SupabaseClient<Database>,
+  artistIds: string[],
+): Promise<Map<string, ArtistReviewSummary>> {
+  const summaries = new Map<string, ArtistReviewSummary>()
+  if (artistIds.length === 0) return summaries
+
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('artist_id, rating')
+    .in('artist_id', artistIds)
+
+  if (error || !data) return summaries
+
+  const ratingsByArtist = new Map<string, { rating: number }[]>()
+  for (const row of data as ReviewRatingRow[]) {
+    const bucket = ratingsByArtist.get(row.artist_id)
+    if (bucket) bucket.push({ rating: row.rating })
+    else ratingsByArtist.set(row.artist_id, [{ rating: row.rating }])
+  }
+
+  for (const [artistId, ratings] of ratingsByArtist) {
+    const { average, count } = computeReviewSummary(ratings)
+    summaries.set(artistId, { average, count })
+  }
+
+  return summaries
 }
 
 export async function getArtists(
@@ -117,10 +172,19 @@ export async function getArtists(
 
   if (error) return { data: [], total: 0 }
 
-  return {
-    data: (data as unknown as SupabaseArtistRow[]).map(transformArtistRow),
-    total,
+  const artists = (data as unknown as SupabaseArtistRow[]).map(transformArtistRow)
+
+  // Attach a per-artist rating summary fetched in ONE bounded query (no N+1).
+  const summaries = await getReviewSummariesByArtistIds(
+    supabase,
+    artists.map((a) => a.id),
+  )
+  for (const artist of artists) {
+    const summary = summaries.get(artist.id)
+    if (summary && summary.count > 0) artist.reviewSummary = summary
   }
+
+  return { data: artists, total }
 }
 
 export async function getArtistBySlug(

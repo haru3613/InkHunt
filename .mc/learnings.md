@@ -28,3 +28,13 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   `11111111-1111-4111-8111-111111111111` (v4, variant 8). Why: cost ~20min on
   HAR-416 — the route's happy-path tests returned 400 not 201. Evidence: HAR-416
   (`src/app/api/artists/[slug]/reviews/__tests__/route.test.ts`).
+- **An unresolved async CHILD silently blanks the whole RTL render.** When the
+  consuming test `await`s an async server component, any nested async child
+  (e.g. `ArtistCard` renders the async `PriceRange`) returns an unsettled
+  Promise that React's sync `render()` drops — the body collapses to `<div />`
+  and every `getByText` fails with no useful error. Fix: `vi.mock` each async
+  child to a sync stub (`() => null`). Also, an async branch that returns
+  `<AsyncChild/>` as an element won't resolve under a single top-level `await`;
+  make it `return AsyncChild({ ...props })` so the awaited tree is fully
+  settled. Evidence: HAR-417 `ArtistCard.test.tsx` (mocks `../PriceRange`;
+  compact branch returns `CompactCard({ artist })`).

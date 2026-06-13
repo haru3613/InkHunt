@@ -250,6 +250,102 @@ describe('getArtists', () => {
     expect(result.data).toEqual([])
     expect(result.total).toBe(0)
   })
+
+  describe('review summary (HAR-417)', () => {
+    /**
+     * Wire the three `from()` calls `getArtists` makes (no filters):
+     *   1. count query   -> { count }
+     *   2. data query    -> { data: artistRows }
+     *   3. reviews query -> { data: reviewRows }  (the new HAR-417 call)
+     * Returns the spy chain used for the reviews call so the test can assert
+     * the single `.in('artist_id', ids)` select.
+     */
+    function wireGetArtists(artistRows: unknown[], reviewRows: unknown[], reviewsError: unknown = null) {
+      const reviewsChain = makeThenable({ data: reviewRows, error: reviewsError })
+      let callNum = 0
+      mockFrom.mockImplementation((table: string) => {
+        callNum++
+        if (callNum === 1) return makeThenable({ count: artistRows.length, error: null })
+        if (callNum === 2) return makeThenable({ data: artistRows, error: null })
+        // 3rd call must be the reviews aggregation query
+        expect(table).toBe('reviews')
+        return reviewsChain
+      })
+      return reviewsChain
+    }
+
+    it('fetches ratings for the page artist ids in ONE reviews query (no N+1)', async () => {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+        { ...BASE_ARTIST, id: 'a2', slug: 'artist-2', artist_styles: [], portfolio_items: [] },
+      ]
+      const reviewRows = [
+        { artist_id: 'a1', rating: 5 },
+        { artist_id: 'a1', rating: 4 },
+        { artist_id: 'a2', rating: 3 },
+      ]
+      const reviewsChain = wireGetArtists(artistRows, reviewRows)
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      // exactly one reviews fetch, filtered to the page's ids
+      expect(reviewsChain.in).toHaveBeenCalledTimes(1)
+      expect(reviewsChain.in).toHaveBeenCalledWith('artist_id', ['a1', 'a2'])
+    })
+
+    it('maps { average, count } per artist', async () => {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+        { ...BASE_ARTIST, id: 'a2', slug: 'artist-2', artist_styles: [], portfolio_items: [] },
+      ]
+      const reviewRows = [
+        { artist_id: 'a1', rating: 5 },
+        { artist_id: 'a1', rating: 4 },
+        { artist_id: 'a1', rating: 4 },
+        { artist_id: 'a2', rating: 3 },
+      ]
+      wireGetArtists(artistRows, reviewRows)
+
+      const { data } = await getArtists({ page: 1, pageSize: 12 })
+
+      const a1 = data.find((a) => a.id === 'a1')
+      const a2 = data.find((a) => a.id === 'a2')
+      // a1: (5+4+4)/3 = 4.333 -> 4.3
+      expect(a1?.reviewSummary).toEqual({ average: 4.3, count: 3 })
+      expect(a2?.reviewSummary).toEqual({ average: 3, count: 1 })
+    })
+
+    it('leaves count 0 (or omits summary) for an artist with no reviews', async () => {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+        { ...BASE_ARTIST, id: 'a2', slug: 'artist-2', artist_styles: [], portfolio_items: [] },
+      ]
+      const reviewRows = [{ artist_id: 'a1', rating: 5 }]
+      wireGetArtists(artistRows, reviewRows)
+
+      const { data } = await getArtists({ page: 1, pageSize: 12 })
+
+      const a2 = data.find((a) => a.id === 'a2')
+      // unreviewed artist: either no summary, or a summary whose count is 0
+      expect(a2?.reviewSummary?.count ?? 0).toBe(0)
+    })
+
+    it('degrades gracefully when the reviews query errors (cards still render, no throw)', async () => {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      wireGetArtists(artistRows, [], { message: 'reviews fetch failed' })
+
+      const result = await getArtists({ page: 1, pageSize: 12 })
+
+      // artists still returned despite the review-fetch failure
+      expect(result.total).toBe(1)
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0].slug).toBe('artist-1')
+      // no rating attached on the failure path
+      expect(result.data[0].reviewSummary?.count ?? 0).toBe(0)
+    })
+  })
 })
 
 describe('getAllArtistSlugs', () => {
