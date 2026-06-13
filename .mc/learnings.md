@@ -20,3 +20,11 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   worktree before any vitest/tsc/next command, else npx pulls a mismatched
   vitest and the config fails to load (`Cannot find module 'vitest/config'`).
   Evidence: PR #91.
+
+- **Zod `z.string().uuid()` test fixtures need a real RFC-4122 UUID.** An
+  all-`1`s placeholder like `1111…-1111-1111-…` FAILS validation (the variant
+  nibble must be 8/9/a/b and the version nibble 1-8), so a route guarded by such
+  a schema silently 400s a "valid" test body. Use a well-formed UUID, e.g.
+  `11111111-1111-4111-8111-111111111111` (v4, variant 8). Why: cost ~20min on
+  HAR-416 — the route's happy-path tests returned 400 not 201. Evidence: HAR-416
+  (`src/app/api/artists/[slug]/reviews/__tests__/route.test.ts`).

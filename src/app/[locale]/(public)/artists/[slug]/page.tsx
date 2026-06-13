@@ -16,6 +16,7 @@ import { ArtistCompareAction } from "@/components/artists/ArtistCompareAction"
 import { ArtistProfileTracker } from "@/components/artists/ArtistProfileTracker"
 import { PortfolioSection } from "@/components/artists/PortfolioSection"
 import { ArtistReviewsSection } from "@/components/artist/ArtistReviewsSection"
+import { ArtistReviewFormSection } from "@/components/artist/ArtistReviewFormSection"
 import type { ReviewListItem } from "@/components/artist/ReviewList"
 import { MobileCTA } from "@/components/artists/MobileCTA"
 
@@ -141,6 +142,14 @@ export default async function ArtistProfilePage({ params }: PageProps) {
 
             <div className="mt-8">
               <ArtistReviewsSection summary={reviewSummary} reviews={reviews} />
+              {/* Write path (Wave 3): client wrapper POSTs to the authed route
+                  and refreshes this server component on success. */}
+              <div className="mt-6">
+                <ArtistReviewFormSection
+                  artistId={artist.id}
+                  artistSlug={artist.slug}
+                />
+              </div>
             </div>
           </div>
         </div>
