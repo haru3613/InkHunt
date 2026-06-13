@@ -27,6 +27,7 @@ migration and land in parallel; the write-path waits on the reviews table.
 | 4 | 2026-06-08 | HAR-386 `ReviewList` presentational component (`src/components/artist/ReviewList.tsx`, maps `ReviewCard` + empty state; self-ideated R3), HAR-387 `RatingBreakdown` presentational component (`src/components/artist/RatingBreakdown.tsx`, renders per-star `distribution` bars; self-ideated R3) | #84, #85 — squash-merged to `staging` (merge commit `48a095b`), `ci-passed` green. v0.2 client-side presentational surface now **complete**. |
 | 5 | 2026-06-08 | HAR-389 `ArtistReviewsSection` presentational composition (`src/components/artist/ArtistReviewsSection.tsx`, assembles `ArtistReviewSummary` + `RatingBreakdown` + `ReviewList` into one props-driven section; no DB/network; queued R4) | #86 — squash-merged to `staging` (merge commit `b8dde9e`), required `ci-passed` green (lint-and-typecheck, test, migration-check, build all passed). **LAST presentational slice of v0.2 — client-side surface is now 100% complete.** |
 | 9 | 2026-06-12 | HAR-415 Wave 3 **read-path** — `getReviewsByArtistId` (`src/lib/supabase/queries/reviews.ts`, admin-client read pattern) + mounted `ArtistReviewsSection` on the public artist page (`…/artists/[slug]/page.tsx`) + the consuming test `…/artists/[slug]/__tests__/page.reviews.test.tsx` that asserts the section displays (cleared the Round-8 QA bounce) | #91 — squash-merged to `staging` (merge commit `1232e22`), required `ci-passed` (strict branch protection) + all 4 checks (lint-and-typecheck, test, migration-check, build) green. **First user-visible Wave 3 slice — reviews now render on artist detail pages.** Product-QA: `promotion_review` (sales-facing UI). |
+| 10 | 2026-06-13 | HAR-416 Wave 3 **write-path** — authed POST `src/app/api/artists/[slug]/reviews/route.ts` (401/400/404/201/409 handling, author id server-derived from session, unique-violation → clean 409) + `ArtistReviewFormSection` client wrapper wiring `ReviewForm` on the artist detail page; HAR-417 Wave 3 **discovery surface** — one bounded aggregate read on `reviews` (no N+1) in the listing query + compact `★ avg (count)` summary on `ArtistCard` (both variants, reuses `StarRating`, hidden when count 0) | #93 (write-path, merge commit `53e661a`) + #92 (discovery surface, squash `d038337`) — both squash-merged to `staging`, all 5 required checks green (lint-and-typecheck, test, migration-check, build, `ci-passed`). **Reviews vertical now complete end-to-end: submit + display + browse-surface rating.** Product-QA: both `promotion_review` (sales-facing UI; informational, not a block). |
 
 With Round 5 the v0.2 **client-side presentational surface is 100% complete**:
 validation schema, StarRating, aggregation util (incl. per-star `distribution`),
@@ -76,8 +77,9 @@ Harvey: to unblock v0.2 Wave 3, action HAR-372 (decide the
 
 ### Queued auto-eligible
 
-Two independent Wave-3 read/write slices in flight (no shared files → a future
-round may drain them in parallel):
+_(empty — both queued Wave-3 slices shipped in Round 10; see Shipped table.)_
+
+The two slices below were drained in parallel in Round 10 and are now **Done**:
 
 - **HAR-416 — Wave 3 write-path** (`auto-claude` + `Feature`): authed POST submit
   route (`src/app/api/artists/[slug]/reviews/route.ts`) + wire `ReviewForm` on the
@@ -226,9 +228,52 @@ round may drain them in parallel):
 - Outcome marker `drained-1`; `PICK=2` (HAR-416 + HAR-417), so Step 1b must NOT
   early-exit next round.
 
+### Round 10 (2026-06-13) — Wave 3 write-path + discovery surface SHIPPED; v0.2 vertical complete
+
+- **Wake cause:** last round's outcome was `drained-1` (not `noop`), so Step 1b
+  correctly did NOT early-exit — HAR-416 (write-path) + HAR-417 (discovery surface)
+  were the 2 queued, mutually-independent (zero file overlap) Todos waiting.
+- **Drain: 2/2 merged.**
+  - **HAR-416 — Wave 3 write-path → PR #93** (squash-merged to `staging`, merge
+    commit `53e661a`). Authed POST `src/app/api/artists/[slug]/reviews/route.ts`
+    (401 unauth / 400 invalid / 404 unknown artist / 201 success / 409
+    duplicate-review via the unique constraint; `author_line_user_id` always the
+    **session** user, never client-supplied) + an `ArtistReviewFormSection` client
+    wrapper wiring `ReviewForm` on the detail page. Single authed INSERT — app-code
+    + auth, **not** needs-human. All 5 required checks green.
+  - **HAR-417 — Wave 3 discovery surface → PR #92** (squash `d038337`, now the
+    `staging` tip). One bounded aggregate read on `reviews` (`.in('artist_id', …)`,
+    **no N+1**) in the listing query + a compact `★ avg (count)` summary on
+    `ArtistCard` (both variants, reuses `StarRating`, hidden when count 0). Pure
+    public read. Merge rebase hit one trivial append-only conflict in
+    `.mc/learnings.md` (both sides appended a learning) — resolved keeping both, no
+    human judgment. All 5 required checks green.
+- 0 deferred, 0 needs-human, 0 tier-2 advisories. Product-QA classified **both**
+  `promotion_review` (sales-facing UI; informational, not a block).
+- **v0.2 Reviews milestone is now COMPLETE end-to-end:** validation schema +
+  StarRating + aggregation + `aggregateRating` JSON-LD + the full presentational
+  component set + read-path display (HAR-415) + **write-path submit (HAR-416)** +
+  **browse-surface rating (HAR-417)**. Every deliverable named in the milestone
+  definition has shipped; the Todo set is now **empty** (`PICK=0`).
+- **No ideation this round (deliberate).** The remaining review-adjacent ideas —
+  sort/filter listing BY rating, edit/delete a review, admin moderation,
+  rate-limiting — are genuinely NEW product scope beyond the v0.2 definition, i.e.
+  a v0.3 / milestone-expansion decision that belongs to Harvey / the PM pass, not
+  drain-dispatcher scope-creep. So the milestone is treated as **genuinely
+  exhausted**, not "today's Todo list is short."
+- **Exhaustion email deferred to the next round (by design).** This round's outcome
+  is `drained-2` (≥1 merged), so the marker is NOT `noop` and Step 1b will NOT
+  early-exit next fire. Per this repo's proven Round-5→Round-6 pattern, the
+  FOLLOWING no-op round is the designated exhaustion-detection round: it will find
+  `PICK=0` + a complete milestone + nothing auto-eligible to ideate, email Harvey
+  for direction (set v0.3 / extend reviews), record `mc-round-outcome: noop`, and
+  from there settle into the Step 1b early-exit. Emailing here would double-send.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-12T22:52:19.811Z
-mc-round-pick: 2
+mc-round-bl: none
+mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: drained-1
+mc-round-outcome: drained-2
