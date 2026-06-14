@@ -45,6 +45,8 @@ function makeThenable<T>(result: T) {
   chain.select = vi.fn().mockReturnValue(chain)
   chain.eq = vi.fn().mockReturnValue(chain)
   chain.in = vi.fn().mockReturnValue(chain)
+  chain.lte = vi.fn().mockReturnValue(chain)
+  chain.gte = vi.fn().mockReturnValue(chain)
   chain.order = vi.fn().mockReturnValue(chain)
   chain.range = vi.fn().mockReturnValue(chain)
   chain.single = vi.fn().mockResolvedValue(result)
@@ -328,6 +330,98 @@ describe('getArtists', () => {
       expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
       // page 2, pageSize 12 -> range(12, 23)
       expect(dataChain.range).toHaveBeenCalledWith(12, 23)
+    })
+  })
+
+  describe('budget price filter (HAR-434)', () => {
+    /**
+     * Wire `getArtists`' three `from()` calls (no style filter) and return BOTH
+     * the count-query chain (1st `from()`) and the data-query chain (2nd) so the
+     * test can assert the `.lte/.gte('price_min', …)` predicate landed on each —
+     * the count query must carry the same predicate or `total` drifts.
+     *   1. count query   -> { count }      (countChain)
+     *   2. data query    -> { data: rows } (dataChain)
+     *   3. reviews query -> { data: [] }
+     */
+    function wireCountAndData() {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      const countChain = makeThenable({ count: 1, error: null })
+      const dataChain = makeThenable({ data: artistRows, error: null })
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return countChain
+        if (callNum === 2) return dataChain
+        return makeThenable({ data: [], error: null })
+      })
+      return { countChain, dataChain }
+    }
+
+    const LTE_CASES: Array<['le3000' | 'le6000' | 'le10000', number]> = [
+      ['le3000', 3000],
+      ['le6000', 6000],
+      ['le10000', 10000],
+    ]
+
+    for (const [budget, threshold] of LTE_CASES) {
+      it(`applies .lte('price_min', ${threshold}) to BOTH queries for ${budget}`, async () => {
+        const { countChain, dataChain } = wireCountAndData()
+
+        await getArtists({ page: 1, pageSize: 12, budget })
+
+        expect(dataChain.lte).toHaveBeenCalledWith('price_min', threshold)
+        expect(countChain.lte).toHaveBeenCalledWith('price_min', threshold)
+        expect(dataChain.gte).not.toHaveBeenCalled()
+        expect(countChain.gte).not.toHaveBeenCalled()
+      })
+    }
+
+    it("applies .gte('price_min', 10000) to BOTH queries for gt10000", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, budget: 'gt10000' })
+
+      expect(dataChain.gte).toHaveBeenCalledWith('price_min', 10000)
+      expect(countChain.gte).toHaveBeenCalledWith('price_min', 10000)
+      expect(dataChain.lte).not.toHaveBeenCalled()
+      expect(countChain.lte).not.toHaveBeenCalled()
+    })
+
+    it('applies NO price predicate for budget=any', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, budget: 'any' })
+
+      expect(dataChain.lte).not.toHaveBeenCalled()
+      expect(dataChain.gte).not.toHaveBeenCalled()
+      expect(countChain.lte).not.toHaveBeenCalled()
+      expect(countChain.gte).not.toHaveBeenCalled()
+    })
+
+    it('applies NO price predicate when budget is absent', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      expect(dataChain.lte).not.toHaveBeenCalled()
+      expect(dataChain.gte).not.toHaveBeenCalled()
+      expect(countChain.lte).not.toHaveBeenCalled()
+      expect(countChain.gte).not.toHaveBeenCalled()
+    })
+
+    it('composes budget with concurrent city + sort filters on the data query', async () => {
+      const { dataChain } = wireCountAndData()
+
+      await getArtists({ city: '台北市', page: 1, pageSize: 12, sort: 'price_low', budget: 'le6000' })
+
+      // budget predicate
+      expect(dataChain.lte).toHaveBeenCalledWith('price_min', 6000)
+      // city filter still applied
+      expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
+      // sort ordering from the prior slice still applied
+      expect(dataChain.order).toHaveBeenCalledWith('price_min', { ascending: true, nullsFirst: false })
     })
   })
 

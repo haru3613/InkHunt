@@ -109,3 +109,54 @@ describe('ArtistFilters — sort control (HAR-433)', () => {
     expect(url).not.toContain('sort=')
   })
 })
+
+describe('ArtistFilters — budget control (HAR-434)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
+  })
+
+  it('renders all five budget options', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    expect(screen.getByText('budgetAny')).toBeInTheDocument()
+    expect(screen.getByText('budgetLe3000')).toBeInTheDocument()
+    expect(screen.getByText('budgetLe6000')).toBeInTheDocument()
+    expect(screen.getByText('budgetLe10000')).toBeInTheDocument()
+    expect(screen.getByText('budgetGt10000')).toBeInTheDocument()
+  })
+
+  it('writes ?budget=le6000 to the URL when 6000 以下 is selected', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    const budgetSelect = selectOwning('budgetAny')
+    fireEvent.change(budgetSelect, { target: { value: 'le6000' } })
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('budget=le6000')
+  })
+
+  it('writes ?budget=gt10000 and resets page when 10000 以上 is selected', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    const budgetSelect = selectOwning('budgetAny')
+    fireEvent.change(budgetSelect, { target: { value: 'gt10000' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('budget=gt10000')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('removes the budget param when 不限 (any/default) is selected', () => {
+    mockSearchParams.set('budget', 'le3000')
+    render(<ArtistFilters styles={[]} />)
+
+    const budgetSelect = selectOwning('budgetAny')
+    fireEvent.change(budgetSelect, { target: { value: 'any' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('budget=')
+  })
+})

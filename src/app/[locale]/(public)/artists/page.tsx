@@ -43,6 +43,7 @@ interface ArtistsPageProps {
     city?: string
     page?: string
     sort?: string
+    budget?: string
   }>
 }
 
@@ -53,13 +54,14 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
   const t = await getTranslations('artists')
   const sp = await searchParams
 
-  const { sort } = parseListingSearchParams(sp)
+  const { sort, budget } = parseListingSearchParams(sp)
 
   const filters = {
     style: sp.style ?? null,
     city: sp.city ?? null,
     page: sp.page ? (parseInt(sp.page, 10) || 1) : 1,
     sort,
+    budget,
   }
 
   const [{ data: artists, total }, styles] = await Promise.all([
