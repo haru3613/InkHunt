@@ -342,9 +342,54 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `MAIN=f6331bb`. Productive outcome (not `noop`) → Step 1b re-scouts next fire and
   picks up HAR-434.
 
+### Round 13 (2026-06-15) — v0.3 Wave 1 slice 2/3: HAR-434 budget filter shipped
+
+- **Wake cause:** Round 12's outcome was `drained-1` (not `noop`), so Step 1b did
+  NOT early-exit — the designated re-scout fire. `BL`/`PICK`/`MAIN` were unchanged
+  from Round 12 (`2026-06-14T03:54:16.167Z` / `2` / `f6331bb`), but the productive
+  prior outcome forces a re-scout, exactly as the Round 12 plan anticipated
+  ("picks up HAR-434").
+- **Dispatched ONE ticket (HAR-434).** Wave 1's three slices share
+  `artists.ts` / `page.tsx` / `ArtistFilters.tsx` and are explicitly sequenced
+  (sort → budget → count). HAR-433 (slice 1/3) merged Round 12, so HAR-434
+  (budget, slice 2/3) was unblocked. HAR-435 (count/empty-state, slice 3/3)
+  depends on HAR-434 + shares the same files → NOT independent, deferred to next
+  round. Per the independence rule only HAR-434 goes this round.
+- **HAR-434 merged** — PR #96 (`feature/artists-budget-filter` → `staging`, merge
+  `9253b2f`), all 5 required checks green (lint-and-typecheck, test,
+  migration-check, build, `ci-passed`). Rebase onto `origin/staging` was a no-op
+  (branch already atop latest staging `9a8e8ab`). Verified pre-dispatch it was NOT
+  already shipped: `getArtists`/`ArtistFilters` had only HAR-433's `sort`, no
+  `budget`/`price_min` predicate, no `budget` in the listing zod. Vertical slice
+  complete (query `budgetPredicate` on data+count + zod enum + 預算 `<Select>`
+  consumer + tests). Worktree ended, remote branch deleted, Linear → Done with a
+  shipped comment. Product-QA `promotion_review` (sales-facing UI; informational,
+  not a block). 0 deferred, 0 needs-human, 0 tier-2.
+- **HAR-436 left `needs-human` (no re-label).** Additive rating-aggregate view,
+  but InkHunt gates ALL migrations to Harvey (`allow_additive_migrations=false`)
+  + needs a Supabase apply — mirrors HAR-372. Already labelled by the PM pass; not
+  re-labelled (idempotency for Step 1b's `BL` convergence).
+- **No ideation (deliberate).** After HAR-434 merged, one auto-eligible slice
+  (HAR-435) remains queued and is now unblocked for next round. The remaining v0.3
+  Wave 1 work is the sequenced HAR-435 (shares the listing spine → can't be
+  parallelized this round), and Wave 2 (rating sort/filter) is intentionally gated
+  behind HAR-436 (`needs-human` migration). There is no genuinely-independent,
+  auto-eligible v0.3 slice to ideate that wouldn't collide with HAR-435's files or
+  the gated migration — so the PM-defined wave is left to drain in sequence rather
+  than scope-creep a parallel slice. The milestone is NOT exhausted (HAR-435
+  pending), so no exhaustion email.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `drained-1`; next markers `BL=2026-06-14T03:54:16.167Z`, `PICK=1`
+  (HAR-434 → Done leaves only HAR-435 non-`needs-human`), `MAIN=f6331bb`.
+  Productive outcome (not `noop`) → Step 1b re-scouts next fire and picks up
+  HAR-435 (now unblocked). When HAR-435 ships, Wave 1 completes and the following
+  no-op round becomes the exhaustion-detection round (emails Harvey for Wave 2 /
+  next-milestone direction — action HAR-436 to unblock rating sort/filter).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-bl: 2026-06-14T03:54:16.167Z
-mc-round-pick: 2
+mc-round-pick: 1
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: drained-1
