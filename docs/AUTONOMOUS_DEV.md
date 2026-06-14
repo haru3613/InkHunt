@@ -387,9 +387,54 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   no-op round becomes the exhaustion-detection round (emails Harvey for Wave 2 /
   next-milestone direction — action HAR-436 to unblock rating sort/filter).
 
+### Round 14 (2026-06-15) — v0.3 Wave 1 slice 3/3: HAR-435 count/empty-state shipped → Wave 1 COMPLETE
+
+- **Wake cause:** Round 13's outcome was `drained-1` (not `noop`), so Step 1b did
+  NOT early-exit — the designated re-scout fire. `BL`/`PICK`/`MAIN` were unchanged
+  from Round 13 (`2026-06-14T03:54:16.167Z` / `1` / `f6331bb`), but the productive
+  prior outcome forces a re-scout, exactly as Round 13 anticipated ("picks up
+  HAR-435 now unblocked").
+- **Dispatched ONE ticket (HAR-435).** The sole non-`needs-human` Todo and the
+  last Wave 1 slice (count + empty-state + 清除篩選). HAR-434 (budget, slice 2/3)
+  merged Round 13, so HAR-435 (shared `page.tsx`/`ArtistFilters.tsx`) was
+  unblocked. Verified pre-dispatch it was NOT already shipped: staging tree had no
+  `找到 N 位刺青師` / `清除篩選` / empty-state copy and no `ArtistListingHeader`.
+  Acceptance is vitest component tests (RTL render+assert), NOT browser-only, so
+  the repo's `frontend-only-browser-verify` `out_of_scope` rule does not exclude
+  it. Self-contained vertical slice (presentational + its own consuming test).
+- **HAR-435 merged** — PR #97 (`feature/har-435-artists-result-count-empty-clear`
+  → `staging`, squash `7b7640e`), all 5 required checks green; rebase onto
+  `origin/staging` was a no-op (1 ahead / 0 behind). Shipped `ArtistListingHeader`
+  (result-count line + empty-state + 清除篩選), presentational only. Worktree
+  ended, remote branch deleted, Linear → Done (auto-transitioned on merge) + a
+  one-line ship comment. Product-QA `promotion_review` (sales-facing UI;
+  informational, not a block). 0 deferred, 0 needs-human, 0 tier-2.
+- **HAR-436 left `needs-human` (no re-label).** Additive rating-aggregate view,
+  but InkHunt gates ALL migrations to Harvey (`allow_additive_migrations=false`)
+  + needs a Supabase apply — mirrors HAR-372. Already labelled; not re-labelled
+  (idempotency for Step 1b's `BL` convergence).
+- **No ideation (deliberate).** HAR-435 completes Wave 1. The only remaining v0.3
+  work is Wave 2 (rating sort/filter), which is gated behind the `needs-human`
+  HAR-436 migration — not bot-eligible until Harvey applies it. There is no
+  genuinely-independent, auto-eligible v0.3 slice to ideate that wouldn't depend on
+  the gated rating view; inventing a parallel non-PM-planned slice would be
+  dispatcher scope-creep. The milestone's **auto-eligible surface is now
+  exhausted** pending Harvey's HAR-436 action.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `drained-1`; next markers `BL=2026-06-14T03:54:16.167Z`, `PICK=0`
+  (HAR-435 → Done leaves only `needs-human` HAR-436), `MAIN=f6331bb`. Productive
+  outcome (not `noop`) → Step 1b re-scouts next fire; that scout finds 0
+  auto-eligible Todos + Wave 2 gated → it is the **exhaustion-detection round**
+  (records `mc-round-outcome: noop` + emails Harvey for direction: apply HAR-436 to
+  unblock Wave 2, or run the PM pass for the next milestone). Rounds after that
+  early-exit on the stable `noop` markers. Exhaustion is NOT emailed this round —
+  this round is productive (`drained-1`), and the marker must reflect that, not a
+  conflicting `noop`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-bl: 2026-06-14T03:54:16.167Z
-mc-round-pick: 1
+mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: drained-1
