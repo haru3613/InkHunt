@@ -10,7 +10,18 @@ marker lines below are parsed by the dispatcher — do not reformat them.
 - Linear: team `Harveychan` (`04886110-…`), project `InkHunt` (`e80ec8b8-…`)
 - Armed for auto-dev: 2026-06-06 (pilot tenant)
 
-## Current milestone — v0.2 Reviews
+## Current milestone — v0.3 Discovery (rank & filter the /artists listing)
+
+**v0.2 Reviews shipped complete end-to-end (Rounds 1–10); see the Shipped table.**
+v0.3 makes the public `/artists` listing rankable + filterable so consumers can
+find an artist by price, recency, and (Wave 2, migration-gated) rating. Wave 1 =
+three no-migration slices on a shared `artists.ts` / `page.tsx` / `ArtistFilters.tsx`
+spine, deliberately SEQUENCED (sort → budget → count/empty-state) because they
+share files — one drains per round, each rebasing on the prior. Wave 2 (sort/filter
+BY rating) is gated on HAR-436, an additive rating-aggregate view that is
+`needs-human` (InkHunt `allow_additive_migrations=false`).
+
+### v0.2 Reviews (shipped — historical milestone definition)
 
 Add a customer reviews capability to artist pages: validation, star-rating UI,
 aggregation, JSON-LD `aggregateRating`, and (later waves) the persisted
@@ -28,6 +39,7 @@ migration and land in parallel; the write-path waits on the reviews table.
 | 5 | 2026-06-08 | HAR-389 `ArtistReviewsSection` presentational composition (`src/components/artist/ArtistReviewsSection.tsx`, assembles `ArtistReviewSummary` + `RatingBreakdown` + `ReviewList` into one props-driven section; no DB/network; queued R4) | #86 — squash-merged to `staging` (merge commit `b8dde9e`), required `ci-passed` green (lint-and-typecheck, test, migration-check, build all passed). **LAST presentational slice of v0.2 — client-side surface is now 100% complete.** |
 | 9 | 2026-06-12 | HAR-415 Wave 3 **read-path** — `getReviewsByArtistId` (`src/lib/supabase/queries/reviews.ts`, admin-client read pattern) + mounted `ArtistReviewsSection` on the public artist page (`…/artists/[slug]/page.tsx`) + the consuming test `…/artists/[slug]/__tests__/page.reviews.test.tsx` that asserts the section displays (cleared the Round-8 QA bounce) | #91 — squash-merged to `staging` (merge commit `1232e22`), required `ci-passed` (strict branch protection) + all 4 checks (lint-and-typecheck, test, migration-check, build) green. **First user-visible Wave 3 slice — reviews now render on artist detail pages.** Product-QA: `promotion_review` (sales-facing UI). |
 | 10 | 2026-06-13 | HAR-416 Wave 3 **write-path** — authed POST `src/app/api/artists/[slug]/reviews/route.ts` (401/400/404/201/409 handling, author id server-derived from session, unique-violation → clean 409) + `ArtistReviewFormSection` client wrapper wiring `ReviewForm` on the artist detail page; HAR-417 Wave 3 **discovery surface** — one bounded aggregate read on `reviews` (no N+1) in the listing query + compact `★ avg (count)` summary on `ArtistCard` (both variants, reuses `StarRating`, hidden when count 0) | #93 (write-path, merge commit `53e661a`) + #92 (discovery surface, squash `d038337`) — both squash-merged to `staging`, all 5 required checks green (lint-and-typecheck, test, migration-check, build, `ci-passed`). **Reviews vertical now complete end-to-end: submit + display + browse-surface rating.** Product-QA: both `promotion_review` (sales-facing UI; informational, not a block). |
+| 12 | 2026-06-14 | **v0.3 Wave 1, slice 1/3** — HAR-433 `/artists` sort control: `sort` enum (`featured`/`price_low`/`price_high`/`newest`) branched in `getArtists` (`src/lib/supabase/queries/artists.ts`), new listing search-params zod schema (`src/lib/validations/listing.ts`), 排序 `<Select>` in `src/components/artists/ArtistFilters.tsx` + `…/artists/page.tsx` wiring; query + zod + component vitest tests | #95 — squash-merged to `staging` (merge commit `d7c7745`), all 5 required checks green (lint-and-typecheck, test, migration-check, build, `ci-passed`). **First v0.3 discovery slice — the artist listing is now sortable.** Product-QA: `promotion_review` (sales-facing UI; informational, not a block). |
 
 With Round 5 the v0.2 **client-side presentational surface is 100% complete**:
 validation schema, StarRating, aggregation util (incl. per-star `distribution`),
@@ -300,9 +312,39 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - Outcome marker `noop`; `PICK=0`, `BL=none`, `MAIN=f6331bb` — all unchanged, so
   Step 1b WILL early-exit the next fire until new tickets/hotfixes appear.
 
+### Round 12 (2026-06-14) — v0.3 Discovery opened; HAR-433 sort control shipped
+
+- **Wake cause:** Harvey / the PM pass set the v0.3 Discovery milestone and opened
+  four tickets — Step 1b correctly did NOT early-exit: `PICK` moved `0 → 3`
+  (HAR-433/434/435 `auto-claude`) and `BL` moved `none → 2026-06-14T03:54:16.167Z`
+  (HAR-436's `updatedAt`). `MAIN` unchanged (`f6331bb`).
+- **Dispatched ONE ticket (HAR-433).** Wave 1's three slices share
+  `artists.ts` / `page.tsx` / `ArtistFilters.tsx` and the tickets are explicitly
+  sequenced ("rebase on the prior after it merges to `staging`") — they are NOT
+  mutually independent, so per the independence rule only the drains-first slice
+  (HAR-433) goes this round. HAR-434 (budget) unlocks next round now that HAR-433
+  is on `staging`; HAR-435 (count/empty-state) after HAR-434.
+- **HAR-433 merged** — PR #95 (`d7c7745`), all 5 required checks green. Verified
+  pre-dispatch it was NOT already shipped (`getArtists` had only `featured` +
+  `updated_at` ordering; no `sort` in `ArtistFilters`; `listing.ts` absent).
+  Vertical slice complete (query + zod + 排序 `<Select>` consumer + tests).
+  Product-QA `promotion_review` (informational, not a block).
+- **HAR-436 left `needs-human` (no re-label).** Additive rating-aggregate view,
+  but InkHunt gates ALL migrations to Harvey (`allow_additive_migrations=false`)
+  and it needs a Supabase apply — mirrors the HAR-372 pattern. Already labelled by
+  the PM pass; not re-labelled (idempotency for Step 1b's `BL` convergence).
+- **No ideation (deliberate).** Two auto-eligible slices (HAR-434, HAR-435) are
+  already queued — the ~2-in-flight target is met; v0.3 is freshly opened, not
+  exhausted.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `drained-1`; next markers `BL=2026-06-14T03:54:16.167Z`, `PICK=2`,
+  `MAIN=f6331bb`. Productive outcome (not `noop`) → Step 1b re-scouts next fire and
+  picks up HAR-434.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: none
-mc-round-pick: 0
+mc-round-bl: 2026-06-14T03:54:16.167Z
+mc-round-pick: 2
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: noop
+mc-round-outcome: drained-1
