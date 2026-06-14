@@ -41,6 +41,12 @@ export type ArtistWithDetails = Omit<ArtistRow, 'admin_note' | 'line_user_id'> &
  */
 export type ArtistSort = 'featured' | 'price_low' | 'price_high' | 'newest'
 
+/**
+ * Budget bucket for `/artists` (HAR-434). Filters on the artist's entry price
+ * `price_min`. `any` applies no price predicate (the default).
+ */
+export type ArtistBudget = 'any' | 'le3000' | 'le6000' | 'le10000' | 'gt10000'
+
 export interface ArtistFilters {
   style?: string | null
   city?: string | null
@@ -48,9 +54,35 @@ export interface ArtistFilters {
   pageSize?: number
   /** Listing sort order; unknown/absent → `featured` (HAR-433). */
   sort?: ArtistSort
+  /** Budget bucket on `price_min`; unknown/absent → `any` / no predicate (HAR-434). */
+  budget?: ArtistBudget
 }
 
 const DEFAULT_PAGE_SIZE = 12
+
+/**
+ * Map a budget bucket to its `price_min` predicate (HAR-434). `null` means "no
+ * predicate" (the `any` / absent case). Kept as a single source of truth so the
+ * SAME predicate lands on both the count query and the data query — otherwise
+ * `total` drifts from the rows actually returned.
+ */
+type PriceMinPredicate = { op: 'lte' | 'gte'; value: number }
+
+function budgetPredicate(budget: ArtistBudget | undefined): PriceMinPredicate | null {
+  switch (budget) {
+    case 'le3000':
+      return { op: 'lte', value: 3000 }
+    case 'le6000':
+      return { op: 'lte', value: 6000 }
+    case 'le10000':
+      return { op: 'lte', value: 10000 }
+    case 'gt10000':
+      return { op: 'gte', value: 10000 }
+    case 'any':
+    default:
+      return null
+  }
+}
 
 const ARTIST_PUBLIC_SELECT = `
   id, slug, display_name, bio, avatar_url, ig_handle,
@@ -149,6 +181,10 @@ export async function getArtists(
     artistIds = matches.map((m) => m.artist_id)
   }
 
+  // HAR-434: resolve the budget `price_min` predicate ONCE so the identical
+  // filter lands on both the count and data queries (keeps `total` accurate).
+  const pricePred = budgetPredicate(filters?.budget)
+
   let countQuery = supabase
     .from('artists')
     .select('*', { count: 'exact', head: true })
@@ -156,6 +192,12 @@ export async function getArtists(
 
   if (artistIds) countQuery = countQuery.in('id', artistIds)
   if (filters?.city) countQuery = countQuery.eq('city', filters.city)
+  if (pricePred) {
+    countQuery =
+      pricePred.op === 'lte'
+        ? countQuery.lte('price_min', pricePred.value)
+        : countQuery.gte('price_min', pricePred.value)
+  }
 
   const { count } = await countQuery
   const total = count ?? 0
@@ -194,6 +236,12 @@ export async function getArtists(
 
   if (artistIds) dataQuery = dataQuery.in('id', artistIds)
   if (filters?.city) dataQuery = dataQuery.eq('city', filters.city)
+  if (pricePred) {
+    dataQuery =
+      pricePred.op === 'lte'
+        ? dataQuery.lte('price_min', pricePred.value)
+        : dataQuery.gte('price_min', pricePred.value)
+  }
 
   const { data, error } = await dataQuery
 

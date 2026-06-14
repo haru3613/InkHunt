@@ -36,6 +36,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const activeStyle = searchParams.get('style')
   const activeCity = searchParams.get('city')
   const activeSort = searchParams.get('sort')
+  const activeBudget = searchParams.get('budget')
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
@@ -73,6 +74,14 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
     [updateParams],
   )
 
+  const handleBudgetChange = useCallback(
+    (value: string | null) => {
+      // `any` is the default (no price predicate) — clear the param (HAR-434).
+      updateParams('budget', !value || value === 'any' ? null : value)
+    },
+    [updateParams],
+  )
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-3">
@@ -105,6 +114,22 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectItem value="price_low">{t('sortPriceLow')}</SelectItem>
             <SelectItem value="price_high">{t('sortPriceHigh')}</SelectItem>
             <SelectItem value="newest">{t('sortNewest')}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          defaultValue={activeBudget ?? 'any'}
+          onValueChange={handleBudgetChange}
+        >
+          <SelectTrigger aria-label={t('budgetLabel')} className="w-auto min-w-[120px]">
+            <SelectValue placeholder={t('budgetLabel')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="any">{t('budgetAny')}</SelectItem>
+            <SelectItem value="le3000">{t('budgetLe3000')}</SelectItem>
+            <SelectItem value="le6000">{t('budgetLe6000')}</SelectItem>
+            <SelectItem value="le10000">{t('budgetLe10000')}</SelectItem>
+            <SelectItem value="gt10000">{t('budgetGt10000')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
