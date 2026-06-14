@@ -251,6 +251,86 @@ describe('getArtists', () => {
     expect(result.total).toBe(0)
   })
 
+  describe('sort ordering (HAR-433)', () => {
+    /**
+     * Wire `getArtists`' three `from()` calls (no style filter) and return the
+     * data-query chain so the test can assert the `.order(...)` calls it issued.
+     *   1. count query   -> { count }
+     *   2. data query    -> { data: artistRows }  (the chain we return)
+     *   3. reviews query -> { data: [] }
+     */
+    function wireDataQuery() {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      const dataChain = makeThenable({ data: artistRows, error: null })
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return makeThenable({ count: 1, error: null })
+        if (callNum === 2) return dataChain
+        return makeThenable({ data: [], error: null })
+      })
+      return dataChain
+    }
+
+    it('defaults to featured + updated_at ordering when sort is absent', async () => {
+      const dataChain = wireDataQuery()
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      expect(dataChain.order).toHaveBeenCalledWith('featured', { ascending: false })
+      expect(dataChain.order).toHaveBeenCalledWith('updated_at', { ascending: false })
+    })
+
+    it('uses featured + updated_at ordering for an explicit featured sort', async () => {
+      const dataChain = wireDataQuery()
+
+      await getArtists({ page: 1, pageSize: 12, sort: 'featured' })
+
+      expect(dataChain.order).toHaveBeenCalledWith('featured', { ascending: false })
+      expect(dataChain.order).toHaveBeenCalledWith('updated_at', { ascending: false })
+    })
+
+    it('orders by price_min ascending for price_low', async () => {
+      const dataChain = wireDataQuery()
+
+      await getArtists({ page: 1, pageSize: 12, sort: 'price_low' })
+
+      expect(dataChain.order).toHaveBeenCalledWith('price_min', { ascending: true, nullsFirst: false })
+      expect(dataChain.order).not.toHaveBeenCalledWith('featured', { ascending: false })
+    })
+
+    it('orders by price_max descending for price_high', async () => {
+      const dataChain = wireDataQuery()
+
+      await getArtists({ page: 1, pageSize: 12, sort: 'price_high' })
+
+      expect(dataChain.order).toHaveBeenCalledWith('price_max', { ascending: false, nullsFirst: false })
+      expect(dataChain.order).not.toHaveBeenCalledWith('featured', { ascending: false })
+    })
+
+    it('orders by created_at descending for newest', async () => {
+      const dataChain = wireDataQuery()
+
+      await getArtists({ page: 1, pageSize: 12, sort: 'newest' })
+
+      expect(dataChain.order).toHaveBeenCalledWith('created_at', { ascending: false })
+      expect(dataChain.order).not.toHaveBeenCalledWith('featured', { ascending: false })
+    })
+
+    it('composes the price_low sort with the city filter and pagination', async () => {
+      const dataChain = wireDataQuery()
+
+      await getArtists({ city: '台北市', page: 2, pageSize: 12, sort: 'price_low' })
+
+      expect(dataChain.order).toHaveBeenCalledWith('price_min', { ascending: true, nullsFirst: false })
+      expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
+      // page 2, pageSize 12 -> range(12, 23)
+      expect(dataChain.range).toHaveBeenCalledWith(12, 23)
+    })
+  })
+
   describe('review summary (HAR-417)', () => {
     /**
      * Wire the three `from()` calls `getArtists` makes (no filters):
