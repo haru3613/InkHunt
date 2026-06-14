@@ -58,3 +58,23 @@ export function parseListingSearchParams(
     budget: listingBudgetSchema.parse(searchParams.budget),
   }
 }
+
+/**
+ * Whether the `/artists` listing has ANY active filter relative to its bare
+ * default view (HAR-435). True when a `style` or `city` is selected, the `sort`
+ * is anything other than the `featured` default, or the `budget` is anything
+ * other than the `any` default. Drives the `清除篩選` (clear-filters) affordance.
+ */
+export function hasActiveListingFilters(filters: {
+  style?: string | null
+  city?: string | null
+  sort: ArtistSort
+  budget: ArtistBudget
+}): boolean {
+  return (
+    Boolean(filters.style) ||
+    Boolean(filters.city) ||
+    filters.sort !== 'featured' ||
+    filters.budget !== 'any'
+  )
+}

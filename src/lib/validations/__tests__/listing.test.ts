@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { parseListingSearchParams, listingSortSchema, listingBudgetSchema } from '../listing'
+import {
+  parseListingSearchParams,
+  listingSortSchema,
+  listingBudgetSchema,
+  hasActiveListingFilters,
+} from '../listing'
 
 describe('listingSortSchema', () => {
   it('passes the four valid sort values through unchanged', () => {
@@ -84,5 +89,49 @@ describe('parseListingSearchParams', () => {
       sort: 'newest',
       budget: 'any',
     })
+  })
+})
+
+describe('hasActiveListingFilters (HAR-435)', () => {
+  it('is false when every filter is at its default', () => {
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
+    ).toBe(false)
+  })
+
+  it('treats absent (undefined) style/city as no filter', () => {
+    expect(
+      hasActiveListingFilters({ style: undefined, city: undefined, sort: 'featured', budget: 'any' }),
+    ).toBe(false)
+  })
+
+  it('treats empty-string style/city as no filter', () => {
+    expect(
+      hasActiveListingFilters({ style: '', city: '', sort: 'featured', budget: 'any' }),
+    ).toBe(false)
+  })
+
+  it('is true when a style is selected', () => {
+    expect(
+      hasActiveListingFilters({ style: 'traditional', city: null, sort: 'featured', budget: 'any' }),
+    ).toBe(true)
+  })
+
+  it('is true when a city is selected', () => {
+    expect(
+      hasActiveListingFilters({ style: null, city: '台北市', sort: 'featured', budget: 'any' }),
+    ).toBe(true)
+  })
+
+  it('is true when sort is not the featured default', () => {
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'newest', budget: 'any' }),
+    ).toBe(true)
+  })
+
+  it('is true when budget is not the any default', () => {
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'le3000' }),
+    ).toBe(true)
   })
 })
