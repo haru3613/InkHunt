@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { setRequestLocale, getTranslations } from 'next-intl/server'
 import { getArtists } from '@/lib/supabase/queries/artists'
 import { getAllStyles } from '@/lib/supabase/queries/styles'
+import { parseListingSearchParams } from '@/lib/validations/listing'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { ArtistFilters } from '@/components/artists/ArtistFilters'
 
@@ -41,6 +42,7 @@ interface ArtistsPageProps {
     style?: string
     city?: string
     page?: string
+    sort?: string
   }>
 }
 
@@ -51,10 +53,13 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
   const t = await getTranslations('artists')
   const sp = await searchParams
 
+  const { sort } = parseListingSearchParams(sp)
+
   const filters = {
     style: sp.style ?? null,
     city: sp.city ?? null,
     page: sp.page ? (parseInt(sp.page, 10) || 1) : 1,
+    sort,
   }
 
   const [{ data: artists, total }, styles] = await Promise.all([

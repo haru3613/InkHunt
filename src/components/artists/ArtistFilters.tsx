@@ -35,6 +35,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
 
   const activeStyle = searchParams.get('style')
   const activeCity = searchParams.get('city')
+  const activeSort = searchParams.get('sort')
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
@@ -64,6 +65,14 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
     [updateParams],
   )
 
+  const handleSortChange = useCallback(
+    (value: string | null) => {
+      // `featured` is the default order — clear the param instead of writing it.
+      updateParams('sort', !value || value === 'featured' ? null : value)
+    },
+    [updateParams],
+  )
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-3">
@@ -81,6 +90,21 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
                 {t(key)}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          defaultValue={activeSort ?? 'featured'}
+          onValueChange={handleSortChange}
+        >
+          <SelectTrigger aria-label={t('sortLabel')} className="w-auto min-w-[120px]">
+            <SelectValue placeholder={t('sortLabel')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="featured">{t('sortFeatured')}</SelectItem>
+            <SelectItem value="price_low">{t('sortPriceLow')}</SelectItem>
+            <SelectItem value="price_high">{t('sortPriceHigh')}</SelectItem>
+            <SelectItem value="newest">{t('sortNewest')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

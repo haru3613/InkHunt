@@ -35,11 +35,19 @@ export type ArtistWithDetails = Omit<ArtistRow, 'admin_note' | 'line_user_id'> &
   reviewSummary?: ArtistReviewSummary
 }
 
+/**
+ * Listing sort order for `/artists` (HAR-433). `featured` is the default
+ * discovery order; the price/recency options are pure read-side ordering.
+ */
+export type ArtistSort = 'featured' | 'price_low' | 'price_high' | 'newest'
+
 export interface ArtistFilters {
   style?: string | null
   city?: string | null
   page?: number
   pageSize?: number
+  /** Listing sort order; unknown/absent → `featured` (HAR-433). */
+  sort?: ArtistSort
 }
 
 const DEFAULT_PAGE_SIZE = 12
@@ -161,9 +169,28 @@ export async function getArtists(
     .from('artists')
     .select(ARTIST_PUBLIC_SELECT)
     .eq('status', 'active')
-    .order('featured', { ascending: false })
-    .order('updated_at', { ascending: false })
-    .range(start, end)
+
+  // HAR-433: branch the listing order. Unknown/absent sort falls through to the
+  // `featured → updated_at` default discovery order.
+  switch (filters?.sort) {
+    case 'price_low':
+      dataQuery = dataQuery.order('price_min', { ascending: true, nullsFirst: false })
+      break
+    case 'price_high':
+      dataQuery = dataQuery.order('price_max', { ascending: false, nullsFirst: false })
+      break
+    case 'newest':
+      dataQuery = dataQuery.order('created_at', { ascending: false })
+      break
+    case 'featured':
+    default:
+      dataQuery = dataQuery
+        .order('featured', { ascending: false })
+        .order('updated_at', { ascending: false })
+      break
+  }
+
+  dataQuery = dataQuery.range(start, end)
 
   if (artistIds) dataQuery = dataQuery.in('id', artistIds)
   if (filters?.city) dataQuery = dataQuery.eq('city', filters.city)
