@@ -432,9 +432,44 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   this round is productive (`drained-1`), and the marker must reflect that, not a
   conflicting `noop`.
 
+### Round 15 (2026-06-15) — v0.3 auto-eligible surface EXHAUSTED → emailed Harvey for direction
+
+- **Wake cause:** Round 14's outcome was `drained-1` (not `noop`), so Step 1b did
+  NOT early-exit — the designated re-scout fire Round 14 anticipated as the
+  "exhaustion-detection round". `BL` had also moved (see below), independently
+  forcing a re-scout.
+- **Scout: 0 auto-eligible Todos.** The sole Todo in the project is **HAR-436**
+  (`needs-human`, the additive `artist_rating_summary` view gated behind a manual
+  Supabase apply). Wave 1 (sort/budget/count) shipped Rounds 13–14; Wave 2
+  (rating sort/filter) is structurally blocked on HAR-436. No genuinely-independent,
+  auto-eligible v0.3 slice exists that wouldn't depend on the gated rating view or
+  invent non-PM-planned scope → **no ideation** (would be dispatcher scope-creep;
+  the PM bot is already engaged — it commented on HAR-436 today explaining the
+  iteration dependency).
+- **HAR-436 left `needs-human` (no re-label, no re-comment).** Already labelled +
+  commented by the PM pass; re-touching it would bump `updatedAt` and break Step 1b
+  `BL` convergence. Idempotent: no-op on it.
+- **`BL` advanced to `2026-06-15T03:38:43.591Z`** — HAR-436's `updatedAt` moved
+  because the PM bot commented on it (blocker-dependency explainer). This adds NO
+  auto-eligible work; `PICK` stays `0`. (This is why this fire re-scouted rather
+  than early-exiting on Round 14's stale `BL`.)
+- **No dispatch this round** (0 tickets). Housekeeping: pruned 6 stale merged bot
+  worktrees (dirs already gone on disk; cleared the harness `worktrees.json`
+  entries). Left every human `.claude/worktrees/*` tree untouched.
+- **MILESTONE AUTO-ELIGIBLE SURFACE EXHAUSTED (first detection).** Emailed Harvey:
+  apply HAR-436 on staging to unblock Wave 2 (rating sort/filter), OR run the PM
+  pass to define the next milestone. State transition → this round commits + emails
+  once; subsequent identical fires early-exit on the stable `noop` markers below.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `noop`; markers `BL=2026-06-15T03:38:43.591Z`, `PICK=0`, `MAIN=f6331bb`.
+  Next fire early-exits unless: a new auto-eligible Todo appears, HAR-436 is
+  un-gated (Harvey applies it / removes the label), or the PM bot comments again
+  (bumps `BL` → one more cheap re-scout that re-confirms exhaustion).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-14T03:54:16.167Z
+mc-round-bl: 2026-06-15T03:38:43.591Z
 mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: drained-1
+mc-round-outcome: noop
