@@ -467,9 +467,39 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   un-gated (Harvey applies it / removes the label), or the PM bot comments again
   (bumps `BL` → one more cheap re-scout that re-confirms exhaustion).
 
+### Round 16 (2026-06-15) — new `needs-human` PM-patrol ticket (HAR-440) absorbed; milestone still exhausted
+
+- **Wake cause:** `BL` moved to `2026-06-15T05:02:42.744Z` — a NEW Todo, **HAR-440**
+  `[PM Patrol R4] Refresh InkHunt local staging checkout`, appeared (labelled
+  `from-haru-pm` + `needs-human`). Step 1b correctly did NOT early-exit (`BL`
+  mismatch vs Round 15's `…T03:38:43.591Z`). `PICK` stayed `0`, `MAIN` unchanged.
+- **HAR-440 triaged → stays `needs-human` (already labelled; no re-label, no
+  re-comment).** Its DoD is to reconcile the **primary checkout**
+  `/Users/harvey/Documents/InkHunt` (monitor: 37 behind, 2 uncommitted, 3 untracked).
+  The dispatcher is HARD-FORBIDDEN from mutating the primary checkout
+  (no `pull`/`reset`/`checkout` there — it may hold a live human session), so this
+  is structurally non-auto-eligible and is a manual local-env task for Harvey. It is
+  a PM-patrol operational alert, not v0.3 product backlog. Idempotent no-op on it.
+- **HAR-436 still `needs-human`** (additive rating-aggregate view, gated to Harvey).
+  No re-touch.
+- **Scout: 0 auto-eligible Todos** (`PICK=0`). v0.3 auto-eligible surface remains
+  exhausted (Wave 1 shipped R13–14; Wave 2 gated on HAR-436). No independent
+  auto-eligible slice to ideate without depending on the gated rating view → **no
+  ideation**, **no dispatch**.
+- **Exhaustion NOT re-emailed** — it was the Round 15 state transition (recorded +
+  emailed once). This round only absorbs a new, irrelevant `needs-human` ticket into
+  the markers so future fires can re-settle to early-exit; the milestone status is
+  unchanged.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `noop`; markers refreshed to `BL=2026-06-15T05:02:42.744Z` (HAR-440's
+  `updatedAt`), `PICK=0`, `MAIN=f6331bb`. Next fire early-exits unless: a new
+  auto-eligible Todo appears, HAR-436/HAR-440 are un-gated, or a new ticket/comment
+  bumps `BL` again.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-15T03:38:43.591Z
+mc-round-bl: 2026-06-15T05:02:42.744Z
 mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: noop
