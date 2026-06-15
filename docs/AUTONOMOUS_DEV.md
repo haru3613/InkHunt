@@ -497,9 +497,28 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   auto-eligible Todo appears, HAR-436/HAR-440 are un-gated, or a new ticket/comment
   bumps `BL` again.
 
+### Round 17 (2026-06-15) — `BL` bumped by HAR-440 PM-patrol comment; milestone still exhausted
+
+- **Wake cause:** exactly the case Round 16 anticipated — a PM-patrol comment on the
+  `needs-human` HAR-440 (2026-06-15 19:00 re-check "R4 still firing", noting HAR-442
+  closed as duplicate) bumped HAR-440's `updatedAt` `05:02:42.744Z → 11:02:42.107Z`,
+  so `BL` moved and Step 1b did NOT early-exit. The comment carries **no new
+  actionable work** and no un-label.
+- **Scout: 0 auto-eligible Todos** (`PICK=0`). Only HAR-440 (`needs-human`,
+  primary-checkout reconciliation — dispatcher HARD-FORBIDDEN from mutating the
+  primary checkout) and HAR-436 (`needs-human`, gated additive rating-view migration)
+  remain. Both already labelled + commented → idempotent no-op (no re-label, no
+  re-comment, to avoid bumping `BL` and breaking convergence). No ideation, no dispatch.
+- **Exhaustion NOT re-emailed** (Round 15 state transition). `origin/main` still **13**
+  ahead of `staging` (SHA `f6331bb`, unchanged) — `mc-sync-flagged-main` debounce holds,
+  not re-emailed.
+- Outcome `noop`; this commit only **refreshes `BL` to `2026-06-15T11:02:42.107Z`** so a
+  fire with no intervening HAR-440 edit early-exits. Next fire early-exits unless a new
+  auto-eligible Todo appears, HAR-436/HAR-440 are un-gated, or a new comment bumps `BL`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-15T05:02:42.744Z
+mc-round-bl: 2026-06-15T11:02:42.107Z
 mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: noop
