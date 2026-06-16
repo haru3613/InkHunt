@@ -3,6 +3,7 @@ import {
   parseListingSearchParams,
   listingSortSchema,
   listingBudgetSchema,
+  parseArtistService,
   hasActiveListingFilters,
 } from '../listing'
 
@@ -81,6 +82,7 @@ describe('parseListingSearchParams', () => {
     expect(parseListingSearchParams({ sort: 'newest', budget: 'le3000' })).toEqual({
       sort: 'newest',
       budget: 'le3000',
+      service: null,
     })
   })
 
@@ -88,6 +90,7 @@ describe('parseListingSearchParams', () => {
     expect(parseListingSearchParams({ sort: 'newest', city: '台北市', page: '2' })).toEqual({
       sort: 'newest',
       budget: 'any',
+      service: null,
     })
   })
 })
@@ -133,5 +136,86 @@ describe('hasActiveListingFilters (HAR-435)', () => {
     expect(
       hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'le3000' }),
     ).toBe(true)
+  })
+
+  it('is true when only the service filter is set (HAR-446)', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: 'coverup',
+      }),
+    ).toBe(true)
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: 'flash',
+      }),
+    ).toBe(true)
+  })
+
+  it('is false when service is null/absent and everything else is default (HAR-446)', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+      }),
+    ).toBe(false)
+    // service omitted entirely is also no filter
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
+    ).toBe(false)
+  })
+})
+
+describe('parseArtistService (HAR-446)', () => {
+  it('maps the two valid service values to themselves', () => {
+    expect(parseArtistService('coverup')).toBe('coverup')
+    expect(parseArtistService('flash')).toBe('flash')
+  })
+
+  it('returns null for unknown string values', () => {
+    expect(parseArtistService('garbage')).toBeNull()
+    expect(parseArtistService('custom')).toBeNull()
+    expect(parseArtistService('COVERUP')).toBeNull()
+    expect(parseArtistService('')).toBeNull()
+  })
+
+  it('returns null for absent / non-string input', () => {
+    expect(parseArtistService(undefined)).toBeNull()
+    expect(parseArtistService(null)).toBeNull()
+    expect(parseArtistService(42)).toBeNull()
+    expect(parseArtistService([])).toBeNull()
+    expect(parseArtistService(['coverup'])).toBeNull()
+  })
+})
+
+describe('parseListingSearchParams — service (HAR-446)', () => {
+  it('extracts a valid service value', () => {
+    expect(parseListingSearchParams({ service: 'coverup' })).toMatchObject({ service: 'coverup' })
+    expect(parseListingSearchParams({ service: 'flash' })).toMatchObject({ service: 'flash' })
+  })
+
+  it('defaults service to null when absent or unknown', () => {
+    expect(parseListingSearchParams({})).toMatchObject({ service: null })
+    expect(parseListingSearchParams({ service: 'nope' })).toMatchObject({ service: null })
+  })
+
+  it('parses sort, budget and service together', () => {
+    expect(
+      parseListingSearchParams({ sort: 'newest', budget: 'le3000', service: 'flash' }),
+    ).toEqual({
+      sort: 'newest',
+      budget: 'le3000',
+      service: 'flash',
+    })
   })
 })

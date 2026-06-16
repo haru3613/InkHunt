@@ -160,3 +160,52 @@ describe('ArtistFilters — budget control (HAR-434)', () => {
     expect(url).not.toContain('budget=')
   })
 })
+
+describe('ArtistFilters — service control (HAR-446)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
+  })
+
+  it('renders the clear option and the two service options', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    expect(screen.getByText('serviceAll')).toBeInTheDocument()
+    expect(screen.getByText('serviceCoverup')).toBeInTheDocument()
+    expect(screen.getByText('serviceFlash')).toBeInTheDocument()
+  })
+
+  it('writes ?service=coverup to the URL when 遮蓋 is selected', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    const serviceSelect = selectOwning('serviceAll')
+    fireEvent.change(serviceSelect, { target: { value: 'coverup' } })
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('service=coverup')
+  })
+
+  it('writes ?service=flash and resets page when Flash 圖 is selected', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    const serviceSelect = selectOwning('serviceAll')
+    fireEvent.change(serviceSelect, { target: { value: 'flash' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('service=flash')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('drops the service param when the clear (全部) option is selected', () => {
+    mockSearchParams.set('service', 'coverup')
+    render(<ArtistFilters styles={[]} />)
+
+    const serviceSelect = selectOwning('serviceAll')
+    fireEvent.change(serviceSelect, { target: { value: 'all' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('service=')
+  })
+})

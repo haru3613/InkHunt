@@ -37,6 +37,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const activeCity = searchParams.get('city')
   const activeSort = searchParams.get('sort')
   const activeBudget = searchParams.get('budget')
+  const activeService = searchParams.get('service')
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
@@ -78,6 +79,14 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
     (value: string | null) => {
       // `any` is the default (no price predicate) — clear the param (HAR-434).
       updateParams('budget', !value || value === 'any' ? null : value)
+    },
+    [updateParams],
+  )
+
+  const handleServiceChange = useCallback(
+    (value: string | null) => {
+      // `all` is the clear option (no service predicate) — drop the param (HAR-446).
+      updateParams('service', !value || value === 'all' ? null : value)
     },
     [updateParams],
   )
@@ -130,6 +139,20 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectItem value="le6000">{t('budgetLe6000')}</SelectItem>
             <SelectItem value="le10000">{t('budgetLe10000')}</SelectItem>
             <SelectItem value="gt10000">{t('budgetGt10000')}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          defaultValue={activeService ?? 'all'}
+          onValueChange={handleServiceChange}
+        >
+          <SelectTrigger aria-label={t('serviceLabel')} className="w-auto min-w-[120px]">
+            <SelectValue placeholder={t('serviceLabel')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('serviceAll')}</SelectItem>
+            <SelectItem value="coverup">{t('serviceCoverup')}</SelectItem>
+            <SelectItem value="flash">{t('serviceFlash')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
