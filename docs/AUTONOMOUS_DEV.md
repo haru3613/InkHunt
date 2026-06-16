@@ -591,9 +591,60 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   does NOT early-exit at Step 1b regardless — it proceeds to Step 2 and should pick up
   HAR-454 as the next pickable Wave-3 slice.
 
+### Round 20 (2026-06-16) — v0.3 Wave 3: HAR-454 active-filter chips SHIPPED; Wave-3 auto surface complete, Wave 2 still human-gated
+
+- **Wake cause:** `BL`/`PICK`/`MAIN` (`2026-06-16T16:38:33.548Z` / `1` / `f6331bb`)
+  all matched the prior round's markers, but `mc-round-outcome` was `drained-1`
+  (not `noop`), so Step 1b correctly did NOT early-exit — HAR-454 was the pickable
+  Wave-3 slice still waiting.
+- **Scout / triage:** HAR-454 auto-eligible (ZERO migration/money/cron/auth/query —
+  pure client-side chips reading the five existing URL params). Already-shipped guard:
+  `git ls-tree origin/staging` found NO `ActiveFilterChips.tsx` and no chip refs in
+  `src`, while the mount target `ArtistFilters.tsx` exists → genuinely actionable.
+  `out_of_scope` `frontend-only-browser-verify` does NOT apply — vitest-gated via a
+  consuming `ActiveFilterChips.test.tsx`. HAR-440 (`needs-human` + `from-haru-pm`,
+  primary-checkout reconciliation — dispatcher HARD-FORBIDDEN from mutating the primary
+  checkout) and HAR-436 (`needs-human`, gated additive rating-view migration,
+  `allow_additive_migrations=false`) both already labelled → idempotent no-op (no
+  re-label, no re-comment).
+- **Dispatched HAR-454** to the parallel drain → **merged to `staging` via PR #100**
+  (squash, merge commit `d3aaf0b`, mergedAt 2026-06-16T23:05:45Z; all 5 required checks
+  green after a fix-in-branch). _CI note:_ required `ci-passed` was initially RED — the
+  pre-existing HAR-435 page test `…/artists/__tests__/page.listing-header.test.tsx`
+  hit `ERR_MODULE_NOT_FOUND` on next-intl's extensionless `next/navigation` import once
+  the new `ActiveFilterChips` (via `@/i18n/navigation`) entered that test's ESM module
+  graph — a module-LOAD failure, not a logic bug (1030 tests still passed). Fixed in
+  branch by stubbing `ActiveFilterChips` inert in that one page-wiring test (consistent
+  with the existing `ArtistFilters`/`ArtistCard`/`ArtistListingHeader` stubs there);
+  full suite 1036 pass / 0 fail, re-ran CI fully green. Worktree ended `--merged`,
+  remote branch `feature/artists-active-filter-chips` deleted, Linear HAR-454 already
+  Done + shipped comment. **0 deferred** (incl. 0 from Product-QA). HAR-454 flagged
+  `promotion_review` (sales-facing discovery UI; informational — a QA status, NOT
+  `needs-human`).
+- **Ideation (deliberately NONE this round):** v0.3's only remaining *defined* work is
+  Wave 2 (sort/filter BY rating), gated on the `needs-human` HAR-436 migration
+  (`allow_additive_migrations=false`) — not auto-ideatable around a migration gate. The
+  price/recency/service discovery axes (sort, budget, count, empty-state, service filter,
+  service badges, and now active-filter chips) are now COMPLETE. Manufacturing a new axis
+  (e.g. name-search) would be a product-scope call that belongs to Harvey/PM, not
+  drain-dispatcher scope-creep — declined per stay-the-author + milestone-anchoring.
+  This is NOT an exhaustion email round (the round was productive); per the established
+  Round 10→11 pattern the awaiting-human email is DEFERRED to the next round.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged — the merge
+  was to `staging` only) → `mc-sync-flagged-main` debounce holds, not re-emailed.
+- Outcome `drained-1`; markers refreshed to `BL=2026-06-16T05:02:25.715Z` (HAR-440's
+  `updatedAt`, newest in the raw Todo set now HAR-454 is Done), `PICK=0` (the only two
+  remaining Todos — HAR-440, HAR-436 — are both `needs-human`), `MAIN=f6331bb`. Because
+  `mc-round-outcome` is `drained-1` (not `noop`), the next fire does NOT early-exit at
+  Step 1b — it proceeds to Step 2, finds `PICK=0` with v0.3 Wave 2 human-gated on
+  HAR-436 and nothing cleanly auto-ideatable, and is the **designated awaiting-human /
+  exhaustion-detection round**: it should record `mc-round-outcome: noop` and email
+  Harvey for direction (apply HAR-436 to unblock Wave-2 rating sort/filter, or set a new
+  milestone).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-16T16:38:33.548Z
-mc-round-pick: 1
+mc-round-bl: 2026-06-16T05:02:25.715Z
+mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: drained-1
