@@ -47,6 +47,15 @@ export type ArtistSort = 'featured' | 'price_low' | 'price_high' | 'newest'
  */
 export type ArtistBudget = 'any' | 'le3000' | 'le6000' | 'le10000' | 'gt10000'
 
+/**
+ * Service-offering filter for `/artists` (HAR-446). Filters on an already-stored
+ * boolean column: `coverup` → `offers_coverup`, `flash` → `has_flash_designs`.
+ * Absent/`null` applies no service predicate (the default). `offers_custom_design`
+ * is intentionally excluded — it DEFAULTs true, so it is near-universal and
+ * low-signal as a discovery filter.
+ */
+export type ArtistService = 'coverup' | 'flash'
+
 export interface ArtistFilters {
   style?: string | null
   city?: string | null
@@ -56,6 +65,8 @@ export interface ArtistFilters {
   sort?: ArtistSort
   /** Budget bucket on `price_min`; unknown/absent → `any` / no predicate (HAR-434). */
   budget?: ArtistBudget
+  /** Service-offering predicate; absent/`null` → no predicate (HAR-446). */
+  service?: ArtistService | null
 }
 
 const DEFAULT_PAGE_SIZE = 12
@@ -79,6 +90,23 @@ function budgetPredicate(budget: ArtistBudget | undefined): PriceMinPredicate | 
     case 'gt10000':
       return { op: 'gte', value: 10000 }
     case 'any':
+    default:
+      return null
+  }
+}
+
+/**
+ * Map a service filter to its boolean artist column (HAR-446). `null` means "no
+ * predicate" (absent/`null` case). Single source of truth so the SAME
+ * `.eq(column, true)` lands on both the count and data queries — otherwise
+ * `total` drifts from the rows actually returned.
+ */
+function serviceColumn(service: ArtistService | null | undefined): keyof ArtistRow | null {
+  switch (service) {
+    case 'coverup':
+      return 'offers_coverup'
+    case 'flash':
+      return 'has_flash_designs'
     default:
       return null
   }
@@ -185,6 +213,10 @@ export async function getArtists(
   // filter lands on both the count and data queries (keeps `total` accurate).
   const pricePred = budgetPredicate(filters?.budget)
 
+  // HAR-446: resolve the service boolean column ONCE for the same reason — the
+  // SAME `.eq(column, true)` must land on both queries or `total` drifts.
+  const svcColumn = serviceColumn(filters?.service)
+
   let countQuery = supabase
     .from('artists')
     .select('*', { count: 'exact', head: true })
@@ -198,6 +230,7 @@ export async function getArtists(
         ? countQuery.lte('price_min', pricePred.value)
         : countQuery.gte('price_min', pricePred.value)
   }
+  if (svcColumn) countQuery = countQuery.eq(svcColumn, true)
 
   const { count } = await countQuery
   const total = count ?? 0
@@ -242,6 +275,7 @@ export async function getArtists(
         ? dataQuery.lte('price_min', pricePred.value)
         : dataQuery.gte('price_min', pricePred.value)
   }
+  if (svcColumn) dataQuery = dataQuery.eq(svcColumn, true)
 
   const { data, error } = await dataQuery
 

@@ -425,6 +425,113 @@ describe('getArtists', () => {
     })
   })
 
+  describe('service-offering filter (HAR-446)', () => {
+    /**
+     * Wire the (no style filter) call sequence and return BOTH the count chain
+     * (1st `from()`) and the data chain (2nd) so the test can assert the
+     * `.eq('offers_coverup'|'has_flash_designs', true)` boolean predicate landed
+     * on each — the count query must carry the same predicate or `total` drifts.
+     *   1. count query   -> { count }      (countChain)
+     *   2. data query    -> { data: rows } (dataChain)
+     *   3. reviews query -> { data: [] }
+     */
+    function wireCountAndData() {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      const countChain = makeThenable({ count: 1, error: null })
+      const dataChain = makeThenable({ data: artistRows, error: null })
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return countChain
+        if (callNum === 2) return dataChain
+        return makeThenable({ data: [], error: null })
+      })
+      return { countChain, dataChain }
+    }
+
+    it("applies .eq('offers_coverup', true) to BOTH queries for service=coverup", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, service: 'coverup' })
+
+      expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)
+      expect(countChain.eq).toHaveBeenCalledWith('offers_coverup', true)
+      expect(dataChain.eq).not.toHaveBeenCalledWith('has_flash_designs', true)
+      expect(countChain.eq).not.toHaveBeenCalledWith('has_flash_designs', true)
+    })
+
+    it("applies .eq('has_flash_designs', true) to BOTH queries for service=flash", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, service: 'flash' })
+
+      expect(dataChain.eq).toHaveBeenCalledWith('has_flash_designs', true)
+      expect(countChain.eq).toHaveBeenCalledWith('has_flash_designs', true)
+      expect(dataChain.eq).not.toHaveBeenCalledWith('offers_coverup', true)
+      expect(countChain.eq).not.toHaveBeenCalledWith('offers_coverup', true)
+    })
+
+    it('applies NO service predicate when service is null', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, service: null })
+
+      expect(dataChain.eq).not.toHaveBeenCalledWith('offers_coverup', true)
+      expect(dataChain.eq).not.toHaveBeenCalledWith('has_flash_designs', true)
+      expect(countChain.eq).not.toHaveBeenCalledWith('offers_coverup', true)
+      expect(countChain.eq).not.toHaveBeenCalledWith('has_flash_designs', true)
+    })
+
+    it('applies NO service predicate when service is absent', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      expect(dataChain.eq).not.toHaveBeenCalledWith('offers_coverup', true)
+      expect(dataChain.eq).not.toHaveBeenCalledWith('has_flash_designs', true)
+      expect(countChain.eq).not.toHaveBeenCalledWith('offers_coverup', true)
+      expect(countChain.eq).not.toHaveBeenCalledWith('has_flash_designs', true)
+    })
+
+    it('returns { data: [], total: 0 } sparse-safe when no artist matches (count=0)', async () => {
+      // count query resolves to 0 → getArtists short-circuits before the data query
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return makeThenable({ count: 0, error: null })
+        return makeThenable({ data: [], error: null })
+      })
+
+      const result = await getArtists({ page: 1, pageSize: 12, service: 'coverup' })
+
+      expect(result).toEqual({ data: [], total: 0 })
+    })
+
+    it('composes the service predicate with concurrent city + budget + sort filters', async () => {
+      const { dataChain } = wireCountAndData()
+
+      await getArtists({
+        city: '台北市',
+        page: 1,
+        pageSize: 12,
+        sort: 'price_low',
+        budget: 'le6000',
+        service: 'coverup',
+      })
+
+      // service predicate
+      expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)
+      // city filter still applied
+      expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
+      // budget predicate still applied
+      expect(dataChain.lte).toHaveBeenCalledWith('price_min', 6000)
+      // sort ordering still applied
+      expect(dataChain.order).toHaveBeenCalledWith('price_min', { ascending: true, nullsFirst: false })
+    })
+  })
+
   describe('review summary (HAR-417)', () => {
     /**
      * Wire the three `from()` calls `getArtists` makes (no filters):

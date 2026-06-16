@@ -45,6 +45,7 @@ interface ArtistsPageProps {
     page?: string
     sort?: string
     budget?: string
+    service?: string
   }>
 }
 
@@ -55,7 +56,7 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
   const t = await getTranslations('artists')
   const sp = await searchParams
 
-  const { sort, budget } = parseListingSearchParams(sp)
+  const { sort, budget, service } = parseListingSearchParams(sp)
 
   const filters = {
     style: sp.style ?? null,
@@ -63,6 +64,7 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     page: sp.page ? (parseInt(sp.page, 10) || 1) : 1,
     sort,
     budget,
+    service,
   }
 
   const [{ data: artists, total }, styles] = await Promise.all([
@@ -75,6 +77,7 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     city: filters.city,
     sort,
     budget,
+    service,
   })
 
   return (
