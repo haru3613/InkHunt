@@ -32,6 +32,13 @@ vi.mock('@/components/artists/ArtistFilters', () => ({
   ArtistFilters: () => <div data-testid="artist-filters" />,
 }))
 
+// Client child that pulls in next-intl navigation -> inert. Its own behaviour is
+// covered by ActiveFilterChips.test.tsx; stubbing it keeps this page-wiring slice
+// from loading the i18n navigation module graph.
+vi.mock('@/components/artists/ActiveFilterChips', () => ({
+  ActiveFilterChips: () => <div data-testid="active-filter-chips" />,
+}))
+
 // ArtistCard is sync but stub it to a marker so we can count grid items cheaply.
 vi.mock('@/components/artists/ArtistCard', () => ({
   ArtistCard: ({ artist }: { artist: { id: string } }) => (
