@@ -552,9 +552,48 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   Step 1b regardless — it proceeds to Step 2 and should pick up HAR-447 as the next
   pickable Wave-3 slice.
 
+### Round 19 (2026-06-16) — v0.3 Wave 3: HAR-447 ArtistCard service badges SHIPPED; refilled backlog
+
+- **Wake cause:** `BL` moved (`2026-06-16T04:34:10.491Z → 2026-06-16T05:02:25.715Z`
+  — HAR-440's `updatedAt` bumped by an out-of-band PM-patrol touch) and last outcome
+  was `drained-1` (not `noop`), so Step 1b correctly did NOT early-exit — HAR-447 was
+  the pickable Wave-3 slice waiting.
+- **Scout / triage:** HAR-447 auto-eligible (ZERO migration/money/cron/auth/query —
+  pure display: render 遮蓋/Flash 圖 badges on `ArtistCard` from booleans the card
+  already receives). Already-shipped guard: grep of `origin/staging:ArtistCard.tsx`
+  (183 lines) found NO `coverup`/`flash`/service-badge references → genuinely
+  actionable. `out_of_scope` `frontend-only-browser-verify` does NOT apply — vitest-
+  gated via a consuming `ArtistCard.test.tsx`. HAR-440 (`needs-human`, primary-checkout
+  reconciliation — dispatcher HARD-FORBIDDEN from mutating the primary checkout) and
+  HAR-436 (`needs-human`, gated additive rating-view migration, `allow_additive_migrations=false`)
+  both already labelled → idempotent no-op (no re-label, no re-comment).
+- **Dispatched HAR-447** to the parallel drain → **merged to `staging` via PR #99**
+  (squash, merge commit `591b089`, mergedAt 2026-06-16T16:34:51Z; all 5 required checks
+  green: lint-and-typecheck, test, migration-check, build, `ci-passed`). Worktree ended
+  `--merged`, remote branch `feature/artistcard-service-badges` deleted, Linear HAR-447
+  already Done + closing comment. **0 deferred** (incl. 0 from Product-QA). HAR-447
+  flagged `promotion_review` (sales-facing discovery UI; informational — a QA status,
+  NOT `needs-human`).
+- **Ideation (refill toward ~2 in flight; milestone NOT exhausted):** opened **HAR-454**
+  (`auto-claude`, Todo) — `[v0.3 W3]` /artists 已套用篩選 chips + 清除全部 (active-filter
+  pills: one removable chip per applied `style`/`city`/`sort`/`budget`/`service` param +
+  a 清除全部 reset, display + one-tap removal). Pure client-side UI reading the existing
+  five URL params (verified `ArtistFilters.tsx:36-40` reads them via `useSearchParams`,
+  cleared by `updateParams(key,null)`); NO query/migration/money/cron/auth. Deliberately
+  housed in a NEW `ActiveFilterChips.tsx` (+ its test) with a one-line mount so it stays
+  file-decoupled from any concurrent `ArtistFilters.tsx`/query work. Closes the wave's
+  filter-feedback loop (filter → see what's applied → undo).
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged — the merge
+  was to `staging` only) → `mc-sync-flagged-main` debounce holds, not re-emailed.
+- Outcome `drained-1`; markers refreshed to `BL=2026-06-16T16:38:33.548Z` (HAR-454's
+  `updatedAt`, newest in the raw Todo set now HAR-447 is Done), `PICK=1` (HAR-454),
+  `MAIN=f6331bb`. Because `mc-round-outcome` is `drained-1` (not `noop`), the next fire
+  does NOT early-exit at Step 1b regardless — it proceeds to Step 2 and should pick up
+  HAR-454 as the next pickable Wave-3 slice.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-16T04:34:10.491Z
+mc-round-bl: 2026-06-16T16:38:33.548Z
 mc-round-pick: 1
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: drained-1
