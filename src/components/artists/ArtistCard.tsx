@@ -44,6 +44,46 @@ function CardReviewSummary({
   )
 }
 
+/**
+ * Service-type badges for the discovery card (HAR-447): renders a 遮蓋
+ * (cover-up) badge when `offers_coverup` is true and a Flash 圖 badge when
+ * `has_flash_designs` is true, so a consumer who filtered by service sees
+ * on-card confirmation of why the artist matched. Renders nothing when neither
+ * flag is set. `offers_custom_design` is deliberately excluded — it DEFAULTs
+ * true and is near-universal / low-signal. Mirrors the existing `Badge`
+ * styling; `t` is the resolved `artists` namespace translator.
+ */
+function ServiceBadges({
+  artist,
+  t,
+}: {
+  readonly artist: ArtistWithDetails
+  readonly t: (key: string) => string
+}) {
+  if (!artist.offers_coverup && !artist.has_flash_designs) return null
+
+  return (
+    <>
+      {artist.offers_coverup && (
+        <Badge
+          variant="secondary"
+          className="rounded-sm bg-ink-accent-dim text-accent-foreground hover:bg-muted"
+        >
+          {t('badgeCoverup')}
+        </Badge>
+      )}
+      {artist.has_flash_designs && (
+        <Badge
+          variant="secondary"
+          className="rounded-sm bg-ink-accent-dim text-accent-foreground hover:bg-muted"
+        >
+          {t('badgeFlash')}
+        </Badge>
+      )}
+    </>
+  )
+}
+
 export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
   if (variant === 'compact') {
     // Await the (async) compact card so the resolved tree is returned directly;
@@ -99,6 +139,7 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
                   +{extraCount}
                 </Badge>
               )}
+              <ServiceBadges artist={artist} t={t} />
             </div>
 
             {artist.portfolio_items.length > 0 && (
@@ -166,6 +207,11 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
           {artist.styles.slice(0, MAX_VISIBLE_STYLES).map((s) => (
             <StyleBadge key={s.id} name={s.name} icon={s.icon} />
           ))}
+        </div>
+      )}
+      {(artist.offers_coverup || artist.has_flash_designs) && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          <ServiceBadges artist={artist} t={t} />
         </div>
       )}
       {artist.reviewSummary && artist.reviewSummary.count > 0 && (
