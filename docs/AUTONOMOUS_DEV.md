@@ -40,6 +40,7 @@ migration and land in parallel; the write-path waits on the reviews table.
 | 9 | 2026-06-12 | HAR-415 Wave 3 **read-path** — `getReviewsByArtistId` (`src/lib/supabase/queries/reviews.ts`, admin-client read pattern) + mounted `ArtistReviewsSection` on the public artist page (`…/artists/[slug]/page.tsx`) + the consuming test `…/artists/[slug]/__tests__/page.reviews.test.tsx` that asserts the section displays (cleared the Round-8 QA bounce) | #91 — squash-merged to `staging` (merge commit `1232e22`), required `ci-passed` (strict branch protection) + all 4 checks (lint-and-typecheck, test, migration-check, build) green. **First user-visible Wave 3 slice — reviews now render on artist detail pages.** Product-QA: `promotion_review` (sales-facing UI). |
 | 10 | 2026-06-13 | HAR-416 Wave 3 **write-path** — authed POST `src/app/api/artists/[slug]/reviews/route.ts` (401/400/404/201/409 handling, author id server-derived from session, unique-violation → clean 409) + `ArtistReviewFormSection` client wrapper wiring `ReviewForm` on the artist detail page; HAR-417 Wave 3 **discovery surface** — one bounded aggregate read on `reviews` (no N+1) in the listing query + compact `★ avg (count)` summary on `ArtistCard` (both variants, reuses `StarRating`, hidden when count 0) | #93 (write-path, merge commit `53e661a`) + #92 (discovery surface, squash `d038337`) — both squash-merged to `staging`, all 5 required checks green (lint-and-typecheck, test, migration-check, build, `ci-passed`). **Reviews vertical now complete end-to-end: submit + display + browse-surface rating.** Product-QA: both `promotion_review` (sales-facing UI; informational, not a block). |
 | 12 | 2026-06-14 | **v0.3 Wave 1, slice 1/3** — HAR-433 `/artists` sort control: `sort` enum (`featured`/`price_low`/`price_high`/`newest`) branched in `getArtists` (`src/lib/supabase/queries/artists.ts`), new listing search-params zod schema (`src/lib/validations/listing.ts`), 排序 `<Select>` in `src/components/artists/ArtistFilters.tsx` + `…/artists/page.tsx` wiring; query + zod + component vitest tests | #95 — squash-merged to `staging` (merge commit `d7c7745`), all 5 required checks green (lint-and-typecheck, test, migration-check, build, `ci-passed`). **First v0.3 discovery slice — the artist listing is now sortable.** Product-QA: `promotion_review` (sales-facing UI; informational, not a block). |
+| 18 | 2026-06-16 | **v0.3 Wave 3** — HAR-446 `/artists` 服務類型 (service-offering) filter: `ArtistService` union (`coverup`/`flash`) + `parseArtistService` + `hasActiveListingFilters` extension (`src/lib/validations/listing.ts`), `.eq('offers_coverup', true)` / `.eq('has_flash_designs', true)` predicate in `getArtists` (`src/lib/supabase/queries/artists.ts`, no migration — columns pre-existed), 服務類型 control in `src/components/artists/ArtistFilters.tsx` + `…/artists/page.tsx` wiring, zh-TW/en i18n; query + zod + consuming component vitest tests | #98 — squash-merged to `staging` (merge commit `a94f680`), all 5 required checks green (lint-and-typecheck, test, migration-check, build, `ci-passed`). **v0.3 discovery now filterable by service type (遮蓋 / Flash 圖).** Product-QA: `promotion_review` (sales-facing UI; informational, not a block). _(Rounds 13–14 — HAR-434 budget filter #?, HAR-435 count/empty-state #? — shipped per their narrative sections but predate this table row; not backfilled here.)_ |
 
 With Round 5 the v0.2 **client-side presentational surface is 100% complete**:
 validation schema, StarRating, aggregation util (incl. per-star `distribution`),
@@ -516,9 +517,44 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   fire with no intervening HAR-440 edit early-exits. Next fire early-exits unless a new
   auto-eligible Todo appears, HAR-436/HAR-440 are un-gated, or a new comment bumps `BL`.
 
+### Round 18 (2026-06-16) — v0.3 Wave 3: HAR-446 service-offering filter SHIPPED; refilled backlog
+
+- **Wake cause:** a NEW auto-eligible Todo **HAR-446** (`auto-claude`, `[v0.3 W3]`
+  /artists 服務類型篩選) was created 2026-06-16 03:41Z, moving `BL`
+  `2026-06-15T11:02:42.107Z → 2026-06-16T03:41:47.506Z` and `PICK` `0 → 1`.
+  Step 1b correctly did NOT early-exit — real new work.
+- **Scout / triage:** HAR-446 auto-eligible (ZERO migration/money/cron/auth; the
+  `offers_coverup`/`has_flash_designs` columns pre-exist on `staging` so it is a pure
+  query-predicate + UI-control + consuming-test slice; `out_of_scope`
+  `frontend-only-browser-verify` does NOT apply — it is vitest-gated). Already-shipped
+  guard: grep of `origin/staging` found the columns SELECTed but **no** filter
+  (`ArtistService`/`parseArtistService` absent) → genuinely actionable. HAR-440
+  (`needs-human`, primary-checkout reconciliation — dispatcher HARD-FORBIDDEN from
+  mutating the primary checkout) and HAR-436 (`needs-human`, gated additive rating-view
+  migration) both already labelled → idempotent no-op (no re-label, no re-comment).
+- **Dispatched HAR-446** to the parallel drain → **merged to `staging` via PR #98**
+  (squash, merge commit `a94f680`, mergedAt 2026-06-16T04:49:40Z; all 5 required checks
+  green: lint-and-typecheck, test, migration-check, build, `ci-passed`). Worktree ended
+  `--merged`, remote branch deleted, Linear HAR-446 already Done + merged comment.
+  **0 deferred** (incl. 0 from Product-QA). HAR-446 flagged `promotion_review`
+  (sales-facing UI; informational — a QA status, NOT `needs-human`).
+- **Ideation (refill toward ~2 in flight; milestone NOT exhausted):** opened **HAR-447**
+  (`auto-claude`, Todo) — `[v0.3 W3]` ArtistCard 服務類型徽章 (遮蓋/Flash 圖 badges,
+  display-only, no query/migration). Deliberately file-DECOUPLED from HAR-446's listing
+  spine (`ArtistCard.tsx` only, not `ArtistFilters.tsx`/`queries`/`page`/`validations`) so
+  it can drain a later round without file-mutex contention. The booleans are already
+  SELECTed and reach the card, so it needs no data-layer change.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged — the merge
+  was to `staging` only) → `mc-sync-flagged-main` debounce holds, not re-emailed.
+- Outcome `drained-1`; markers refreshed to `BL=2026-06-16T04:34:10.491Z` (HAR-447's
+  `updatedAt`, newest in the raw Todo set), `PICK=1` (HAR-447), `MAIN=f6331bb`. Because
+  `mc-round-outcome` is `drained-1` (not `noop`), the next fire does NOT early-exit at
+  Step 1b regardless — it proceeds to Step 2 and should pick up HAR-447 as the next
+  pickable Wave-3 slice.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-15T11:02:42.107Z
-mc-round-pick: 0
+mc-round-bl: 2026-06-16T04:34:10.491Z
+mc-round-pick: 1
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: noop
+mc-round-outcome: drained-1
