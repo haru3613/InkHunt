@@ -5,6 +5,7 @@ import { getAllStyles } from '@/lib/supabase/queries/styles'
 import { parseListingSearchParams, hasActiveListingFilters } from '@/lib/validations/listing'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { ArtistFilters } from '@/components/artists/ArtistFilters'
+import { ActiveFilterChips } from '@/components/artists/ActiveFilterChips'
 import { ArtistListingHeader } from '@/components/artists/ArtistListingHeader'
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
@@ -85,6 +86,10 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
       <h1 className="font-display mb-1 text-2xl font-bold text-foreground">{t('title')}</h1>
 
       <ArtistFilters styles={styles} />
+
+      <div className="mt-3">
+        <ActiveFilterChips styles={styles} />
+      </div>
 
       <div className="mt-4">
         <ArtistListingHeader total={total} hasActiveFilters={hasActiveFilters} />
