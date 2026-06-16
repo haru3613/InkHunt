@@ -77,6 +77,14 @@ function withSummary(
   return { ...BASE, reviewSummary: summary }
 }
 
+function withService(
+  flags: Partial<
+    Pick<ArtistWithDetails, 'offers_coverup' | 'has_flash_designs'>
+  >,
+): ArtistWithDetails {
+  return { ...BASE, ...flags }
+}
+
 async function renderCard(
   artist: ArtistWithDetails,
   variant: 'default' | 'compact' = 'default',
@@ -124,5 +132,71 @@ describe('ArtistCard — review summary (HAR-417)', () => {
     await renderCard(withSummary(undefined))
 
     expect(screen.queryByRole('img', { name: /評分/ })).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * Service-type badges (HAR-447): the card must surface the discriminating
+ * service booleans it already receives — a 遮蓋 (cover-up) badge when
+ * `offers_coverup` is true and a Flash 圖 badge when `has_flash_designs` is
+ * true — so a consumer filtering by service sees on-card confirmation of why an
+ * artist matched. `getTranslations` is mocked to echo the key, so we assert on
+ * the i18n keys (`badgeCoverup` / `badgeFlash`).
+ */
+describe('ArtistCard — service-type badges (HAR-447)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('shows the 遮蓋 badge when offers_coverup is true (default variant)', async () => {
+    await renderCard(withService({ offers_coverup: true }))
+
+    expect(screen.getByText('badgeCoverup')).toBeInTheDocument()
+    expect(screen.queryByText('badgeFlash')).not.toBeInTheDocument()
+  })
+
+  it('shows the Flash 圖 badge when has_flash_designs is true (default variant)', async () => {
+    await renderCard(withService({ has_flash_designs: true }))
+
+    expect(screen.getByText('badgeFlash')).toBeInTheDocument()
+    expect(screen.queryByText('badgeCoverup')).not.toBeInTheDocument()
+  })
+
+  it('shows both badges when both flags are true (default variant)', async () => {
+    await renderCard(
+      withService({ offers_coverup: true, has_flash_designs: true }),
+    )
+
+    expect(screen.getByText('badgeCoverup')).toBeInTheDocument()
+    expect(screen.getByText('badgeFlash')).toBeInTheDocument()
+  })
+
+  it('shows NO service badge when both flags are false (default variant)', async () => {
+    await renderCard(
+      withService({ offers_coverup: false, has_flash_designs: false }),
+    )
+
+    expect(screen.queryByText('badgeCoverup')).not.toBeInTheDocument()
+    expect(screen.queryByText('badgeFlash')).not.toBeInTheDocument()
+  })
+
+  it('shows the service badges in the compact variant too', async () => {
+    await renderCard(
+      withService({ offers_coverup: true, has_flash_designs: true }),
+      'compact',
+    )
+
+    expect(screen.getByText('badgeCoverup')).toBeInTheDocument()
+    expect(screen.getByText('badgeFlash')).toBeInTheDocument()
+  })
+
+  it('shows NO service badge in the compact variant when both flags are false', async () => {
+    await renderCard(
+      withService({ offers_coverup: false, has_flash_designs: false }),
+      'compact',
+    )
+
+    expect(screen.queryByText('badgeCoverup')).not.toBeInTheDocument()
+    expect(screen.queryByText('badgeFlash')).not.toBeInTheDocument()
   })
 })

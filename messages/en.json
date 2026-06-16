@@ -49,6 +49,8 @@
     "serviceAll": "All Services",
     "serviceCoverup": "Cover-up",
     "serviceFlash": "Flash Designs",
+    "badgeCoverup": "Cover-up",
+    "badgeFlash": "Flash",
     "allStyles": "All",
     "recommended": "Featured",
     "priceFrom": "From {price}",
