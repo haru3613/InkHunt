@@ -642,9 +642,66 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   Harvey for direction (apply HAR-436 to unblock Wave-2 rating sort/filter, or set a new
   milestone).
 
+### Round 21 (2026-06-17) — v0.3 W1.5 keyword-search wave opened by PM; HAR-455 backend slice SHIPPED (reviewer needs_human OVERRIDDEN as a read-only non-boundary concern)
+
+- **Wake cause:** the PM opened a NEW **v0.3 W1.5 keyword-search wave** —
+  HAR-455 (backend `?q=` parse + name/bio ilike), HAR-456 (search box), HAR-457
+  (search chip), all `auto-claude`, created 2026-06-17 03:38–39Z. `BL` moved
+  (`2026-06-16T05:02:25.715Z → 2026-06-17T03:39:22.661Z`) and `PICK` `0 → 3`, so
+  this was NOT the awaiting-human/exhaustion round Round 20 anticipated — real new
+  auto-eligible work arrived. (Last outcome was `drained-1` anyway, so Step 1b would
+  not have early-exited regardless.) The Wave-2 rating sort/filter exhaustion that
+  Round 20 flagged is now moot for this fire — W1.5 supersedes it as the active work.
+- **Scout / triage:** the three W1.5 tickets are an explicit **sequential chain**
+  (each says "Sequence AFTER …" + "Rebase on prior before the PR"; HAR-456's box is a
+  broken vertical slice without HAR-455's query consumer) → NOT mutually independent,
+  so only the foundational first slice **HAR-455** was dispatched; HAR-456/457 stay
+  Todo for later rounds once their base merges. Already-shipped guard: `git grep
+  origin/staging` found NO `parseListingQuery`/`?q=` in `listing.ts` and NO
+  `ilike`/`.or(` keyword predicate in `artists.ts` → genuinely actionable. HAR-455 is
+  backend-only (parser + query, vitest-gated) so `out_of_scope`
+  `frontend-only-browser-verify` does NOT apply; no migration/money/cron/auth →
+  bot-eligible. HAR-440 (`needs-human`, primary-checkout reconciliation) and HAR-436
+  (`needs-human`, gated additive rating-view migration) both already labelled →
+  idempotent no-op (no re-label, no re-comment).
+- **Drain returned 0/1 merged, 1 deferred `needs_human` — but the dispatcher
+  OVERRODE that verdict and MERGED.** The drain implemented HAR-455 as **PR #101**
+  (squash `f3596107`): all acceptance criteria pass, 19 new vitest cases, all 5
+  required checks green (lint-and-typecheck, test, migration-check, build,
+  `ci-passed`), MERGEABLE/CLEAN. The code-reviewer tagged it `needs_human` over an
+  **incomplete PostgREST reserved-char escape set** — `escapeSearchTerm` neutralizes
+  `\ % _ ,` but not `*` (a `%`/wildcard alias in `ilike`) or the structural `( ) :`.
+  **Routing judgment:** the change is a READ-ONLY public `/artists` SELECT (fixed
+  `ARTIST_PUBLIC_SELECT`, RLS server-side) — filter manipulation cannot leak private
+  data, bypass RLS, or touch money/data; worst case is a 400 or a widened set of
+  already-public rows. That does **not** meet this fleet's `needs-human` boundary
+  (money + irreversible-data ONLY), and the dispatch prompt explicitly forbids
+  `needs-human` for QA/robustness concerns. The reviewer itself wrote the finding is
+  "NOT a blocker" and recommended a follow-up ticket. So per the fleet-uniform
+  boundary + "don't over-flag", the green, AC-meeting, read-only slice was **merged to
+  the safe `staging` target** (manual `gh pr merge --squash`, server-side `ci-passed`
+  gate still enforced), worktree ended `--merged`, branch deleted, HAR-455 → Done with
+  a routing-note comment. **0 actual needs-human, 0 promotion-review carried up.**
+- **Follow-up opened: HAR-458** (`auto-claude`, High) — harden the `?q=` escaping via
+  the docs-aligned **double-quote-wrap** (neutralizes `* ( ) :`), update the mocked
+  tests + the `.mc/learnings.md` rule, with a **live-staging `?q=` probe gate** (the
+  quoted form changes query semantics and the suite is fully mocked, so it can't be
+  proven against live PostgREST by tests alone — exactly why the reviewer flagged it).
+  High-priority so it lands before any production promotion. (Created in Linear's
+  default `Backlog` state, then moved to `Todo` so future rounds scout it.)
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged — the merge
+  was to `staging` only) → `mc-sync-flagged-main` debounce holds, not re-emailed.
+- Outcome `drained-1`; markers refreshed to `BL=2026-06-17T04:47:14.387Z` (HAR-458's
+  `updatedAt` after the Backlog→Todo move, newest in the raw Todo set now HAR-455 is
+  Done), `PICK=3` (HAR-456 + HAR-457 + HAR-458, all `auto-claude`), `MAIN=f6331bb`.
+  Because `mc-round-outcome` is `drained-1` (not `noop`), the next fire does NOT
+  early-exit at Step 1b — it proceeds to Step 2 and should pick up **HAR-456** (W1.5
+  slice 2/3, the search box, now unblocked since HAR-455 merged), with HAR-457 (chip)
+  and HAR-458 (escaping hardening) following.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-16T05:02:25.715Z
-mc-round-pick: 0
+mc-round-bl: 2026-06-17T04:47:14.387Z
+mc-round-pick: 3
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: drained-1
