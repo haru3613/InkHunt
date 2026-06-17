@@ -742,9 +742,47 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   milestone). Markers refreshed to `BL=2026-06-17T05:04:07.242Z` (HAR-440, newest in
   the raw Todo set now HAR-457 is Done), `PICK=0`, `MAIN=f6331bb`.
 
+### Round 23 (2026-06-18) — designated exhaustion-detection round; Harvey emailed for v0.3 Wave 2 / next-milestone direction
+
+- **Wake cause:** Round 22's outcome was `drained-1` (not `noop`), so Step 1b
+  correctly did NOT early-exit — this is the exhaustion-detection round Round 22
+  scheduled. `BL`/`PICK`/`MAIN` are unchanged from Round 22
+  (`2026-06-17T05:04:07.242Z` / `0` / `f6331bb`), but the productive prior outcome
+  forces a re-scout.
+- **Scout result: nothing auto-eligible.** Project `Todo` set = exactly **2**, both
+  already `needs-human`-labelled → `PICK=0`, nothing to drain. No `mc-qa-blocked`
+  retry pending.
+  - **HAR-436** — Wave-2 rating-aggregate view migration. Additive (read-only view),
+    but InkHunt gates ALL migrations to Harvey (`allow_additive_migrations=false`);
+    the blocker for Wave 2 (sort-by-評分最高 + filter-by-最低評分 4★+). Already
+    labelled — no re-label, no re-comment (idempotency for Step 1b's `BL` convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational; behind origin + dirty files). Human call. Already labelled — no
+    re-label.
+- **v0.3 Discovery auto-eligible surface EXHAUSTED.** Shipped end-to-end: Wave 1
+  (sort / budget / count+empty-state), W1.5 keyword search (HAR-455 backend `?q=`,
+  HAR-456 box, HAR-458 PostgREST escaping hardening, HAR-457 chip), Wave 3
+  service-type filter. The ONLY remaining defined milestone work is Wave 2 rating
+  sort/filter, gated on the `needs-human` HAR-436 migration.
+- **No ideation (deliberate).** No genuinely-independent, auto-eligible v0.3 slice
+  remains that wouldn't depend on the gated HAR-436 migration; defining a new
+  milestone (v0.4) is a product-direction call that belongs to Harvey / the PM pass,
+  not drain-dispatcher scope-creep. So the milestone is treated as **genuinely
+  exhausted**, not "today's Todo list is short."
+- **Emailed Harvey for direction** — apply HAR-436 on staging to unblock Wave 2
+  rating sort/filter, or set a new milestone (v0.4) and the bot ideates + drains its
+  auto-eligible surface. First no-op after Round 22's productive close → a fresh
+  state transition, recorded once here; later identical fires early-exit at Step 1b
+  (markers match AND `mc-round-outcome: noop`) without re-triage or re-email.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome marker `noop`; `BL=2026-06-17T05:04:07.242Z`, `PICK=0`, `MAIN=f6331bb` —
+  all unchanged, so Step 1b WILL early-exit the next fire until new tickets, a
+  removed `needs-human` label, or a main hotfix appears.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-bl: 2026-06-17T05:04:07.242Z
 mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: drained-1
+mc-round-outcome: noop
