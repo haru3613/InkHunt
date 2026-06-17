@@ -4,6 +4,7 @@ import {
   listingSortSchema,
   listingBudgetSchema,
   parseArtistService,
+  parseListingQuery,
   hasActiveListingFilters,
 } from '../listing'
 
@@ -83,6 +84,7 @@ describe('parseListingSearchParams', () => {
       sort: 'newest',
       budget: 'le3000',
       service: null,
+      q: null,
     })
   })
 
@@ -91,6 +93,7 @@ describe('parseListingSearchParams', () => {
       sort: 'newest',
       budget: 'any',
       service: null,
+      q: null,
     })
   })
 })
@@ -216,6 +219,113 @@ describe('parseListingSearchParams — service (HAR-446)', () => {
       sort: 'newest',
       budget: 'le3000',
       service: 'flash',
+      q: null,
     })
+  })
+})
+
+describe('parseListingQuery (HAR-455)', () => {
+  it('returns null for absent / non-string input', () => {
+    expect(parseListingQuery(undefined)).toBeNull()
+    expect(parseListingQuery(null)).toBeNull()
+    expect(parseListingQuery(42)).toBeNull()
+    expect(parseListingQuery([])).toBeNull()
+    expect(parseListingQuery(['bob'])).toBeNull()
+  })
+
+  it('returns null for an empty or whitespace-only string', () => {
+    expect(parseListingQuery('')).toBeNull()
+    expect(parseListingQuery('   ')).toBeNull()
+    expect(parseListingQuery('\t\n')).toBeNull()
+  })
+
+  it('trims surrounding whitespace and returns the normalized string', () => {
+    expect(parseListingQuery('  bob ')).toBe('bob')
+    expect(parseListingQuery('ink')).toBe('ink')
+  })
+
+  it('caps an over-long input at 100 chars (post-trim)', () => {
+    const longInput = 'a'.repeat(250)
+    const result = parseListingQuery(longInput)
+    expect(result).not.toBeNull()
+    expect(result).toHaveLength(100)
+    expect(result).toBe('a'.repeat(100))
+  })
+
+  it('trims before capping so leading/trailing spaces do not consume the budget', () => {
+    const result = parseListingQuery(`  ${'a'.repeat(250)}  `)
+    expect(result).toHaveLength(100)
+  })
+})
+
+describe('parseListingSearchParams — q (HAR-455)', () => {
+  it('extracts a valid q value', () => {
+    expect(parseListingSearchParams({ q: 'ink' })).toMatchObject({ q: 'ink' })
+  })
+
+  it('trims the q value', () => {
+    expect(parseListingSearchParams({ q: '  bob ' })).toMatchObject({ q: 'bob' })
+  })
+
+  it('defaults q to null when absent, empty or whitespace-only', () => {
+    expect(parseListingSearchParams({})).toMatchObject({ q: null })
+    expect(parseListingSearchParams({ q: '' })).toMatchObject({ q: null })
+    expect(parseListingSearchParams({ q: '   ' })).toMatchObject({ q: null })
+  })
+
+  it('parses q alongside sort, budget and service', () => {
+    expect(
+      parseListingSearchParams({ sort: 'newest', budget: 'le3000', service: 'flash', q: 'bob' }),
+    ).toEqual({
+      sort: 'newest',
+      budget: 'le3000',
+      service: 'flash',
+      q: 'bob',
+    })
+  })
+})
+
+describe('hasActiveListingFilters — q (HAR-455)', () => {
+  it('is true when only q is set', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: 'bob',
+      }),
+    ).toBe(true)
+  })
+
+  it('is false when q is null/absent and everything else is default', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+      }),
+    ).toBe(false)
+    // q omitted entirely is also no filter
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
+    ).toBe(false)
+  })
+
+  it('treats an empty / whitespace-only q as no filter', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: '',
+      }),
+    ).toBe(false)
   })
 })

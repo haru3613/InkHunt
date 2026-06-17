@@ -38,3 +38,13 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   make it `return AsyncChild({ ...props })` so the awaited tree is fully
   settled. Evidence: HAR-417 `ArtistCard.test.tsx` (mocks `../PriceRange`;
   compact branch returns `CompactCard({ artist })`).
+- **A user keyword fed into a PostgREST `.or()` filter string MUST be escaped —
+  `.or()` is comma-delimited at the top level and `ilike` treats `%`/`_` as
+  wildcards.** Backslash-escape `\` first (it is the LIKE escape char), then
+  `%`, `_`, and `,`; an unescaped comma splits the filter into extra OR branches
+  and an unescaped `%`/`_` widens (or breaks) the match. Resolve the `.or(...)`
+  string ONCE and apply the SAME string to BOTH the count and data query (like
+  `budgetPredicate`/`serviceColumn`) or `total` drifts from the rows returned.
+  In the artists query test, add `chain.or = vi.fn().mockReturnValue(chain)` to
+  `makeThenable` so the new call doesn't break the chain. Evidence: HAR-455
+  (`getArtists` `q`/`searchPredicate`/`escapeSearchTerm`; PR pending).

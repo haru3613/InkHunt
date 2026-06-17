@@ -59,6 +59,28 @@ export function parseArtistService(raw: unknown): ArtistService | null {
     : null
 }
 
+/**
+ * Max length of the free-text keyword search term (HAR-455). Bounds the
+ * `ilike` predicate so a pathologically long `?q=` can't blow up the query
+ * string; user-meaningful searches are far shorter.
+ */
+export const LISTING_QUERY_MAX_LENGTH = 100
+
+/**
+ * Parse a raw `q` search param into a normalized keyword string or `null`
+ * (HAR-455). Mirrors `parseArtistService`'s untrusted-string contract — the
+ * page reads the value straight off `searchParams` so this never throws. Trims
+ * surrounding whitespace, treats empty/whitespace-only as `null` (the
+ * no-search default), and caps the length (post-trim) to bound the predicate.
+ * Returns the normalized term or `null`.
+ */
+export function parseListingQuery(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  const trimmed = raw.trim()
+  if (trimmed === '') return null
+  return trimmed.slice(0, LISTING_QUERY_MAX_LENGTH)
+}
+
 export const listingSearchParamsSchema = z.object({
   sort: listingSortSchema,
   budget: listingBudgetSchema,
@@ -68,6 +90,8 @@ export type ListingSearchParams = {
   sort: ArtistSort
   budget: ArtistBudget
   service: ArtistService | null
+  /** Free-text keyword search term, or `null` for no search (HAR-455). */
+  q: string | null
 }
 
 /**
@@ -83,6 +107,7 @@ export function parseListingSearchParams(
     sort: listingSortSchema.parse(searchParams.sort),
     budget: listingBudgetSchema.parse(searchParams.budget),
     service: parseArtistService(searchParams.service),
+    q: parseListingQuery(searchParams.q),
   }
 }
 
@@ -90,8 +115,9 @@ export function parseListingSearchParams(
  * Whether the `/artists` listing has ANY active filter relative to its bare
  * default view (HAR-435). True when a `style` or `city` is selected, the `sort`
  * is anything other than the `featured` default, the `budget` is anything other
- * than the `any` default, or a `service` filter is set (HAR-446). Drives the
- * `清除篩選` (clear-filters) affordance.
+ * than the `any` default, a `service` filter is set (HAR-446), or a non-empty
+ * `q` keyword search is active (HAR-455). Drives the `清除篩選` (clear-filters)
+ * affordance.
  */
 export function hasActiveListingFilters(filters: {
   style?: string | null
@@ -99,12 +125,14 @@ export function hasActiveListingFilters(filters: {
   sort: ArtistSort
   budget: ArtistBudget
   service?: ArtistService | null
+  q?: string | null
 }): boolean {
   return (
     Boolean(filters.style) ||
     Boolean(filters.city) ||
     filters.sort !== 'featured' ||
     filters.budget !== 'any' ||
-    Boolean(filters.service)
+    Boolean(filters.service) ||
+    Boolean(filters.q && filters.q.trim())
   )
 }
