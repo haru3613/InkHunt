@@ -35,6 +35,7 @@
     "activeFiltersLabel": "Active filters",
     "removeFilter": "Remove filter",
     "clearAll": "Clear all",
+    "searchChipLabel": "“{q}”",
     "searchPlaceholder": "Search by name or bio",
     "allRegions": "All Regions",
     "selectRegion": "Select region",

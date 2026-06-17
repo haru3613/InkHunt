@@ -12,8 +12,8 @@ interface ActiveFilterChipsProps {
   styles: Style[]
 }
 
-/** URL param keys this row reflects (the full set ArtistFilters writes). */
-const FILTER_KEYS = ['style', 'city', 'sort', 'budget', 'service'] as const
+/** URL param keys this row reflects (the full set ArtistFilters writes + search). */
+const FILTER_KEYS = ['style', 'city', 'sort', 'budget', 'service', 'q'] as const
 
 /**
  * Map a non-default option value to the existing `artists`-namespace i18n key
@@ -66,9 +66,13 @@ export function ActiveFilterChips({ styles }: ActiveFilterChipsProps) {
   const sort = searchParams.get('sort')
   const budget = searchParams.get('budget')
   const service = searchParams.get('service')
+  const q = searchParams.get('q')?.trim()
 
   const chips: ActiveChip[] = []
 
+  if (q) {
+    chips.push({ key: 'q', label: t('searchChipLabel', { q }) })
+  }
   if (style) {
     const matched = styles.find((s) => s.slug === style)
     chips.push({ key: 'style', label: matched?.name ?? style })

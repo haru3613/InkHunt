@@ -17,7 +17,12 @@ vi.mock('@/i18n/navigation', () => ({
 
 vi.mock('next-intl', () => ({
   // Echo the key so chips assert on resolved-label structure deterministically.
-  useTranslations: () => (key: string) => key,
+  // When interpolation values are passed (searchChipLabel), append them so the
+  // search term stays assertable under the key-echo convention.
+  useTranslations:
+    () =>
+    (key: string, values?: Record<string, string | number>) =>
+      values ? `${key}:${Object.values(values).join(',')}` : key,
 }))
 
 import { ActiveFilterChips } from '../ActiveFilterChips'
@@ -137,5 +142,88 @@ describe('ActiveFilterChips (HAR-454)', () => {
     mockSearchParams.set('style', 'unknown-slug')
     render(<ActiveFilterChips styles={STYLES} />)
     expect(screen.getByText('unknown-slug', { exact: false })).toBeInTheDocument()
+  })
+
+  // --- HAR-457: active search (q) chip ---
+
+  it('renders a search chip carrying the q term when q is a non-empty string', () => {
+    mockSearchParams.set('q', 'bob')
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    // The chip's visible label embeds the raw search term.
+    expect(screen.getByText('bob', { exact: false })).toBeInTheDocument()
+    const chips = screen.getAllByTestId('filter-chip')
+    expect(chips).toHaveLength(1)
+  })
+
+  it('does not render a search chip when q is absent', () => {
+    const { container } = render(<ActiveFilterChips styles={STYLES} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('does not render a search chip when q is present but empty/whitespace', () => {
+    mockSearchParams.set('q', '   ')
+    const { container } = render(<ActiveFilterChips styles={STYLES} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('removing the search chip drops q but preserves other params', () => {
+    mockSearchParams.set('q', 'bob')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('bob'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('q=')
+    expect(url).toContain('style=traditional')
+    expect(url).toContain('city=')
+  })
+
+  it('removing the search chip also resets pagination', () => {
+    mockSearchParams.set('q', 'bob')
+    mockSearchParams.set('page', '3')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('bob'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('q=')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('清除全部 also drops q (bare /artists when q is the only filter)', () => {
+    mockSearchParams.set('q', 'bob')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(screen.getByText('clearAll'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toBe('/artists')
+    expect(url).not.toContain('q=')
+  })
+
+  it('清除全部 drops q alongside the other five params', () => {
+    mockSearchParams.set('q', 'bob')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+    mockSearchParams.set('sort', 'price_low')
+    mockSearchParams.set('budget', 'le6000')
+    mockSearchParams.set('service', 'coverup')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(screen.getByText('clearAll'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    for (const key of ['q=', 'style=', 'city=', 'sort=', 'budget=', 'service=']) {
+      expect(url).not.toContain(key)
+    }
   })
 })
