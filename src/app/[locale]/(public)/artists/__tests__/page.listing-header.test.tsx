@@ -125,3 +125,27 @@ describe('ArtistsPage — listing header wiring (HAR-435)', () => {
     expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'true')
   })
 })
+
+describe('ArtistsPage — keyword search wiring (HAR-456)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('passes the parsed ?q= keyword into the getArtists filters', async () => {
+    await renderPage({ q: 'bob' }, ARTISTS, 3)
+    expect(getArtists).toHaveBeenCalledTimes(1)
+    const filters = getArtists.mock.calls[0][0] as { q?: string | null }
+    expect(filters.q).toBe('bob')
+  })
+
+  it('leaves q null when no ?q= is present (no search predicate)', async () => {
+    await renderPage({}, ARTISTS, 3)
+    const filters = getArtists.mock.calls[0][0] as { q?: string | null }
+    expect(filters.q).toBeNull()
+  })
+
+  it('signals active filters when a keyword search is present', async () => {
+    await renderPage({ q: 'bob' }, ARTISTS, 3)
+    expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'true')
+  })
+})

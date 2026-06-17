@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
 // --- Mocks (must be declared before the component import) ---
@@ -46,6 +46,13 @@ vi.mock('@/components/ui/select', () => ({
   ),
   SelectTrigger: () => null,
   SelectValue: () => null,
+}))
+
+// Mock the base-ui Input with a plain native <input> so the test can read
+// its placeholder/value and fireEvent.change on it. (Same approach as the
+// Select mock above.)
+vi.mock('@/components/ui/input', () => ({
+  Input: (props: React.ComponentProps<'input'>) => <input {...props} />,
 }))
 
 /** Find the native <select> that owns a given option label (e.g. the sort one). */
@@ -207,5 +214,112 @@ describe('ArtistFilters — service control (HAR-446)', () => {
 
     const url = mockPush.mock.calls[0][0] as string
     expect(url).not.toContain('service=')
+  })
+})
+
+describe('ArtistFilters — keyword search box (HAR-456)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
+  })
+
+  afterEach(() => {
+    // Each fake-timer test opts in; make sure we always restore real timers so
+    // an unrelated test that follows isn't left with frozen time.
+    vi.useRealTimers()
+  })
+
+  /** The search <input>, located by its (mocked-to-key) placeholder. */
+  function searchBox(): HTMLInputElement {
+    return screen.getByPlaceholderText('searchPlaceholder') as HTMLInputElement
+  }
+
+  it('renders a search box with the searchPlaceholder placeholder', () => {
+    render(<ArtistFilters styles={[]} />)
+    expect(searchBox()).toBeInTheDocument()
+  })
+
+  it('seeds its initial value from searchParams q', () => {
+    mockSearchParams.set('q', 'ink')
+    render(<ArtistFilters styles={[]} />)
+    expect(searchBox().value).toBe('ink')
+  })
+
+  it('does NOT push on the initial mount (seeded value is not a user edit)', () => {
+    vi.useFakeTimers()
+    mockSearchParams.set('q', 'ink')
+    render(<ArtistFilters styles={[]} />)
+
+    vi.advanceTimersByTime(1000)
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('debounces: no push before the timer fires, one push after (~300ms)', () => {
+    vi.useFakeTimers()
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.change(searchBox(), { target: { value: 'bob' } })
+    // before the debounce window elapses, nothing is pushed
+    expect(mockPush).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(300)
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('q=bob')
+  })
+
+  it('coalesces rapid keystrokes into a single push of the final value', () => {
+    vi.useFakeTimers()
+    render(<ArtistFilters styles={[]} />)
+
+    const box = searchBox()
+    fireEvent.change(box, { target: { value: 'b' } })
+    vi.advanceTimersByTime(100)
+    fireEvent.change(box, { target: { value: 'bo' } })
+    vi.advanceTimersByTime(100)
+    fireEvent.change(box, { target: { value: 'bob' } })
+    vi.advanceTimersByTime(300)
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('q=bob')
+  })
+
+  it('resets page when a search is typed', () => {
+    vi.useFakeTimers()
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.change(searchBox(), { target: { value: 'bob' } })
+    vi.advanceTimersByTime(300)
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('q=bob')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('clears the q param when the box is emptied', () => {
+    vi.useFakeTimers()
+    mockSearchParams.set('q', 'bob')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.change(searchBox(), { target: { value: '' } })
+    vi.advanceTimersByTime(300)
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('q=')
+  })
+
+  it('treats a whitespace-only query as empty (clears q)', () => {
+    vi.useFakeTimers()
+    mockSearchParams.set('q', 'bob')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.change(searchBox(), { target: { value: '   ' } })
+    vi.advanceTimersByTime(300)
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('q=')
   })
 })
