@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import type { Style } from '@/types/database'
@@ -12,7 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { StyleBadge } from './StyleBadge'
+
+/** Debounce window (ms) for the keyword-search box (HAR-456). */
+const SEARCH_DEBOUNCE_MS = 300
 
 interface ArtistFiltersProps {
   styles: Style[]
@@ -38,6 +42,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const activeSort = searchParams.get('sort')
   const activeBudget = searchParams.get('budget')
   const activeService = searchParams.get('service')
+  const activeQuery = searchParams.get('q')
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
@@ -52,6 +57,28 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
     },
     [router, searchParams],
   )
+
+  // Keyword search (HAR-456). Controlled box seeded from `?q=`; debounced so a
+  // burst of keystrokes only writes the URL once. The box is the user-visible
+  // consumer of HAR-455's `?q=` backend parsing.
+  const [query, setQuery] = useState(activeQuery ?? '')
+  // Skip the debounce push on the initial mount — the seeded value reflects the
+  // URL already, so writing it back would be a redundant (and looping) push.
+  const isFirstRender = useRef(true)
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    const handle = setTimeout(() => {
+      const trimmed = query.trim()
+      // An empty (or whitespace-only) box clears the param; reuse updateParams
+      // so `page` is dropped on change like every other filter.
+      updateParams('q', trimmed || null)
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(handle)
+  }, [query, updateParams])
 
   const handleStyleClick = useCallback(
     (slug: string | null) => {
@@ -93,6 +120,15 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
 
   return (
     <div className="flex flex-col gap-3">
+      <Input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={t('searchPlaceholder')}
+        aria-label={t('searchPlaceholder')}
+        className="w-full sm:max-w-xs"
+      />
+
       <div className="flex gap-3">
         <Select
           defaultValue={activeCity ?? 'all'}
