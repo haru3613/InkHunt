@@ -533,12 +533,13 @@ describe('getArtists', () => {
     })
   })
 
-  describe('keyword search filter (HAR-455)', () => {
+  describe('keyword search filter (HAR-455, hardened HAR-458)', () => {
     /**
      * Wire the (no style filter) call sequence and return BOTH the count chain
      * (1st `from()`) and the data chain (2nd) so the test can assert the
-     * `.or('display_name.ilike.%term%,bio.ilike.%term%')` predicate landed on
-     * each — the count query must carry the SAME predicate or `total` drifts.
+     * double-quote-wrapped `.or('display_name.ilike."%term%",bio.ilike."%term%"')`
+     * predicate (HAR-458) landed on each — the count query must carry the SAME
+     * predicate or `total` drifts.
      *   1. count query   -> { count }      (countChain)
      *   2. data query    -> { data: rows } (dataChain)
      *   3. reviews query -> { data: [] }
@@ -559,12 +560,14 @@ describe('getArtists', () => {
       return { countChain, dataChain }
     }
 
-    it('applies the name/bio ilike .or(...) predicate to BOTH queries for q=bob', async () => {
+    it('applies the double-quote-wrapped name/bio ilike .or(...) predicate to BOTH queries for q=bob', async () => {
       const { countChain, dataChain } = wireCountAndData()
 
       await getArtists({ page: 1, pageSize: 12, q: 'bob' })
 
-      const expected = 'display_name.ilike.%bob%,bio.ilike.%bob%'
+      // HAR-458: the filter value is double-quote-wrapped so every PostgREST
+      // reserved char inside it is inert.
+      const expected = 'display_name.ilike."%bob%",bio.ilike."%bob%"'
       expect(dataChain.or).toHaveBeenCalledWith(expected)
       expect(countChain.or).toHaveBeenCalledWith(expected)
     })
@@ -596,22 +599,78 @@ describe('getArtists', () => {
       expect(countChain.or).not.toHaveBeenCalled()
     })
 
-    it('escapes %, _ and , in the term before reaching .or (both queries)', async () => {
+    it('still LIKE-escapes %, _ inside the quoted value so they match literally; comma needs no escape inside quotes (both queries)', async () => {
       const { countChain, dataChain } = wireCountAndData()
 
-      // a term with every PostgREST-dangerous char: comma (or-delimiter),
-      // % and _ (LIKE wildcards)
+      // a term with LIKE wildcards (%, _) and the OR-delimiter (,). The %/_
+      // are LIKE-escaped (so they match literally, not as wildcards) AND the
+      // whole value is quote-wrapped; the comma is now inert inside the quotes.
       await getArtists({ page: 1, pageSize: 12, q: 'a%b_c,d' })
 
       const expected =
-        'display_name.ilike.%a\\%b\\_c\\,d%,bio.ilike.%a\\%b\\_c\\,d%'
+        'display_name.ilike."%a\\\\%b\\\\_c,d%",bio.ilike."%a\\\\%b\\\\_c,d%"'
       expect(dataChain.or).toHaveBeenCalledWith(expected)
       expect(countChain.or).toHaveBeenCalledWith(expected)
 
-      // the raw, unescaped comma must NOT survive into the filter string —
-      // otherwise PostgREST splits it into extra OR branches
+      // the raw user comma sits INSIDE the double-quoted value, so it cannot
+      // split the filter into extra OR branches: there is exactly one top-level
+      // delimiter comma (the one between the two ilike clauses).
       const dataArg = (dataChain.or as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
-      expect(dataArg).not.toMatch(/[^\\],d/)
+      expect(dataArg.split('",bio.ilike.').length).toBe(2)
+    })
+
+    it('neutralizes the wildcard alias * — it is inert inside the quoted value, not a % alias (both queries)', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      // `*` is a documented PostgREST alias for `%` in like/ilike. Inside the
+      // quoted value it is a literal character, not a wildcard.
+      await getArtists({ page: 1, pageSize: 12, q: 'a*b' })
+
+      const expected = 'display_name.ilike."%a*b%",bio.ilike."%a*b%"'
+      expect(dataChain.or).toHaveBeenCalledWith(expected)
+      expect(countChain.or).toHaveBeenCalledWith(expected)
+    })
+
+    it('neutralizes structural reserved chars ( ) : — they cannot close the OR group early (both queries)', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      // `(` `)` `:` are structural in the PostgREST filter grammar. supabase-js
+      // wraps `.or(...)` in parens, so a bare `)` could close the group early.
+      // Wrapped in quotes they are literal characters.
+      await getArtists({ page: 1, pageSize: 12, q: 'a*b(c):d' })
+
+      const expected = 'display_name.ilike."%a*b(c):d%",bio.ilike."%a*b(c):d%"'
+      expect(dataChain.or).toHaveBeenCalledWith(expected)
+      expect(countChain.or).toHaveBeenCalledWith(expected)
+    })
+
+    it('a closing paren in the term does not break the filter — exactly one top-level OR delimiter remains', async () => {
+      const { dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, q: 'ben)smith' })
+
+      const expected = 'display_name.ilike."%ben)smith%",bio.ilike."%ben)smith%"'
+      expect(dataChain.or).toHaveBeenCalledWith(expected)
+
+      // the embedded ) is inside the quotes; the only top-level delimiter is the
+      // single comma between the two ilike clauses.
+      const dataArg = (dataChain.or as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+      expect(dataArg.split('",bio.ilike.').length).toBe(2)
+    })
+
+    it('escapes an embedded double-quote and backslash inside the quoted value (PostgREST quoted-value grammar)', async () => {
+      const { dataChain } = wireCountAndData()
+
+      // `"` must be `\"` and `\` must be `\\` inside a PostgREST double-quoted
+      // value, otherwise the quote closes the value early. A user `\` is first
+      // LIKE-escaped (`\` → `\\`) then quote-escaped (`\\` → `\\\\`), so it ends
+      // up as four backslashes in the .or string and unwraps to a literal `\`
+      // under SQL LIKE.
+      await getArtists({ page: 1, pageSize: 12, q: 'a"b\\c' })
+
+      // value seen by .or: display_name.ilike."%a\"b\\\\c%",...
+      const expected = 'display_name.ilike."%a\\"b\\\\\\\\c%",bio.ilike."%a\\"b\\\\\\\\c%"'
+      expect(dataChain.or).toHaveBeenCalledWith(expected)
     })
 
     it('trims the term before building the predicate', async () => {
@@ -619,7 +678,7 @@ describe('getArtists', () => {
 
       await getArtists({ page: 1, pageSize: 12, q: '  bob  ' })
 
-      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike.%bob%,bio.ilike.%bob%')
+      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike."%bob%",bio.ilike."%bob%"')
     })
 
     it('composes the q predicate with concurrent city + budget + sort + service filters', async () => {
@@ -636,7 +695,7 @@ describe('getArtists', () => {
       })
 
       // keyword predicate
-      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike.%bob%,bio.ilike.%bob%')
+      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike."%bob%",bio.ilike."%bob%"')
       // other facets still applied
       expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
       expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)
