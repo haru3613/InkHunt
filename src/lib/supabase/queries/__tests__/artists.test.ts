@@ -47,6 +47,7 @@ function makeThenable<T>(result: T) {
   chain.in = vi.fn().mockReturnValue(chain)
   chain.lte = vi.fn().mockReturnValue(chain)
   chain.gte = vi.fn().mockReturnValue(chain)
+  chain.or = vi.fn().mockReturnValue(chain)
   chain.order = vi.fn().mockReturnValue(chain)
   chain.range = vi.fn().mockReturnValue(chain)
   chain.single = vi.fn().mockResolvedValue(result)
@@ -528,6 +529,118 @@ describe('getArtists', () => {
       // budget predicate still applied
       expect(dataChain.lte).toHaveBeenCalledWith('price_min', 6000)
       // sort ordering still applied
+      expect(dataChain.order).toHaveBeenCalledWith('price_min', { ascending: true, nullsFirst: false })
+    })
+  })
+
+  describe('keyword search filter (HAR-455)', () => {
+    /**
+     * Wire the (no style filter) call sequence and return BOTH the count chain
+     * (1st `from()`) and the data chain (2nd) so the test can assert the
+     * `.or('display_name.ilike.%term%,bio.ilike.%term%')` predicate landed on
+     * each — the count query must carry the SAME predicate or `total` drifts.
+     *   1. count query   -> { count }      (countChain)
+     *   2. data query    -> { data: rows } (dataChain)
+     *   3. reviews query -> { data: [] }
+     */
+    function wireCountAndData() {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      const countChain = makeThenable({ count: 1, error: null })
+      const dataChain = makeThenable({ data: artistRows, error: null })
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return countChain
+        if (callNum === 2) return dataChain
+        return makeThenable({ data: [], error: null })
+      })
+      return { countChain, dataChain }
+    }
+
+    it('applies the name/bio ilike .or(...) predicate to BOTH queries for q=bob', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, q: 'bob' })
+
+      const expected = 'display_name.ilike.%bob%,bio.ilike.%bob%'
+      expect(dataChain.or).toHaveBeenCalledWith(expected)
+      expect(countChain.or).toHaveBeenCalledWith(expected)
+    })
+
+    it('applies NO .or predicate when q is null', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, q: null })
+
+      expect(dataChain.or).not.toHaveBeenCalled()
+      expect(countChain.or).not.toHaveBeenCalled()
+    })
+
+    it('applies NO .or predicate when q is absent ({})', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({})
+
+      expect(dataChain.or).not.toHaveBeenCalled()
+      expect(countChain.or).not.toHaveBeenCalled()
+    })
+
+    it('applies NO .or predicate when q is empty / whitespace-only', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, q: '   ' })
+
+      expect(dataChain.or).not.toHaveBeenCalled()
+      expect(countChain.or).not.toHaveBeenCalled()
+    })
+
+    it('escapes %, _ and , in the term before reaching .or (both queries)', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      // a term with every PostgREST-dangerous char: comma (or-delimiter),
+      // % and _ (LIKE wildcards)
+      await getArtists({ page: 1, pageSize: 12, q: 'a%b_c,d' })
+
+      const expected =
+        'display_name.ilike.%a\\%b\\_c\\,d%,bio.ilike.%a\\%b\\_c\\,d%'
+      expect(dataChain.or).toHaveBeenCalledWith(expected)
+      expect(countChain.or).toHaveBeenCalledWith(expected)
+
+      // the raw, unescaped comma must NOT survive into the filter string —
+      // otherwise PostgREST splits it into extra OR branches
+      const dataArg = (dataChain.or as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+      expect(dataArg).not.toMatch(/[^\\],d/)
+    })
+
+    it('trims the term before building the predicate', async () => {
+      const { dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, q: '  bob  ' })
+
+      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike.%bob%,bio.ilike.%bob%')
+    })
+
+    it('composes the q predicate with concurrent city + budget + sort + service filters', async () => {
+      const { dataChain } = wireCountAndData()
+
+      await getArtists({
+        city: '台北市',
+        page: 1,
+        pageSize: 12,
+        sort: 'price_low',
+        budget: 'le6000',
+        service: 'coverup',
+        q: 'bob',
+      })
+
+      // keyword predicate
+      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike.%bob%,bio.ilike.%bob%')
+      // other facets still applied
+      expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
+      expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)
+      expect(dataChain.lte).toHaveBeenCalledWith('price_min', 6000)
       expect(dataChain.order).toHaveBeenCalledWith('price_min', { ascending: true, nullsFirst: false })
     })
   })

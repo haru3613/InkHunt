@@ -67,6 +67,12 @@ export interface ArtistFilters {
   budget?: ArtistBudget
   /** Service-offering predicate; absent/`null` → no predicate (HAR-446). */
   service?: ArtistService | null
+  /**
+   * Free-text keyword search term (HAR-455). When a non-empty string, applies
+   * a `display_name`/`bio` `ilike` substring match. Absent/`null`/empty → no
+   * predicate (byte-identical to the unfiltered query).
+   */
+  q?: string | null
 }
 
 const DEFAULT_PAGE_SIZE = 12
@@ -110,6 +116,36 @@ function serviceColumn(service: ArtistService | null | undefined): keyof ArtistR
     default:
       return null
   }
+}
+
+/**
+ * Escape a user keyword term for safe interpolation into a PostgREST `.or()`
+ * filter string (HAR-455). PostgREST's `or` is comma-delimited at the top
+ * level, and `ilike` treats `%`/`_` as SQL LIKE wildcards — so an unescaped
+ * comma would split the filter into extra OR branches and an unescaped `%`/`_`
+ * would widen (or break) the match. Backslash-escape `\` first (it is the LIKE
+ * escape char), then `%`, `_`, and `,`.
+ */
+function escapeSearchTerm(term: string): string {
+  return term
+    .replace(/\\/g, '\\\\')
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_')
+    .replace(/,/g, '\\,')
+}
+
+/**
+ * Build the name/bio keyword `.or()` filter string ONCE (HAR-455) so the SAME
+ * predicate lands on both the count and data queries — otherwise `total`
+ * drifts from the rows returned. Returns `null` for absent/empty/whitespace-only
+ * `q` (no predicate, byte-identical to today's query).
+ */
+function searchPredicate(q: string | null | undefined): string | null {
+  if (!q) return null
+  const term = q.trim()
+  if (term === '') return null
+  const escaped = escapeSearchTerm(term)
+  return `display_name.ilike.%${escaped}%,bio.ilike.%${escaped}%`
 }
 
 const ARTIST_PUBLIC_SELECT = `
@@ -217,6 +253,11 @@ export async function getArtists(
   // SAME `.eq(column, true)` must land on both queries or `total` drifts.
   const svcColumn = serviceColumn(filters?.service)
 
+  // HAR-455: resolve the name/bio keyword `.or()` filter string ONCE so the
+  // SAME predicate lands on both queries — otherwise `total` drifts. `null`
+  // when no/empty search term (no predicate, byte-identical to today's query).
+  const searchOr = searchPredicate(filters?.q)
+
   let countQuery = supabase
     .from('artists')
     .select('*', { count: 'exact', head: true })
@@ -231,6 +272,7 @@ export async function getArtists(
         : countQuery.gte('price_min', pricePred.value)
   }
   if (svcColumn) countQuery = countQuery.eq(svcColumn, true)
+  if (searchOr) countQuery = countQuery.or(searchOr)
 
   const { count } = await countQuery
   const total = count ?? 0
@@ -276,6 +318,7 @@ export async function getArtists(
         : dataQuery.gte('price_min', pricePred.value)
   }
   if (svcColumn) dataQuery = dataQuery.eq(svcColumn, true)
+  if (searchOr) dataQuery = dataQuery.or(searchOr)
 
   const { data, error } = await dataQuery
 
