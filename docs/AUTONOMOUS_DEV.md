@@ -699,9 +699,52 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   slice 2/3, the search box, now unblocked since HAR-455 merged), with HAR-457 (chip)
   and HAR-458 (escaping hardening) following.
 
+### Round 22 (2026-06-18) — v0.3 W1.5 keyword-search wave COMPLETE: HAR-457 search chip SHIPPED; auto-eligible surface exhausted, Wave 2 human-gated
+
+- **Context:** since Round 21, HAR-456 (search box, **PR #103**, merge `…`) and
+  HAR-458 (escaping hardening, **PR #102**) also merged to `staging` in interim
+  rounds that did not write their own doc entries — so the `?q=` backend +
+  double-quote-wrap escaping + search box were all live entering this round. This
+  round drains the final W1.5 slice and closes the wave.
+- **Drained HAR-457 → PR #104** (squash `58a07e5` on `origin/staging`, confirmed):
+  the removable `q` pill in `ActiveFilterChips` (`'q'` added to `FILTER_KEYS` so
+  清除全部 drops it; per-chip `×` drops just `q`; pagination resets on chip removal)
+  + empty-state honors search, with the consuming `ActiveFilterChips.test.tsx`
+  cases. All 5 required checks green (lint-and-typecheck, test, migration-check,
+  build, `ci-passed`). Rebase was a clean no-op; worktree ended `--merged --pr 104`,
+  remote branch deleted; HAR-457 already `Done`, shipped comment added.
+  Product-QA: `promotion_review` (sales-facing UI; informational, not a block).
+- **Scout / triage:** HAR-457 was the only auto-eligible Todo. Already-shipped
+  guard: `ActiveFilterChips.tsx` on `origin/staging` had `FILTER_KEYS =
+  ['style','city','sort','budget','service']` with no `'q'`/`searchChip` → genuinely
+  actionable. Deps HAR-455 (#101) / HAR-456 (#103) verified merged. HAR-440
+  (`needs-human` PM-patrol primary-checkout reconciliation) and HAR-436
+  (`needs-human` gated Wave-2 rating-view migration) both already labelled →
+  idempotent no-op (no re-label, no re-comment).
+- **Housekeeping:** cleaned three stranded bot worktrees left by interim rounds
+  (`feature-har-458-…` whose PR #102 had merged out-of-band, plus two merged
+  `feature-artists-…-q` trees) — physical dirs already gone, harness state ended.
+- **Ideation:** declined. Only 1 ticket qualified vs the ~2-in-flight target, but
+  the only remaining DEFINED milestone work (Wave 2 rating sort/filter) is gated on
+  HAR-436 (`needs-human` additive view) — the bot cannot ideate an auto-eligible
+  Wave-2 ticket without the migration. The keyword-search wave closes with HAR-457,
+  filter/chip already preserve `q`, and no un-shipped `q`-dropping surface was found
+  → forcing a second ticket would be scatter. Round is productive, milestone not
+  genuinely complete, so **no exhaustion email this round**.
+- `origin/main` still **13** ahead of `staging` (SHA `f6331bb`, unchanged — the
+  merge was to `staging` only) → `mc-sync-flagged-main` debounce holds, not re-emailed.
+- **Auto-eligible surface now EXHAUSTED:** with HAR-457 merged, the only Todos are
+  HAR-440 + HAR-436, both `needs-human` → `PICK=0`. Outcome `drained-1`, so the next
+  fire does NOT early-exit at Step 1b — it re-scouts, finds nothing auto-eligible and
+  nothing to ideate within the gated milestone, and becomes the **designated
+  exhaustion-detection round** (record `mc-round-outcome: noop` + email Harvey for
+  direction: apply HAR-436 to unblock Wave 2 rating sort/filter, or set a new
+  milestone). Markers refreshed to `BL=2026-06-17T05:04:07.242Z` (HAR-440, newest in
+  the raw Todo set now HAR-457 is Done), `PICK=0`, `MAIN=f6331bb`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-17T04:47:14.387Z
-mc-round-pick: 3
+mc-round-bl: 2026-06-17T05:04:07.242Z
+mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: drained-1
