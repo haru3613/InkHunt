@@ -38,13 +38,26 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   make it `return AsyncChild({ ...props })` so the awaited tree is fully
   settled. Evidence: HAR-417 `ArtistCard.test.tsx` (mocks `../PriceRange`;
   compact branch returns `CompactCard({ artist })`).
-- **A user keyword fed into a PostgREST `.or()` filter string MUST be escaped —
-  `.or()` is comma-delimited at the top level and `ilike` treats `%`/`_` as
-  wildcards.** Backslash-escape `\` first (it is the LIKE escape char), then
-  `%`, `_`, and `,`; an unescaped comma splits the filter into extra OR branches
-  and an unescaped `%`/`_` widens (or breaks) the match. Resolve the `.or(...)`
-  string ONCE and apply the SAME string to BOTH the count and data query (like
-  `budgetPredicate`/`serviceColumn`) or `total` drifts from the rows returned.
-  In the artists query test, add `chain.or = vi.fn().mockReturnValue(chain)` to
-  `makeThenable` so the new call doesn't break the chain. Evidence: HAR-455
-  (`getArtists` `q`/`searchPredicate`/`escapeSearchTerm`; PR pending).
+- **A user keyword fed into a PostgREST `.or()` filter VALUE must be escaped in
+  TWO layers — a per-char backslash allowlist alone is INCOMPLETE.** (HAR-458
+  supersedes the HAR-455 backslash-only rule: the allowlist missed `*` (a
+  documented `like`/`ilike` alias for `%` → widens the match) and the structural
+  grammar chars `( ) :` (an embedded `)` can close the supabase-js-added `.or()`
+  paren group early → malformed filter / 400).) The COMPLETE, docs-aligned fix:
+  1. **SQL-LIKE layer** — escape `\` first (LIKE escape char), then `%` and `_`
+     so the user's literal wildcards match literally (PostgREST passes these
+     straight to Postgres LIKE; double-quoting does NOT neutralize them).
+  2. **PostgREST-grammar layer** — double-quote-WRAP the whole `%term%` value
+     (`display_name.ilike."%term%",bio.ilike."%term%"`); inside the quotes only
+     `"` (→ `\"`) and `\` (→ `\\`) need escaping, and `* ( ) : ,` all become
+     inert. Do NOT escape the comma per-char — quoting handles it.
+  Keep the `%…%` framing OUTSIDE the user term (it's the real substring
+  wildcard). Resolve the `.or(...)` string ONCE and apply the SAME string to
+  BOTH the count and data query (like `budgetPredicate`/`serviceColumn`) or
+  `total` drifts. In the artists query test, `makeThenable` already wires
+  `chain.or = vi.fn().mockReturnValue(chain)`. NOTE: a user `\` ends up as FOUR
+  backslashes in the `.or` string (LIKE-escaped `\\` then quote-escaped to
+  `\\\\`) — verify expected test literals with a round-trip script, don't
+  hand-count. Evidence: HAR-458 (`searchPredicate`/`escapeSearchTerm`/
+  `quotePostgrestValue`; PR pending). Live-staging semantics gate still open —
+  the suite is fully mocked, so `?q=*`/`?q=)`/literal `?q=%` need a staging smoke.

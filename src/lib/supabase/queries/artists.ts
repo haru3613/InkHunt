@@ -119,33 +119,56 @@ function serviceColumn(service: ArtistService | null | undefined): keyof ArtistR
 }
 
 /**
- * Escape a user keyword term for safe interpolation into a PostgREST `.or()`
- * filter string (HAR-455). PostgREST's `or` is comma-delimited at the top
- * level, and `ilike` treats `%`/`_` as SQL LIKE wildcards — so an unescaped
- * comma would split the filter into extra OR branches and an unescaped `%`/`_`
- * would widen (or break) the match. Backslash-escape `\` first (it is the LIKE
- * escape char), then `%`, `_`, and `,`.
+ * Escape a user keyword term so its `%`/`_` match LITERALLY under SQL `LIKE`
+ * (HAR-455, retained HAR-458). The PostgREST grammar layer (commas, `*`, `(`,
+ * `)`, `:`) is handled separately by `quotePostgrestValue` — this function ONLY
+ * neutralizes the SQL LIKE wildcards that PostgREST passes straight through to
+ * Postgres. Backslash-escape `\` first (it is the LIKE escape char), then `%`
+ * and `_`. The comma is NOT escaped here: once the whole value is double-quote
+ * wrapped (below) the comma is inert to the PostgREST `.or()` grammar.
  */
 function escapeSearchTerm(term: string): string {
   return term
     .replace(/\\/g, '\\\\')
     .replace(/%/g, '\\%')
     .replace(/_/g, '\\_')
-    .replace(/,/g, '\\,')
 }
 
 /**
- * Build the name/bio keyword `.or()` filter string ONCE (HAR-455) so the SAME
- * predicate lands on both the count and data queries — otherwise `total`
- * drifts from the rows returned. Returns `null` for absent/empty/whitespace-only
- * `q` (no predicate, byte-identical to today's query).
+ * Wrap a filter value in PostgREST double quotes so every reserved char in the
+ * grammar (`,` OR-delimiter, `*` wildcard alias, `(` `)` group parens, `:`,
+ * `.`) becomes inert literal text (HAR-458). The documented, complete fix per
+ * the PostgREST docs ("if a filter value contains reserved characters it must
+ * be wrapped in double quotes"): inside a quoted value the only chars needing
+ * escaping are the quote `"` (→ `\"`) and the backslash `\` (→ `\\`).
+ * supabase-js percent-encodes the resulting `.or()` string for the wire.
+ */
+function quotePostgrestValue(value: string): string {
+  const inner = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  return `"${inner}"`
+}
+
+/**
+ * Build the name/bio keyword `.or()` filter string ONCE (HAR-455, hardened
+ * HAR-458) so the SAME predicate lands on both the count and data queries —
+ * otherwise `total` drifts from the rows returned. Returns `null` for
+ * absent/empty/whitespace-only `q` (no predicate, byte-identical to the
+ * unfiltered query).
+ *
+ * Two escaping layers, applied inside-out:
+ *   1. {@link escapeSearchTerm} — `%`/`_`/`\` so the user's literal wildcards
+ *      match literally under SQL LIKE (PostgREST passes these through verbatim).
+ *   2. {@link quotePostgrestValue} — double-quote-wrap the whole `%term%` value
+ *      so the PostgREST filter grammar treats `* ( ) : ,` as inert literals.
+ * The framing `%…%` stays OUTSIDE the user term so it remains a real LIKE
+ * substring wildcard.
  */
 function searchPredicate(q: string | null | undefined): string | null {
   if (!q) return null
   const term = q.trim()
   if (term === '') return null
-  const escaped = escapeSearchTerm(term)
-  return `display_name.ilike.%${escaped}%,bio.ilike.%${escaped}%`
+  const quoted = quotePostgrestValue(`%${escapeSearchTerm(term)}%`)
+  return `display_name.ilike.${quoted},bio.ilike.${quoted}`
 }
 
 const ARTIST_PUBLIC_SELECT = `
