@@ -780,9 +780,37 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   all unchanged, so Step 1b WILL early-exit the next fire until new tickets, a
   removed `needs-human` label, or a main hotfix appears.
 
+### Round 24 (2026-06-18) — forced re-scout from a benign PM-cron `BL` bump; re-baselined, no re-email
+
+- **Wake cause:** Step 1b did NOT early-exit because `BL` moved
+  (`2026-06-17T05:04:07.242Z` → `2026-06-18T03:37:33.764Z`). Investigated: the bump
+  is HAR-436's `updatedAt` tracking an **autonomous-PM cron comment** posted today
+  (`2026-06-18T03:37:33.798Z`, "InkHunt's bot pipeline is now fully idle; this
+  migration is the only thing it's waiting on") — NOT new work, not an un-blocked
+  ticket. `PICK=0` and `MAIN=f6331bb` both unchanged.
+- **Scout result: nothing auto-eligible** (unchanged from Round 23). Project `Todo`
+  set = exactly **2**, both already `needs-human`-labelled → `PICK=0`:
+  - **HAR-436** — Wave-2 rating-aggregate view migration; additive but InkHunt gates
+    ALL migrations to Harvey (`allow_additive_migrations=false`). Already labelled —
+    no re-label, no re-comment (idempotency: re-touching bumps `updatedAt` and breaks
+    Step 1b convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational, human call). Already labelled — untouched.
+  No `mc-qa-blocked` retry pending. No ideatable v0.3 slice that wouldn't depend on
+  the gated HAR-436 migration; v0.4 is a Harvey/PM product-direction call.
+- **No re-email (deliberate).** Exhaustion was already flagged in Round 23, and the
+  PM cron itself pinged Harvey TODAY on the exact same HAR-436 blocker — a second
+  dispatcher email would be pure duplicate noise. `mc-sync-flagged-main: f6331bb`
+  debounce also holds (main still 13 ahead, SHA unchanged).
+- **Why this round commits (marker re-baseline, not a "still blocked" entry):** the
+  early-exit signal `BL` genuinely moved, so the recorded marker is now stale. Left
+  unrecorded, EVERY future fire would re-scout on the mismatch and never converge.
+  Refreshing `BL` to the PM-comment timestamp lets the next fire early-exit at Step 1b
+  again. `PICK`/`MAIN`/outcome unchanged.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-17T05:04:07.242Z
+mc-round-bl: 2026-06-18T03:37:33.764Z
 mc-round-pick: 0
 mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
 mc-round-outcome: noop
