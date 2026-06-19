@@ -808,9 +808,38 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   Refreshing `BL` to the PM-comment timestamp lets the next fire early-exit at Step 1b
   again. `PICK`/`MAIN`/outcome unchanged.
 
+### Round 25 (2026-06-19) — new main hotfix flagged; still milestone-exhausted, no dispatch
+
+- **Wake cause:** Step 1b did NOT early-exit because `MAIN` moved
+  (`f6331bb` → `97854fab`). `origin/main` is now **16** ahead of `staging` (was 13).
+  The new commit is `2c3d688` *"ci: apply migrations with --include-all so out-of-order
+  migrations deploy"* — a CI/deploy hotfix Harvey landed directly on `main`, not new
+  product work and not an un-blocked ticket. `BL` and `PICK` both unchanged.
+- **Scout result: nothing auto-eligible** (unchanged from Rounds 23–24). Project `Todo`
+  set = exactly **2**, both already `needs-human`-labelled → `PICK=0`:
+  - **HAR-436** — Wave-2 rating-aggregate view migration; additive but InkHunt gates
+    ALL migrations to Harvey (`allow_additive_migrations=false`). Already labelled —
+    left untouched (idempotency: re-touching bumps `updatedAt` and breaks Step 1b
+    convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational, human call). Already labelled — untouched.
+  No `mc-qa-blocked` retry pending. No ideatable v0.3 slice independent of the gated
+  HAR-436 migration; v0.4 is a Harvey/PM product-direction call. Milestone remains
+  genuinely exhausted (already flagged Round 23).
+- **Re-flagged the main→staging divergence (NEW SHA → debounce did not hold).** Prior
+  flag was `f6331bb`; current `origin/main` is `97854fab`, so this is a fresh hotfix
+  the bot's line never received. main→staging reconciliation is ALWAYS Harvey's manual
+  call — did NOT merge/rebase/modify staging. Emailed Harvey
+  (*"InkHunt main ahead of staging (hotfixes not in staging)"*) and updated the
+  `mc-sync-flagged-main` marker to the new SHA so the next fire debounces.
+- **Why this round commits (state transition, not a "still blocked" entry):** the
+  divergence marker is newly flagged with a new SHA and `MAIN` genuinely moved, so the
+  recorded markers are stale. Refreshing `mc-sync-flagged-main` + `mc-round-main` lets
+  the next fire early-exit at Step 1b again. `BL`/`PICK`/outcome unchanged.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
-mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
+mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-bl: 2026-06-18T03:37:33.764Z
 mc-round-pick: 0
-mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
+mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-outcome: noop
