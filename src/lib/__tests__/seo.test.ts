@@ -159,6 +159,51 @@ describe('generateArtistJsonLd', () => {
     const result = gen(fullArtist)
     expect(result.url).toBe('https://staging.inkhunt.tw/artists/lin-tattoo')
   })
+
+  // --- aggregateRating (HAR-380) ---
+
+  it('emits aggregateRating with the correct shape and values when count > 0', () => {
+    const result = generateArtistJsonLd(fullArtist, { average: 4.3, count: 12 })
+    expect(result.aggregateRating).toEqual({
+      '@type': 'AggregateRating',
+      ratingValue: 4.3,
+      reviewCount: 12,
+      bestRating: 5,
+      worstRating: 1,
+    })
+  })
+
+  it('omits aggregateRating when reviewSummary count is 0', () => {
+    const result = generateArtistJsonLd(fullArtist, { average: 0, count: 0 })
+    expect(result.aggregateRating).toBeUndefined()
+  })
+
+  it('omits aggregateRating when no reviewSummary arg is passed (backward-compat)', () => {
+    const result = generateArtistJsonLd(fullArtist)
+    expect(result.aggregateRating).toBeUndefined()
+  })
+
+  it('produces byte-identical output to the no-arg call when an empty summary is passed', () => {
+    // Backward-compat guard: a zero-count summary must not perturb any other field.
+    const withoutSummary = generateArtistJsonLd(fullArtist)
+    const withEmptySummary = generateArtistJsonLd(fullArtist, { average: 0, count: 0 })
+    expect(JSON.stringify(withEmptySummary)).toBe(JSON.stringify(withoutSummary))
+  })
+
+  it('accepts a ReviewSummary-shaped object (extra fields like distribution are ignored)', () => {
+    const result = generateArtistJsonLd(fullArtist, {
+      average: 5,
+      count: 3,
+      distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 3 },
+    })
+    expect(result.aggregateRating).toEqual({
+      '@type': 'AggregateRating',
+      ratingValue: 5,
+      reviewCount: 3,
+      bestRating: 5,
+      worstRating: 1,
+    })
+  })
 })
 
 // ---------------------------------------------------------------------------

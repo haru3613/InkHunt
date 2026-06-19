@@ -8,6 +8,7 @@ import { ArtistAvatar } from './ArtistAvatar'
 import { StyleBadge } from './StyleBadge'
 import { PriceRange } from './PriceRange'
 import { ArtistCompareAction } from './ArtistCompareAction'
+import { StarRating } from '@/components/shared/StarRating'
 import { formatPrice } from '@/lib/utils'
 
 interface ArtistCardProps {
@@ -17,9 +18,79 @@ interface ArtistCardProps {
 
 const MAX_VISIBLE_STYLES = 3
 
+/** Star size (px) for the compact rating summary shown on listing cards. */
+const RATING_STAR_SIZE = 14
+
+/**
+ * Compact rating summary for the listing/browse surface (HAR-417): a small
+ * read-only StarRating + the numeric average (1 decimal) + `(count)`. Renders
+ * nothing when the artist has no reviews so unreviewed cards stay clean.
+ */
+function CardReviewSummary({
+  summary,
+}: {
+  readonly summary: ArtistWithDetails['reviewSummary']
+}) {
+  if (!summary || summary.count === 0) return null
+
+  return (
+    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <StarRating value={summary.average} size={RATING_STAR_SIZE} readOnly />
+      <span className="font-medium tabular-nums text-foreground">
+        {summary.average.toFixed(1)}
+      </span>
+      <span className="tabular-nums">({summary.count})</span>
+    </div>
+  )
+}
+
+/**
+ * Service-type badges for the discovery card (HAR-447): renders a 遮蓋
+ * (cover-up) badge when `offers_coverup` is true and a Flash 圖 badge when
+ * `has_flash_designs` is true, so a consumer who filtered by service sees
+ * on-card confirmation of why the artist matched. Renders nothing when neither
+ * flag is set. `offers_custom_design` is deliberately excluded — it DEFAULTs
+ * true and is near-universal / low-signal. Mirrors the existing `Badge`
+ * styling; `t` is the resolved `artists` namespace translator.
+ */
+function ServiceBadges({
+  artist,
+  t,
+}: {
+  readonly artist: ArtistWithDetails
+  readonly t: (key: string) => string
+}) {
+  if (!artist.offers_coverup && !artist.has_flash_designs) return null
+
+  return (
+    <>
+      {artist.offers_coverup && (
+        <Badge
+          variant="secondary"
+          className="rounded-sm bg-ink-accent-dim text-accent-foreground hover:bg-muted"
+        >
+          {t('badgeCoverup')}
+        </Badge>
+      )}
+      {artist.has_flash_designs && (
+        <Badge
+          variant="secondary"
+          className="rounded-sm bg-ink-accent-dim text-accent-foreground hover:bg-muted"
+        >
+          {t('badgeFlash')}
+        </Badge>
+      )}
+    </>
+  )
+}
+
 export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
   if (variant === 'compact') {
-    return <CompactCard artist={artist} />
+    // Await the (async) compact card so the resolved tree is returned directly;
+    // this keeps a single top-level `await ArtistCard(...)` enough to render the
+    // whole card (incl. the review summary) — RSC awaits nested async children
+    // anyway, so behavior is unchanged in production.
+    return CompactCard({ artist })
   }
 
   const t = await getTranslations('artists')
@@ -53,6 +124,8 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
               </div>
             </div>
 
+            <CardReviewSummary summary={artist.reviewSummary} />
+
             <div className="flex flex-wrap gap-1.5">
               {visibleStyles.map((style) => (
                 <StyleBadge
@@ -66,6 +139,7 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
                   +{extraCount}
                 </Badge>
               )}
+              <ServiceBadges artist={artist} t={t} />
             </div>
 
             {artist.portfolio_items.length > 0 && (
@@ -133,6 +207,16 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
           {artist.styles.slice(0, MAX_VISIBLE_STYLES).map((s) => (
             <StyleBadge key={s.id} name={s.name} icon={s.icon} />
           ))}
+        </div>
+      )}
+      {(artist.offers_coverup || artist.has_flash_designs) && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          <ServiceBadges artist={artist} t={t} />
+        </div>
+      )}
+      {artist.reviewSummary && artist.reviewSummary.count > 0 && (
+        <div className="mt-2">
+          <CardReviewSummary summary={artist.reviewSummary} />
         </div>
       )}
       {artist.price_min !== null && artist.price_min !== undefined && (

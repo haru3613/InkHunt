@@ -328,43 +328,25 @@ export interface Database {
         Row: {
           id: string
           artist_id: string
-          consumer_line_id: string
-          consumer_name: string | null
-          rating_skill: number
-          rating_communication: number
-          rating_environment: number
-          rating_value: number
+          author_line_user_id: string
+          rating: number
           comment: string | null
-          photo_urls: Json
-          verified: boolean
           created_at: string
         }
         Insert: {
           id?: string
           artist_id: string
-          consumer_line_id: string
-          consumer_name?: string | null
-          rating_skill: number
-          rating_communication: number
-          rating_environment: number
-          rating_value: number
+          author_line_user_id: string
+          rating: number
           comment?: string | null
-          photo_urls?: Json
-          verified?: boolean
           created_at?: string
         }
         Update: {
           id?: string
           artist_id?: string
-          consumer_line_id?: string
-          consumer_name?: string | null
-          rating_skill?: number
-          rating_communication?: number
-          rating_environment?: number
-          rating_value?: number
+          author_line_user_id?: string
+          rating?: number
           comment?: string | null
-          photo_urls?: Json
-          verified?: boolean
           created_at?: string
         }
         Relationships: []
