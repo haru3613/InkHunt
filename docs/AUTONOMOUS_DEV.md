@@ -837,9 +837,39 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   recorded markers are stale. Refreshing `mc-sync-flagged-main` + `mc-round-main` lets
   the next fire early-exit at Step 1b again. `BL`/`PICK`/outcome unchanged.
 
+### Round 26 (2026-06-19) — PM-patrol edit bumped BL; still milestone-exhausted, no dispatch
+
+- **Wake cause:** Step 1b did NOT early-exit because `BL` moved
+  (`2026-06-18T03:37:33.764Z` → `2026-06-19T05:02:50.694Z`). The bump is **HAR-440**'s
+  `updatedAt` tracking a PM-patrol cron edit today — its description was refreshed with
+  new monitor evidence (`git.behind` 37 → 54) for the `[PM Patrol R4]` "refresh local
+  staging checkout" task. NOT new product work, NOT an un-blocked ticket. `PICK=0` and
+  `MAIN=97854fab` both unchanged.
+- **Scout result: nothing auto-eligible** (unchanged from Rounds 23–25). Project `Todo`
+  set = exactly **2**, both already `needs-human`-labelled → `PICK=0`:
+  - **HAR-436** — Wave-2 rating-aggregate view migration; additive but InkHunt gates
+    ALL migrations to Harvey (`allow_additive_migrations=false`). Already labelled —
+    left untouched (idempotency: re-touching bumps `updatedAt` and breaks Step 1b
+    convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational, human call — the dispatcher must NEVER mutate the primary checkout).
+    Already labelled — untouched.
+  No `mc-qa-blocked` retry pending. No ideatable v0.3 slice independent of the gated
+  HAR-436 migration; v0.4 is a Harvey/PM product-direction call. Milestone remains
+  genuinely exhausted (already flagged Round 23).
+- **No re-email (deliberate).** Exhaustion already flagged Round 23; the PM cron itself
+  is what touched HAR-440 today, so Harvey is already in that loop. main→staging sync:
+  still 16 ahead at the SAME SHA already flagged Round 25 (`97854fab`) → `mc-sync-flagged-main`
+  debounce holds, no re-email; did NOT merge/rebase/modify staging.
+- **Why this round commits (marker re-baseline, not a "still blocked" entry):** `BL`
+  genuinely moved, so the recorded marker is stale. Left unrecorded, EVERY future fire
+  would re-scout on the mismatch and never converge. Refreshing `mc-round-bl` to the
+  PM-edit timestamp lets the next fire early-exit at Step 1b again. `PICK`/`MAIN`/outcome
+  unchanged.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-18T03:37:33.764Z
+mc-round-bl: 2026-06-19T05:02:50.694Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-outcome: noop
