@@ -867,9 +867,42 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   PM-edit timestamp lets the next fire early-exit at Step 1b again. `PICK`/`MAIN`/outcome
   unchanged.
 
+### Round 27 (2026-06-20) — PM-escalation comment bumped BL; still milestone-exhausted, no dispatch
+
+- **Wake cause:** Step 1b did NOT early-exit because `BL` moved
+  (`2026-06-19T05:02:50.694Z` → `2026-06-20T03:37:11.645Z`). The bump is **HAR-436**'s
+  `updatedAt` tracking today's **PM-escalation comment** (day-6, `2026-06-20T03:37:11.684Z`):
+  the migration is now flagged as the SOLE thing keeping InkHunt's bot pipeline idle, with
+  two unblock options for Harvey (apply the additive view on staging, or authorize a
+  no-migration v0.4). NOT new product work, NOT an un-blocked ticket, NOT a scope change.
+  `PICK=0` and `MAIN=97854fab` both unchanged.
+- **Scout result: nothing auto-eligible** (unchanged from Rounds 23–26). Project `Todo`
+  set = exactly **2**, both already `needs-human`-labelled → `PICK=0`:
+  - **HAR-436** — Wave-2 rating-aggregate view migration; additive but InkHunt gates
+    ALL migrations to Harvey (`allow_additive_migrations=false`). Already labelled —
+    left untouched (idempotency: re-touching bumps `updatedAt` and breaks Step 1b
+    convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational, human call — the dispatcher must NEVER mutate the primary checkout).
+    Already labelled — untouched.
+  No `mc-qa-blocked` retry pending. Every bot-eligible v0.3 slice is shipped; the sole
+  open outcome (DoS #4 rating sort/filter) is gated entirely on the human migration;
+  v0.4 is a Harvey/PM product-direction call. Milestone remains genuinely exhausted
+  (already flagged Round 23).
+- **No re-email (deliberate).** Exhaustion was already flagged Round 23, and the PM cron
+  itself posted today's escalation on HAR-436 — Harvey is already in that loop; a
+  dispatcher email would be duplicate noise. main→staging sync: still **16** ahead at the
+  SAME SHA already flagged Round 25 (`97854fab`) → `mc-sync-flagged-main` debounce holds,
+  no re-email; did NOT merge/rebase/modify staging.
+- **Why this round commits (marker re-baseline, not a "still blocked" entry):** `BL`
+  genuinely moved, so the recorded marker is stale. Left unrecorded, EVERY future fire
+  would re-scout on the mismatch and never converge. Refreshing `mc-round-bl` to the
+  PM-escalation timestamp lets the next fire early-exit at Step 1b again.
+  `PICK`/`MAIN`/outcome unchanged.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-19T05:02:50.694Z
+mc-round-bl: 2026-06-20T03:37:11.645Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-outcome: noop
