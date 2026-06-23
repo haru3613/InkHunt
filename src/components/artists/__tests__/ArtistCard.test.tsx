@@ -38,6 +38,27 @@ vi.mock('../PriceRange', () => ({
   PriceRange: () => null,
 }))
 
+// FavoriteButton is a client component (useAuth/useState + fetch). Stub it to a
+// sync element that surfaces the props it received via data-attrs, so the
+// consuming test can assert the card mounts it with the right `artistId` /
+// `initialFavorited` WITHOUT driving the real optimistic toggle (that flow is
+// covered by FavoriteButton.test.tsx).
+vi.mock('../FavoriteButton', () => ({
+  FavoriteButton: ({
+    artistId,
+    initialFavorited,
+  }: {
+    artistId: string
+    initialFavorited?: boolean
+  }) => (
+    <button
+      data-testid="favorite-button"
+      data-artist-id={artistId}
+      data-initial-favorited={String(initialFavorited ?? false)}
+    />
+  ),
+}))
+
 import { ArtistCard } from '../ArtistCard'
 import type { ArtistWithDetails } from '@/lib/supabase/queries/artists'
 
@@ -198,5 +219,37 @@ describe('ArtistCard — service-type badges (HAR-447)', () => {
 
     expect(screen.queryByText('badgeCoverup')).not.toBeInTheDocument()
     expect(screen.queryByText('badgeFlash')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * Save-from-discovery (HAR-472): the listing card must mount a `FavoriteButton`
+ * so a user can save an artist straight from the `/artists` grid. The button is
+ * stubbed (above) to a sync element echoing its props; we assert the card both
+ * renders it AND threads the artist's `id` through as `artistId`. Driving the
+ * real optimistic POST/DELETE toggle is FavoriteButton.test.tsx's job — here we
+ * only verify the consuming composition. Out of scope: reflecting the user's
+ * actual saved state, so every card mounts with `initialFavorited={false}`.
+ */
+describe('ArtistCard — FavoriteButton (save from discovery, HAR-472)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('mounts a FavoriteButton carrying the artist id as artistId (default variant)', async () => {
+    await renderCard({ ...BASE, id: 'artist-xyz' })
+
+    const fav = screen.getByTestId('favorite-button')
+    expect(fav).toBeInTheDocument()
+    expect(fav).toHaveAttribute('data-artist-id', 'artist-xyz')
+  })
+
+  it('mounts the FavoriteButton unfilled by default (initialFavorited=false)', async () => {
+    await renderCard(BASE)
+
+    expect(screen.getByTestId('favorite-button')).toHaveAttribute(
+      'data-initial-favorited',
+      'false',
+    )
   })
 })

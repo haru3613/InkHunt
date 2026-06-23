@@ -8,6 +8,7 @@ import { ArtistAvatar } from './ArtistAvatar'
 import { StyleBadge } from './StyleBadge'
 import { PriceRange } from './PriceRange'
 import { ArtistCompareAction } from './ArtistCompareAction'
+import { FavoriteButton } from './FavoriteButton'
 import { StarRating } from '@/components/shared/StarRating'
 import { formatPrice } from '@/lib/utils'
 
@@ -162,6 +163,17 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
           </CardContent>
         </Card>
       </Link>
+
+      {/*
+       * Save-from-discovery (HAR-472): the favorite toggle sits OUTSIDE the
+       * Link (top-right overlay) so a tap saves the artist instead of
+       * navigating to the profile. Every card starts unfilled —
+       * `initialFavorited` defaults to false; reflecting the user's actual
+       * saved state on the grid is a deferred follow-up slice.
+       */}
+      <div className="absolute right-3 top-3">
+        <FavoriteButton artistId={artist.id} initialFavorited={false} />
+      </div>
 
       {/* Compare button sits outside the Link so clicks do not trigger navigation */}
       <div className="absolute bottom-3 right-3">
