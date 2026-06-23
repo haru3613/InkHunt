@@ -1003,9 +1003,48 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   (`97854fab`) → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
   merge/rebase/modify staging.
 
+### Round 31–32 (2026-06-24) — recovered Round 31's stranded dispatch + shipped HAR-436/472 (4 PRs → staging)
+
+- **Context: Round 31 timed out mid-merge.** The prior fire dispatched HAR-467 +
+  HAR-468 (v0.4 W2) but its drain died before the serial merge phase, leaving the doc
+  at Round 30's markers (`drained-1`, `pick:2`). This round found three stranded
+  artifacts and completed them rather than re-doing them.
+- **Recovered 3 stranded-green PRs.** All were OPEN / MERGEABLE / CLEAN with every CI
+  check (incl. server-side `ci-passed`) already SUCCESS:
+  - **HAR-467 → PR #109** (FavoriteButton) — squash-merged to staging (22:25Z).
+  - **HAR-468 → PR #110** (/favorites page) — `update-branch` (was BEHIND after #109) →
+    auto-merge fired on green (22:28Z).
+  - **HAR-436 → PR #111** (migration `artist_rating_summary` view). The Round 31 drain
+    had left a COMPLETE, uncommitted WIP in the worktree (additive `CREATE VIEW` + 9
+    vitest assertions, never committed). Verified it (9/9 green, `tsc --noEmit` exit 0),
+    committed + pushed + opened PR #111, auto-merged on green (22:37Z). Discarding it
+    would have wasted correct work AND risked a re-implementation following the **stale
+    ticket text** — which describes a 4-column rating mean from the dropped prototype
+    table that `011_reviews.sql` superseded with a single `rating` column. The WIP (and
+    the shipped view) correctly follow the shipped schema + app authority
+    `computeReviewSummary`. v0.3 Wave-2 rating sort/filter foundation is now on staging.
+- **Refill + fresh drain.** With the Todo backlog empty of bot-eligible work (only
+  HAR-440 `needs-human` remained) and the v0.4 milestone still open, ideated **HAR-472**
+  (mount FavoriteButton on ArtistCard — the "next refill slice" HAR-467 deferred, now
+  un-blocked by the merged button) and dispatched the drain. **HAR-472 → PR #112**
+  squash-merged on green CI (22:43Z). 1/1 merged, 0 deferred, 0 Product-QA bounce.
+- **Migration safety.** HAR-436 is additive + reversible (`DROP VIEW` down), read-only,
+  no data mutation — in-scope per the migration policy. It reaches remote Supabase ONLY
+  via `deploy.yml` on push to **main** (Harvey's manual staging→main gate), never from a
+  staging merge.
+- **Promotion-review (informational, NOT needs-human):** HAR-467/468/472 (sales-facing
+  UI) + HAR-436 (additive migration) all queue for the human staging→main promotion gate.
+- **Worktree hygiene.** Cleaned merged worktrees (favorites-foundation/api, favorite-button,
+  favorites-page, rating-summary, har-472) + the stale local `feature/artist-rating-summary-view`
+  branch. `feature-favorite-button`/`favorites-page` needed explicit `--pr N` (the timed-out
+  drain never recorded their `pr_number` in `worktrees.json`).
+- **main→staging sync: still 16 ahead at the SAME SHA** (`97854fab`) already flagged
+  Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT merge/rebase/modify
+  staging. Reconciliation remains Harvey's manual call.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-bl: 2026-06-23T05:04:12.296Z
-mc-round-pick: 2
+mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: drained-1
+mc-round-outcome: drained-4
