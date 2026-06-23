@@ -931,9 +931,81 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   HAR-440 timestamp lets the next fire early-exit at Step 1b again.
   `PICK`/`MAIN`/outcome unchanged.
 
+### Round 29 (2026-06-23) — v0.4 SAVE & SHORTLIST opened by PM; dispatched HAR-465 foundation, merged
+
+- **Wake cause / milestone un-exhausted.** Step 1b did NOT early-exit: `PICK` moved
+  `0 → 4` and `BL` moved (`2026-06-21T11:02:42.283Z → 2026-06-23T03:38:43.040Z`). The
+  autonomous-PM opened a fresh **v0.4 — SAVE & SHORTLIST** wave (the Tattoodo
+  mood-board / favorite-artists retention pattern) as four `auto-claude` Todos:
+  - **HAR-465** [W1] favorites foundation — zod schema + query layer (no dep).
+  - **HAR-466** [W1] favorites API GET/POST/DELETE — depends on HAR-465.
+  - **HAR-467** [W2] FavoriteButton client component — depends on HAR-466.
+  - **HAR-468** [W2] /favorites page + MobileNav wire — depends on HAR-465 + HAR-466.
+  v0.3 was the prior milestone; v0.4 is now the live milestone, so the "exhausted"
+  state from Rounds 23–28 no longer holds.
+- **Dependency-aware dispatch (1 ticket, not 3).** Only **HAR-465** had no unmet
+  dependency on `origin/staging`; HAR-466/467/468 all transitively need HAR-465's
+  `src/lib/supabase/queries/favorites.ts` + `validations/favorite.ts`, which do not yet
+  exist on staging — dispatching them in parallel would fail their consuming tests on
+  missing imports. Dispatched HAR-465 alone; the wave drains sequentially over the next
+  fires (466 unblocks now that 465 is on staging, then W2).
+- **Already-shipped guard.** Confirmed `queries/favorites.ts` / `validations/favorite.ts`
+  absent on `origin/staging`; the `favorites` table + RLS already exist (migrations
+  001/002) so HAR-465 needs **no migration** — genuinely actionable.
+- **Outcome: 1/1 merged.** HAR-465 → **PR #107** (`feature/favorites-foundation` →
+  staging) squash-merged on green CI (`ci-passed` incl. build / lint-and-typecheck /
+  test / migration-check). Worktree ended, remote branch deleted, HAR-465 set Done.
+  0 deferred, 0 promotion-review, 0 tier2.
+- **Stale worktree noted, left untouched.** `InkHunt-feature-artist-rating-summary-view`
+  (HAR-436, a needs-human rating-aggregate **migration** ticket no longer in Todo) holds
+  an UNCOMMITTED draft `supabase/migrations/012_artist_rating_summary.sql` +
+  `src/__tests__/migrations/`. `wt end` would discard that draft, and all migrations are
+  Harvey-gated, so it was left in place (not blocking this round's dispatch). Candidate
+  for Harvey to land or discard manually.
+- **main→staging sync: still 16 ahead at the SAME SHA** already flagged Round 25
+  (`97854fab`) → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
+  merge/rebase/modify staging.
+
+### Round 30 (2026-06-23) — v0.4 W1 favorites API dispatched, merged
+
+- **Wake / no early-exit.** Step 1b did NOT early-exit: last outcome was `drained-1`
+  (not `noop`) and `BL` had moved (HAR-440 bumped to `2026-06-23T05:04:12.296Z`), so the
+  round proceeded to scout normally. `PICK` was 3, `MAIN` unchanged (`97854fab`).
+- **Dependency-aware dispatch (1 ticket).** v0.4 SAVE & SHORTLIST wave drains sequentially
+  on the shared `favorites` spine. Round 29 landed HAR-465 (`queries/favorites.ts` +
+  `validations/favorite.ts`) on `staging`, which UN-blocked **HAR-466** (favorites API).
+  Confirmed on `origin/staging`: `addFavorite` / `removeFavorite` / `getFavoriteArtists`
+  exported by `queries/favorites.ts`, `favoriteInputSchema` by `validations/favorite.ts`,
+  `requireAuth` / `handleApiError` by `auth/helpers.ts`, and the reference pattern
+  `api/inquiries/route.ts` present — while the target `api/favorites/route.ts` was absent
+  (already-shipped guard clear). HAR-467/HAR-468 (W2) still transitively need HAR-466's
+  API route, which was not yet on staging this round → deferred, not dispatched.
+- **Outcome: 1/1 merged.** HAR-466 → **PR #108** (`feature/favorites-api` → staging)
+  squash-merged on green CI (`ci-passed` incl. build / lint-and-typecheck / test /
+  migration-check). Merge commit `fe9f8f3`, mergedAt 2026-06-23T10:57:31Z. Worktree ended,
+  remote branch deleted, HAR-466 set Done (completion comment added). 0 deferred, 0
+  Product-QA bounce. HAR-466 is **promotion-review** (sales-facing authed surface;
+  informational, NOT a `needs-human` block) — auth-gated single-row writes on the
+  pre-existing `favorites` table, no migration, reversible.
+- **Auth/money/data boundary check.** HAR-466 ships `requireAuth`-gated GET/POST/DELETE
+  over single rows scoped to the authed `lineUserId` (explicitly NOT bulk). Per the
+  fleet-uniform boundary (money + irreversible-data only), authed app-code on an existing
+  table is auto-mergeable on `staging` — production promotion stays Harvey's manual call.
+- **Wave health / no ideation.** 2 auto-eligible Todos remain in flight (HAR-467
+  FavoriteButton, HAR-468 /favorites page) — both UN-blocked next fire now that HAR-466's
+  API is on staging. ≥2 in flight → no refill ideation needed; v0.4 milestone is healthy,
+  not exhausted.
+- **Stale worktree noted, left untouched.** `InkHunt-feature-artist-rating-summary-view`
+  (HAR-436, needs-human rating-aggregate **migration**, no longer in Todo) still holds an
+  uncommitted draft migration — `wt end` would discard it and all migrations are
+  Harvey-gated, so left in place (Round 29 note still applies).
+- **main→staging sync: still 16 ahead at the SAME SHA** already flagged Round 25
+  (`97854fab`) → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
+  merge/rebase/modify staging.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-21T11:02:42.283Z
-mc-round-pick: 0
+mc-round-bl: 2026-06-23T05:04:12.296Z
+mc-round-pick: 2
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: noop
+mc-round-outcome: drained-1

@@ -171,7 +171,7 @@ function searchPredicate(q: string | null | undefined): string | null {
   return `display_name.ilike.${quoted},bio.ilike.${quoted}`
 }
 
-const ARTIST_PUBLIC_SELECT = `
+export const ARTIST_PUBLIC_SELECT = `
   id, slug, display_name, bio, avatar_url, ig_handle,
   city, district, address, lat, lng,
   price_min, price_max, pricing_note, deposit_amount,
