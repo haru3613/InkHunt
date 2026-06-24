@@ -149,3 +149,44 @@ describe('ArtistsPage — keyword search wiring (HAR-456)', () => {
     expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'true')
   })
 })
+
+describe('ArtistsPage — minRating wiring (HAR-477)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('passes the parsed ?minRating=4 into the getArtists filters', async () => {
+    await renderPage({ minRating: '4' }, ARTISTS, 3)
+    expect(getArtists).toHaveBeenCalledTimes(1)
+    const filters = getArtists.mock.calls[0][0] as { minRating?: number | null }
+    expect(filters.minRating).toBe(4)
+  })
+
+  it('passes the parsed ?minRating=4.5 into the getArtists filters', async () => {
+    await renderPage({ minRating: '4.5' }, ARTISTS, 3)
+    const filters = getArtists.mock.calls[0][0] as { minRating?: number | null }
+    expect(filters.minRating).toBe(4.5)
+  })
+
+  it('leaves minRating null when no ?minRating= is present (no predicate)', async () => {
+    await renderPage({}, ARTISTS, 3)
+    const filters = getArtists.mock.calls[0][0] as { minRating?: number | null }
+    expect(filters.minRating).toBeNull()
+  })
+
+  it('leaves minRating null for a value outside the 4 / 4.5 allowlist', async () => {
+    await renderPage({ minRating: '3' }, ARTISTS, 3)
+    const filters = getArtists.mock.calls[0][0] as { minRating?: number | null }
+    expect(filters.minRating).toBeNull()
+  })
+
+  it('signals active filters when a minRating threshold is present', async () => {
+    await renderPage({ minRating: '4' }, ARTISTS, 3)
+    expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'true')
+  })
+
+  it('does NOT signal active filters for a minRating outside the allowlist', async () => {
+    await renderPage({ minRating: '3' }, [], 0)
+    expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'false')
+  })
+})

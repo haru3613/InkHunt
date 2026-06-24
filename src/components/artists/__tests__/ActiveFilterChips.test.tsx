@@ -226,4 +226,71 @@ describe('ActiveFilterChips (HAR-454)', () => {
       expect(url).not.toContain(key)
     }
   })
+
+  // --- HAR-477: active minRating (評分) chip ---
+
+  it('renders a rating chip labelled 4★+ when minRating=4 is set', () => {
+    mockSearchParams.set('minRating', '4')
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    expect(screen.getByText('rating4Plus', { exact: false })).toBeInTheDocument()
+    expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
+  })
+
+  it('renders a rating chip labelled 4.5★+ when minRating=4.5 is set', () => {
+    mockSearchParams.set('minRating', '4.5')
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    expect(screen.getByText('rating45Plus', { exact: false })).toBeInTheDocument()
+    expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
+  })
+
+  it('does not render a rating chip for a minRating outside the 4 / 4.5 allowlist', () => {
+    mockSearchParams.set('minRating', '3')
+    const { container } = render(<ActiveFilterChips styles={STYLES} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('removing the rating chip drops minRating but preserves other params', () => {
+    mockSearchParams.set('minRating', '4')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('rating4Plus'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('minRating=')
+    expect(url).toContain('style=traditional')
+    expect(url).toContain('city=')
+  })
+
+  it('removing the rating chip also resets pagination', () => {
+    mockSearchParams.set('minRating', '4.5')
+    mockSearchParams.set('page', '3')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('rating45Plus'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('minRating=')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('清除全部 drops minRating alongside the other params', () => {
+    mockSearchParams.set('minRating', '4')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(screen.getByText('clearAll'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('minRating=')
+    expect(url).not.toContain('style=')
+  })
 })
