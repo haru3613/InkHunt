@@ -61,3 +61,16 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   hand-count. Evidence: HAR-458 (`searchPredicate`/`escapeSearchTerm`/
   `quotePostgrestValue`; PR pending). Live-staging semantics gate still open —
   the suite is fully mocked, so `?q=*`/`?q=)`/literal `?q=%` need a staging smoke.
+- **The canonical `/artists` filter unions (`ArtistSort`/`ArtistBudget`/
+  `ArtistService`) live in `src/lib/supabase/queries/artists.ts`, NOT in
+  `validations/listing.ts`** — the validator imports them as types and its
+  `ARTIST_SORTS`/`…` const arrays must stay in sync. Adding a new sort/budget
+  value (a "parser-only" slice) therefore REQUIRES editing the type in
+  `artists.ts` too, or `tsc --noEmit` (a CI gate) fails on the `as ArtistSort`
+  cast — this is NOT a `getArtists` behavior edit and stays in-scope. The query
+  `switch (filters?.sort)` has a `default` branch (no exhaustive `never`), so an
+  unhandled new value safely falls through to the `featured` default. Also: an
+  existing test may assert the new value coerces to the default (e.g.
+  `parse('rating') === 'featured'`); that single assertion MUST flip when you
+  add the value — it is not a "keep existing cases green" violation. Evidence:
+  HAR-474 (added `'rating'`; PR pending).

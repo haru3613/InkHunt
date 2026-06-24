@@ -3,9 +3,10 @@ import type { ArtistSort, ArtistBudget, ArtistService } from '@/lib/supabase/que
 
 /**
  * Valid `/artists` listing sort values (HAR-433). Kept in sync with
- * `ArtistSort` in the artists query layer.
+ * `ArtistSort` in the artists query layer. `rating` (評分最高) was added in
+ * HAR-474 for rate-aware ranking; its read-side ordering lands in a follow-up.
  */
-export const ARTIST_SORTS = ['featured', 'price_low', 'price_high', 'newest'] as const
+export const ARTIST_SORTS = ['featured', 'price_low', 'price_high', 'newest', 'rating'] as const
 
 /**
  * Valid `/artists` budget bucket values (HAR-434). Kept in sync with
@@ -81,6 +82,41 @@ export function parseListingQuery(raw: unknown): string | null {
   return trimmed.slice(0, LISTING_QUERY_MAX_LENGTH)
 }
 
+/**
+ * Allowed discrete `minRating` filter values (HAR-474). A fixed allowlist —
+ * NOT an arbitrary float range — keeps the rating predicate bounded: only
+ * "4★ and up" and "4.5★ and up" are offered as discovery thresholds. Mirrors
+ * the budget/service bucket convention.
+ */
+export const ALLOWED_MIN_RATINGS = [4, 4.5] as const
+
+/**
+ * Parse a raw `minRating` search param into one of the allowed discrete rating
+ * thresholds (`4` or `4.5`) or `null` (HAR-474). Mirrors `parseArtistService`'s
+ * untrusted-string contract — the page reads the value straight off
+ * `searchParams` so this never throws — but accepts BOTH the string form
+ * (`'4'`, `'4.5'`) and the numeric form (`4`, `4.5`). Anything else —
+ * absent/empty/non-numeric input, or a number outside the allowlist (`3`, `5`,
+ * `0`, negatives, arbitrary floats) — resolves to `null` (no rating predicate),
+ * the bare-listing state.
+ */
+export function parseMinRating(raw: unknown): number | null {
+  let value: number
+  if (typeof raw === 'number') {
+    value = raw
+  } else if (typeof raw === 'string') {
+    if (raw.trim() === '') return null
+    // Number(' 4 ') === 4, but trailing/leading whitespace is not a valid param
+    // form here, so reject it explicitly rather than silently coercing.
+    if (raw !== raw.trim()) return null
+    value = Number(raw)
+  } else {
+    return null
+  }
+  if (!Number.isFinite(value)) return null
+  return (ALLOWED_MIN_RATINGS as readonly number[]).includes(value) ? value : null
+}
+
 export const listingSearchParamsSchema = z.object({
   sort: listingSortSchema,
   budget: listingBudgetSchema,
@@ -92,6 +128,8 @@ export type ListingSearchParams = {
   service: ArtistService | null
   /** Free-text keyword search term, or `null` for no search (HAR-455). */
   q: string | null
+  /** Minimum rating threshold (`4` or `4.5`), or `null` for no filter (HAR-474). */
+  minRating: number | null
 }
 
 /**
@@ -108,6 +146,7 @@ export function parseListingSearchParams(
     budget: listingBudgetSchema.parse(searchParams.budget),
     service: parseArtistService(searchParams.service),
     q: parseListingQuery(searchParams.q),
+    minRating: parseMinRating(searchParams.minRating),
   }
 }
 
@@ -115,9 +154,9 @@ export function parseListingSearchParams(
  * Whether the `/artists` listing has ANY active filter relative to its bare
  * default view (HAR-435). True when a `style` or `city` is selected, the `sort`
  * is anything other than the `featured` default, the `budget` is anything other
- * than the `any` default, a `service` filter is set (HAR-446), or a non-empty
- * `q` keyword search is active (HAR-455). Drives the `清除篩選` (clear-filters)
- * affordance.
+ * than the `any` default, a `service` filter is set (HAR-446), a non-empty `q`
+ * keyword search is active (HAR-455), or a `minRating` threshold is set
+ * (HAR-474). Drives the `清除篩選` (clear-filters) affordance.
  */
 export function hasActiveListingFilters(filters: {
   style?: string | null
@@ -126,6 +165,7 @@ export function hasActiveListingFilters(filters: {
   budget: ArtistBudget
   service?: ArtistService | null
   q?: string | null
+  minRating?: number | null
 }): boolean {
   return (
     Boolean(filters.style) ||
@@ -133,6 +173,7 @@ export function hasActiveListingFilters(filters: {
     filters.sort !== 'featured' ||
     filters.budget !== 'any' ||
     Boolean(filters.service) ||
-    Boolean(filters.q && filters.q.trim())
+    Boolean(filters.q && filters.q.trim()) ||
+    filters.minRating != null
   )
 }
