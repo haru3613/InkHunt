@@ -76,6 +76,14 @@ export interface ArtistFilters {
    * predicate (byte-identical to the unfiltered query).
    */
   q?: string | null
+  /**
+   * Minimum aggregate rating (HAR-475). When a non-null number, keeps only
+   * artists whose `artist_rating_summary.avg_rating` ≥ `minRating` (the SAME
+   * `.gte('avg_rating', …)` predicate lands on both the count and data queries
+   * so `total` cannot drift). Absent/`null` → no predicate (byte-identical to
+   * the unfiltered query).
+   */
+  minRating?: number | null
 }
 
 const DEFAULT_PAGE_SIZE = 12
@@ -184,6 +192,19 @@ export const ARTIST_PUBLIC_SELECT = `
   artist_styles(styles(*)), portfolio_items(*)
 ` as const
 
+/**
+ * Embed the `artist_rating_summary` view (HAR-436) as a PostgREST relationship
+ * so the rating sort / `minRating` filter can `.order`/`.gte` against the
+ * view's `avg_rating` over the WHOLE artist set at query time — shape (a) of
+ * HAR-475 (the codebase already reads embedded relationships in
+ * `ARTIST_PUBLIC_SELECT`, so this is the consistent shape). `!inner` makes the
+ * embed restrict the parent rows, so a `.gte('avg_rating', …)` on the data
+ * query and the same `.gte` on the `count` query filter the same set (no
+ * `total` drift). Appended to the select ONLY when a rating facet is active;
+ * absent rating facet → the select is byte-identical to today's query.
+ */
+const ARTIST_RATING_EMBED = 'artist_rating_summary!inner(avg_rating, review_count)'
+
 interface SupabaseArtistRow extends Omit<ArtistRow, 'admin_note' | 'line_user_id'> {
   artist_styles: Array<{ styles: StyleRow | null }>
   portfolio_items: PortfolioItemRow[]
@@ -284,9 +305,26 @@ export async function getArtists(
   // when no/empty search term (no predicate, byte-identical to today's query).
   const searchOr = searchPredicate(filters?.q)
 
+  // HAR-475: a rating facet (sort by rating OR a minRating floor) needs the
+  // `artist_rating_summary` view embedded so the order/filter runs against the
+  // WHOLE set in the DB, not just the JS-aggregated page. `minRating` resolved
+  // ONCE so the identical `.gte('avg_rating', …)` lands on both queries (no
+  // `total` drift). `null` minRating → no predicate.
+  const minRating = filters?.minRating ?? null
+  const ratingSort = filters?.sort === 'rating'
+  // The embed must be present on a query whenever EITHER rating facet is active
+  // (the sort orders by the embed's column; the filter restricts via `!inner`).
+  const ratingEmbedNeeded = ratingSort || minRating != null
+
   let countQuery = supabase
     .from('artists')
-    .select('*', { count: 'exact', head: true })
+    // Embed the rating view only when a rating facet is active so the count
+    // stays byte-identical to today's query otherwise. `!inner` makes the
+    // `.gte('avg_rating', …)` below restrict the counted rows.
+    .select(ratingEmbedNeeded ? `*, ${ARTIST_RATING_EMBED}` : '*', {
+      count: 'exact',
+      head: true,
+    })
     .eq('status', 'active')
 
   if (artistIds) countQuery = countQuery.in('id', artistIds)
@@ -299,6 +337,9 @@ export async function getArtists(
   }
   if (svcColumn) countQuery = countQuery.eq(svcColumn, true)
   if (searchOr) countQuery = countQuery.or(searchOr)
+  // Same minRating floor on the count query as the data query → `total` matches
+  // the rows returned (the predicate references the embedded view's column).
+  if (minRating != null) countQuery = countQuery.gte('avg_rating', minRating)
 
   const { count } = await countQuery
   const total = count ?? 0
@@ -310,12 +351,24 @@ export async function getArtists(
 
   let dataQuery = supabase
     .from('artists')
-    .select(ARTIST_PUBLIC_SELECT)
+    // Embed the rating view only when a rating facet is active so the unfiltered
+    // select stays byte-identical to today's query otherwise (HAR-475).
+    .select(ratingEmbedNeeded ? `${ARTIST_PUBLIC_SELECT}, ${ARTIST_RATING_EMBED}` : ARTIST_PUBLIC_SELECT)
     .eq('status', 'active')
 
-  // HAR-433: branch the listing order. Unknown/absent sort falls through to the
+  // HAR-433: branch the listing order. HAR-475 adds `rating` → order by the
+  // embedded `artist_rating_summary.avg_rating` DESC; zero-review artists
+  // (`avg_rating = 0` via the view's COALESCE, or a null aggregate) sort LAST
+  // via `nullsFirst: false`. Unknown/absent sort falls through to the
   // `featured → updated_at` default discovery order.
   switch (filters?.sort) {
+    case 'rating':
+      dataQuery = dataQuery.order('avg_rating', {
+        ascending: false,
+        foreignTable: 'artist_rating_summary',
+        nullsFirst: false,
+      })
+      break
     case 'price_low':
       dataQuery = dataQuery.order('price_min', { ascending: true, nullsFirst: false })
       break
@@ -345,6 +398,8 @@ export async function getArtists(
   }
   if (svcColumn) dataQuery = dataQuery.eq(svcColumn, true)
   if (searchOr) dataQuery = dataQuery.or(searchOr)
+  // Same minRating floor as the count query (HAR-475) → rows match `total`.
+  if (minRating != null) dataQuery = dataQuery.gte('avg_rating', minRating)
 
   const { data, error } = await dataQuery
 

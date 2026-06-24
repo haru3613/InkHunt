@@ -74,3 +74,20 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   `parse('rating') === 'featured'`); that single assertion MUST flip when you
   add the value — it is not a "keep existing cases green" violation. Evidence:
   HAR-474 (added `'rating'`; PR pending).
+- **`getArtists` can `.order`/`.gte` against an embedded VIEW column even though
+  the view is absent from `database.ts` (`Views: { [_ in never]: never }`).**
+  To order/filter the WHOLE artist set by `artist_rating_summary.avg_rating`,
+  embed it in the select (`artist_rating_summary!inner(avg_rating, review_count)`)
+  and use `.order('avg_rating', { foreignTable: 'artist_rating_summary',
+  ascending: false, nullsFirst: false })` + `.gte('avg_rating', n)`. `tsc` does
+  NOT reject `avg_rating`/the view name (the result is `as unknown as` cast and
+  the conditional-`.select()` ternary widens the builder), so no
+  `database.ts`/codegen change is needed. Embed ONLY when a rating facet is
+  active (ternary on the select) so the unfiltered query stays byte-identical.
+  Apply the `.gte` to BOTH the count and data queries (like
+  `budgetPredicate`/`searchPredicate`) or `total` drifts. The view COALESCEs
+  zero-review artists to `avg_rating = 0` (not null), so `descending +
+  nullsFirst:false` already sinks both 0-rated and null-aggregate artists last.
+  Mocked-suite caveat: the live PostgREST `!inner` + embedded-column-filter
+  semantics aren't exercised by the unit test — a staging smoke is the final
+  confirmation. Evidence: HAR-475 (`ARTIST_RATING_EMBED`; PR pending).
