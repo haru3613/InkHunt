@@ -72,13 +72,37 @@ describe('ArtistFilters — sort control (HAR-433)', () => {
     for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
   })
 
-  it('renders the four sort options', () => {
+  it('renders all five sort options', () => {
     render(<ArtistFilters styles={[]} />)
 
     expect(screen.getByText('sortFeatured')).toBeInTheDocument()
     expect(screen.getByText('sortPriceLow')).toBeInTheDocument()
     expect(screen.getByText('sortPriceHigh')).toBeInTheDocument()
     expect(screen.getByText('sortNewest')).toBeInTheDocument()
+    expect(screen.getByText('sortRating')).toBeInTheDocument()
+  })
+
+  it('writes ?sort=rating to the URL when 評分最高 is selected (HAR-476)', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    const sortSelect = selectOwning('sortFeatured')
+    fireEvent.change(sortSelect, { target: { value: 'rating' } })
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('sort=rating')
+  })
+
+  it('writes ?sort=rating and resets page when 評分最高 is selected (HAR-476)', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    const sortSelect = selectOwning('sortFeatured')
+    fireEvent.change(sortSelect, { target: { value: 'rating' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('sort=rating')
+    expect(url).not.toContain('page=3')
   })
 
   it('writes ?sort=price_low to the URL when 價格低→高 is selected', () => {
