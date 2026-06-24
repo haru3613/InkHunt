@@ -156,6 +156,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="featured">{t('sortFeatured')}</SelectItem>
+            <SelectItem value="rating">{t('sortRating')}</SelectItem>
             <SelectItem value="price_low">{t('sortPriceLow')}</SelectItem>
             <SelectItem value="price_high">{t('sortPriceHigh')}</SelectItem>
             <SelectItem value="newest">{t('sortNewest')}</SelectItem>
