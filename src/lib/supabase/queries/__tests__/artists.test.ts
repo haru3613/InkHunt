@@ -704,6 +704,137 @@ describe('getArtists', () => {
     })
   })
 
+  describe('rating sort + minRating filter (HAR-475)', () => {
+    /**
+     * Wire the (no style filter) call sequence and return BOTH the count chain
+     * (1st `from()`) and the data chain (2nd) so the test can assert the rating
+     * order / `.gte('avg_rating', …)` predicate landed on each — the minRating
+     * filter must carry the SAME predicate on the count query or `total` drifts.
+     *   1. count query   -> { count }      (countChain)
+     *   2. data query    -> { data: rows } (dataChain)
+     *   3. reviews query -> { data: [] }
+     */
+    function wireCountAndData() {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      const countChain = makeThenable({ count: 1, error: null })
+      const dataChain = makeThenable({ data: artistRows, error: null })
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return countChain
+        if (callNum === 2) return dataChain
+        return makeThenable({ data: [], error: null })
+      })
+      return { countChain, dataChain }
+    }
+
+    it('orders by the view avg_rating descending with zero-review artists last for sort=rating', async () => {
+      const { dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, sort: 'rating' })
+
+      // descending avg_rating against the artist_rating_summary view; zero-review
+      // artists (avg_rating 0 / null aggregate) sort LAST via nullsFirst:false.
+      expect(dataChain.order).toHaveBeenCalledWith('avg_rating', {
+        ascending: false,
+        foreignTable: 'artist_rating_summary',
+        nullsFirst: false,
+      })
+      // the default discovery order must NOT also be applied for an explicit
+      // rating sort.
+      expect(dataChain.order).not.toHaveBeenCalledWith('featured', { ascending: false })
+    })
+
+    it('does NOT order by avg_rating for the default (absent) sort', async () => {
+      const { dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      expect(dataChain.order).not.toHaveBeenCalledWith('avg_rating', expect.anything())
+    })
+
+    it("applies .gte('avg_rating', 4) to BOTH queries for minRating=4", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, minRating: 4 })
+
+      expect(dataChain.gte).toHaveBeenCalledWith('avg_rating', 4)
+      expect(countChain.gte).toHaveBeenCalledWith('avg_rating', 4)
+    })
+
+    it("applies .gte('avg_rating', 4.5) to BOTH queries for minRating=4.5", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, minRating: 4.5 })
+
+      expect(dataChain.gte).toHaveBeenCalledWith('avg_rating', 4.5)
+      expect(countChain.gte).toHaveBeenCalledWith('avg_rating', 4.5)
+    })
+
+    it('applies NO avg_rating predicate when minRating is absent ({})', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({})
+
+      expect(dataChain.gte).not.toHaveBeenCalledWith('avg_rating', expect.anything())
+      expect(countChain.gte).not.toHaveBeenCalledWith('avg_rating', expect.anything())
+      expect(dataChain.order).not.toHaveBeenCalledWith('avg_rating', expect.anything())
+    })
+
+    it('applies NO avg_rating predicate when minRating is null', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, minRating: null })
+
+      expect(dataChain.gte).not.toHaveBeenCalledWith('avg_rating', expect.anything())
+      expect(countChain.gte).not.toHaveBeenCalledWith('avg_rating', expect.anything())
+    })
+
+    it('returns { data: [], total: 0 } sparse-safe when no artist matches minRating (count=0)', async () => {
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return makeThenable({ count: 0, error: null })
+        return makeThenable({ data: [], error: null })
+      })
+
+      const result = await getArtists({ page: 1, pageSize: 12, minRating: 4, sort: 'rating' })
+
+      expect(result).toEqual({ data: [], total: 0 })
+    })
+
+    it('composes rating sort + minRating with concurrent city + budget + service + q facets', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({
+        city: '台北市',
+        page: 1,
+        pageSize: 12,
+        sort: 'rating',
+        minRating: 4,
+        budget: 'le6000',
+        service: 'coverup',
+        q: 'bob',
+      })
+
+      // rating sort + minRating
+      expect(dataChain.order).toHaveBeenCalledWith('avg_rating', {
+        ascending: false,
+        foreignTable: 'artist_rating_summary',
+        nullsFirst: false,
+      })
+      expect(dataChain.gte).toHaveBeenCalledWith('avg_rating', 4)
+      expect(countChain.gte).toHaveBeenCalledWith('avg_rating', 4)
+      // other facets still applied to the data query
+      expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
+      expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)
+      expect(dataChain.lte).toHaveBeenCalledWith('price_min', 6000)
+      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike."%bob%",bio.ilike."%bob%"')
+    })
+  })
+
   describe('review summary (HAR-417)', () => {
     /**
      * Wire the three `from()` calls `getArtists` makes (no filters):
