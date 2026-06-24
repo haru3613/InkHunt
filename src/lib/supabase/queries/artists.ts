@@ -38,8 +38,11 @@ export type ArtistWithDetails = Omit<ArtistRow, 'admin_note' | 'line_user_id'> &
 /**
  * Listing sort order for `/artists` (HAR-433). `featured` is the default
  * discovery order; the price/recency options are pure read-side ordering.
+ * `rating` (評分最高, HAR-474) is the parser-recognized value for rate-aware
+ * ranking; the read-side ordering for it lands in a follow-up (HAR-B) and for
+ * now falls through to the `featured` default in the query switch.
  */
-export type ArtistSort = 'featured' | 'price_low' | 'price_high' | 'newest'
+export type ArtistSort = 'featured' | 'price_low' | 'price_high' | 'newest' | 'rating'
 
 /**
  * Budget bucket for `/artists` (HAR-434). Filters on the artist's entry price
