@@ -1042,9 +1042,40 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT merge/rebase/modify
   staging. Reconciliation remains Harvey's manual call.
 
+### Round 33 (2026-06-25) — recovered stranded-green PR #116 (HAR-477); HAR-478 retry-deferred (transient API crash)
+
+- **Recovered HAR-477 → PR #116** (v0.5 W2 `/artists` 最低評分 filter control + active
+  chip). A 5th stranded-green PR left OPEN by the Round 31–32 fire (its worktree was
+  created 22:39Z, after the 4 it merged). OPEN / MERGEABLE / CLEAN, all 5 required checks
+  (lint-and-typecheck, test, migration-check, build, `ci-passed`) SUCCESS → squash-merged
+  to staging (`7fa51da`, 04:30Z). HAR-477 → **Done**, worktree cleaned (`--pr 116`).
+- **Functional-slice check (not scaffolding).** HAR-477's own spec marked the
+  `getArtists` `.gte('avg_rating', …)` predicate out-of-scope ("HAR-B"), but that
+  predicate already shipped on staging via **HAR-475** (`minRating` filter param +
+  `artist_rating_summary!inner` embed in `src/lib/supabase/queries/artists.ts`). So the
+  merged control filters real data end-to-end (URL → page → `getArtists` predicate →
+  removable chip), verified before merging.
+- **Dispatched HAR-478** (v0.5 W2 評分最高 sort chip; single-file `ActiveFilterChips.tsx`
+  + consuming test, verified NOT already shipped — `SORT_LABEL_KEYS` lacks `rating` on
+  staging). Drain implementer **crashed mid-response on a transient API error**
+  (`Connection closed`) — 0/1 merged. This is a flaky-infra failure, NOT a needs-human
+  boundary and NOT a gate verdict → HAR-478 **reset In Progress → Todo** (stays pickable
+  for next-round retry, no `needs-human` label). Removed the empty stranded worktree +
+  branch (`feature/har-478-rating-sort-chip`, 0 commits beyond staging) and cleared the
+  dangling `worktrees.json` record so the retry `wt start` won't collide. No failure
+  email: the round still merged HAR-477 (progress made), and the crash self-heals on retry.
+- **Did NOT ideate a refill ticket.** `PICK=1` (HAR-478 only) is < 2, but the PM created
+  HAR-478 today (queue is being fed externally) and every remaining v0.5 discovery slice
+  clusters on the same `ArtistFilters`/`ActiveFilterChips` files (would collide with the
+  in-flight HAR-478) — selecting the next product slice is a PM/Harvey call, not a
+  mechanical refill. Left to next round / PM.
+- **main→staging sync: still 16 ahead at the SAME SHA** (`97854fab`) already flagged
+  Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
+  merge/rebase/modify staging. Reconciliation remains Harvey's manual call.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-23T05:04:12.296Z
-mc-round-pick: 0
+mc-round-bl: 2026-06-25T04:35:15.781Z
+mc-round-pick: 1
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: drained-4
+mc-round-outcome: drained-1
