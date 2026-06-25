@@ -1099,9 +1099,40 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
   merge/rebase/modify staging. Reconciliation remains Harvey's manual call.
 
+### Round 35 (2026-06-26) — designated exhaustion-detection round; Harvey emailed for next v0.5 slice / milestone direction
+
+- **Wake cause:** Round 34's outcome was `drained-1` (not `noop`), so Step 1b
+  correctly did NOT early-exit — this is the exhaustion-detection round Round 34
+  scheduled. `BL`/`PICK`/`MAIN` are unchanged from Round 34
+  (`2026-06-25T05:05:00.246Z` / `0` / `97854fab`), but the productive prior outcome
+  forces a re-scout.
+- **Scout result: nothing auto-eligible.** InkHunt project = 37 Done, 1 Canceled,
+  exactly **1 Todo** — HAR-440 (`[PM Patrol R4]` reconcile the local InkHunt staging
+  checkout; operational human call), already `needs-human` + `from-haru-pm` labelled →
+  `PICK=0`, nothing to drain. No `mc-qa-blocked` retry pending. Idempotent: HAR-440
+  already labelled, so no re-label / no re-comment (preserves Step 1b `BL` convergence).
+  (The team-scoped Linear query returns 50 mixed-repo rows ignoring project/state
+  filters — the project-scoped `getProjectIssues` is authoritative; the v0.4/v0.5 rows
+  it surfaced are all `Done`.)
+- **v0.5 W2 discovery chip pair COMPLETE** (HAR-477 最低評分 filter chip #116, HAR-478
+  評分最高 sort chip #117, both on staging). The remaining v0.5 discovery slices all
+  cluster on `ArtistFilters.tsx` / `ActiveFilterChips.tsx` (would collide) and picking
+  the next slice is a product/taste call — **no auto-ideation** (collision + scatter +
+  stay-the-author). Round 33/34 deferred the awaiting-human email "to next round"; this
+  IS that round.
+- **Emailed Harvey for direction** — feed the next v0.5 slice (or a new milestone) via
+  the PM pass, or park the milestone. First no-op after Round 34's productive close → a
+  fresh state transition, recorded once here; later identical fires early-exit at Step 1b
+  (markers match AND `mc-round-outcome: noop`) without re-triage or re-email.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome marker `noop`; `BL=2026-06-25T05:05:00.246Z`, `PICK=0`, `MAIN=97854fab` — all
+  unchanged, so Step 1b WILL early-exit the next fire until new tickets, a removed
+  `needs-human` label, or a main hotfix appears.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-bl: 2026-06-25T05:05:00.246Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: drained-1
+mc-round-outcome: noop
