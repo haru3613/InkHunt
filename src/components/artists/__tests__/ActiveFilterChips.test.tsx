@@ -91,6 +91,63 @@ describe('ActiveFilterChips (HAR-454)', () => {
     expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
   })
 
+  // --- HAR-478: active sort=rating (評分最高) chip ---
+
+  it('resolves a rating sort chip via the sortRating label', () => {
+    mockSearchParams.set('sort', 'rating')
+    render(<ActiveFilterChips styles={STYLES} />)
+    expect(screen.getByText('sortRating', { exact: false })).toBeInTheDocument()
+    expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
+  })
+
+  it('does not render a sort chip when sort=featured (the default)', () => {
+    mockSearchParams.set('sort', 'featured')
+    const { container } = render(<ActiveFilterChips styles={STYLES} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('removing the rating sort chip drops sort but preserves other params', () => {
+    mockSearchParams.set('sort', 'rating')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('sortRating'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('sort=')
+    expect(url).toContain('style=traditional')
+    expect(url).toContain('city=')
+  })
+
+  it('removing the rating sort chip also resets pagination', () => {
+    mockSearchParams.set('sort', 'rating')
+    mockSearchParams.set('page', '3')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('sortRating'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('sort=')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('清除全部 pushes bare /artists when sort=rating is the only filter', () => {
+    mockSearchParams.set('sort', 'rating')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(screen.getByText('clearAll'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toBe('/artists')
+    expect(url).not.toContain('sort=')
+  })
+
   it('removing one chip navigates with only that param dropped (others intact)', () => {
     mockSearchParams.set('style', 'traditional')
     mockSearchParams.set('city', '台北市')
