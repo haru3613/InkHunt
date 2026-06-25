@@ -1073,9 +1073,35 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
   merge/rebase/modify staging. Reconciliation remains Harvey's manual call.
 
+### Round 34 (2026-06-25) — HAR-478 retry succeeded (評分最高 sort chip shipped); v0.5 W2 chip pair complete
+
+- **HAR-478 → PR #117** (v0.5 W2 `/artists` 評分最高 sort chip). The Round 33
+  dispatch crashed mid-response on a transient API error and reset the ticket to Todo;
+  this round retried and merged. Re-ran the already-shipped guard before dispatch —
+  `SORT_LABEL_KEYS` on staging still lacked `rating` (only `price_low`/`price_high`/
+  `newest`), so the premise held. Single-file `ActiveFilterChips.tsx` chip wiring +
+  consuming `ActiveFilterChips.test.tsx` case; all 5 required checks green
+  (lint-and-typecheck, test, migration-check, build, `ci-passed`). Squash-merged to
+  staging (`9dabcd7`), HAR-478 already in Done state (closing comment added), worktree
+  cleaned (`--pr 117`). 1/1 merged, 0 deferred, 0 Product-QA bounce.
+- **v0.5 W2 chip pair now complete.** HAR-477 (最低評分 *filter* chip, PR #116, Round 33)
+  + HAR-478 (評分最高 *sort* chip, PR #117) both ship the removable active-filter chip for
+  the rating discovery controls (URL → page → `getArtists` predicate/ordering → removable
+  chip), end-to-end.
+- **Promotion-review (informational, NOT needs-human):** HAR-478 (sales-facing UI)
+  queues for the human staging→main promotion gate.
+- **Did NOT ideate a refill ticket.** Post-merge `PICK=0` (only HAR-440 `needs-human`
+  remains as Todo). Both known v0.5 W2 chip slices are now shipped and every remaining
+  v0.5 discovery slice clusters on the same `ArtistFilters`/`ActiveFilterChips` spine —
+  selecting the next product slice is a PM/Harvey call, not a mechanical refill, and the
+  PM is feeding the queue externally. Left to PM / next round.
+- **main→staging sync: still 16 ahead at the SAME SHA** (`97854fab`) already flagged
+  Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
+  merge/rebase/modify staging. Reconciliation remains Harvey's manual call.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-25T04:35:15.781Z
-mc-round-pick: 1
+mc-round-bl: 2026-06-25T05:05:00.246Z
+mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-outcome: drained-1
