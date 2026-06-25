@@ -347,3 +347,64 @@ describe('ArtistFilters — keyword search box (HAR-456)', () => {
     expect(url).not.toContain('q=')
   })
 })
+
+describe('ArtistFilters — minimum-rating control (HAR-477)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
+  })
+
+  it('renders the clear option and the two rating-threshold options', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    expect(screen.getByText('ratingAll')).toBeInTheDocument()
+    expect(screen.getByText('rating4Plus')).toBeInTheDocument()
+    expect(screen.getByText('rating45Plus')).toBeInTheDocument()
+  })
+
+  it('writes ?minRating=4 to the URL when 4★+ is selected', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    const ratingSelect = selectOwning('ratingAll')
+    fireEvent.change(ratingSelect, { target: { value: '4' } })
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('minRating=4')
+  })
+
+  it('writes ?minRating=4.5 to the URL when 4.5★+ is selected', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    const ratingSelect = selectOwning('ratingAll')
+    fireEvent.change(ratingSelect, { target: { value: '4.5' } })
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    // URLSearchParams encodes the dot literally, so assert on the raw 4.5 value.
+    expect(url).toContain('minRating=4.5')
+  })
+
+  it('writes ?minRating=4 and resets page when 4★+ is selected', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    const ratingSelect = selectOwning('ratingAll')
+    fireEvent.change(ratingSelect, { target: { value: '4' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('minRating=4')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('drops the minRating param when the clear (全部) option is selected', () => {
+    mockSearchParams.set('minRating', '4')
+    render(<ArtistFilters styles={[]} />)
+
+    const ratingSelect = selectOwning('ratingAll')
+    fireEvent.change(ratingSelect, { target: { value: 'all' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('minRating=')
+  })
+})

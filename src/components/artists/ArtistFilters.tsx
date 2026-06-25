@@ -42,6 +42,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const activeSort = searchParams.get('sort')
   const activeBudget = searchParams.get('budget')
   const activeService = searchParams.get('service')
+  const activeMinRating = searchParams.get('minRating')
   const activeQuery = searchParams.get('q')
 
   const updateParams = useCallback(
@@ -118,6 +119,16 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
     [updateParams],
   )
 
+  const handleMinRatingChange = useCallback(
+    (value: string | null) => {
+      // `all` is the clear option (no rating predicate) — drop the param. Only
+      // the `4` / `4.5` allowlist is offered (HAR-474/477); `parseMinRating`
+      // rejects anything else on the page side regardless.
+      updateParams('minRating', !value || value === 'all' ? null : value)
+    },
+    [updateParams],
+  )
+
   return (
     <div className="flex flex-col gap-3">
       <Input
@@ -190,6 +201,20 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectItem value="all">{t('serviceAll')}</SelectItem>
             <SelectItem value="coverup">{t('serviceCoverup')}</SelectItem>
             <SelectItem value="flash">{t('serviceFlash')}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          defaultValue={activeMinRating ?? 'all'}
+          onValueChange={handleMinRatingChange}
+        >
+          <SelectTrigger aria-label={t('ratingLabel')} className="w-auto min-w-[120px]">
+            <SelectValue placeholder={t('ratingLabel')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('ratingAll')}</SelectItem>
+            <SelectItem value="4">{t('rating4Plus')}</SelectItem>
+            <SelectItem value="4.5">{t('rating45Plus')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
