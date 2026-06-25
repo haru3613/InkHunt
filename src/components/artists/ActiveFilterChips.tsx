@@ -24,6 +24,7 @@ const SORT_LABEL_KEYS: Record<string, string> = {
   price_low: 'sortPriceLow',
   price_high: 'sortPriceHigh',
   newest: 'sortNewest',
+  rating: 'sortRating',
 }
 
 const BUDGET_LABEL_KEYS: Record<string, string> = {
