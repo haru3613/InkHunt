@@ -6,6 +6,7 @@ import {
   parseArtistService,
   parseListingQuery,
   parseMinRating,
+  parseHealed,
   hasActiveListingFilters,
 } from '../listing'
 
@@ -89,6 +90,7 @@ describe('parseListingSearchParams', () => {
       service: null,
       q: null,
       minRating: null,
+      healed: false,
     })
   })
 
@@ -99,6 +101,7 @@ describe('parseListingSearchParams', () => {
       service: null,
       q: null,
       minRating: null,
+      healed: false,
     })
   })
 })
@@ -226,6 +229,7 @@ describe('parseListingSearchParams — service (HAR-446)', () => {
       service: 'flash',
       q: null,
       minRating: null,
+      healed: false,
     })
   })
 })
@@ -288,6 +292,7 @@ describe('parseListingSearchParams — q (HAR-455)', () => {
       service: 'flash',
       q: 'bob',
       minRating: null,
+      healed: false,
     })
   })
 })
@@ -424,6 +429,7 @@ describe('parseListingSearchParams — minRating (HAR-474)', () => {
       service: 'flash',
       q: 'bob',
       minRating: 4.5,
+      healed: false,
     })
   })
 })
@@ -481,6 +487,101 @@ describe('hasActiveListingFilters — minRating + rating sort (HAR-474)', () => 
       }),
     ).toBe(false)
     // minRating omitted entirely is also no filter
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
+    ).toBe(false)
+  })
+})
+
+describe('parseHealed (HAR-479)', () => {
+  it('returns true ONLY for the canonical "1" value', () => {
+    expect(parseHealed('1')).toBe(true)
+  })
+
+  it('returns false for every other string', () => {
+    expect(parseHealed('0')).toBe(false)
+    expect(parseHealed('true')).toBe(false)
+    expect(parseHealed('on')).toBe(false)
+    expect(parseHealed('yes')).toBe(false)
+    expect(parseHealed('')).toBe(false)
+    expect(parseHealed('garbage')).toBe(false)
+    expect(parseHealed(' 1 ')).toBe(false)
+    expect(parseHealed('1 ')).toBe(false)
+  })
+
+  it('returns false for absent / non-string / array input', () => {
+    expect(parseHealed(undefined)).toBe(false)
+    expect(parseHealed(null)).toBe(false)
+    expect(parseHealed(1)).toBe(false)
+    expect(parseHealed(true)).toBe(false)
+    expect(parseHealed([])).toBe(false)
+    expect(parseHealed(['1'])).toBe(false)
+    expect(parseHealed({})).toBe(false)
+  })
+})
+
+describe('parseListingSearchParams — healed (HAR-479)', () => {
+  it('surfaces healed:true only for "1"', () => {
+    expect(parseListingSearchParams({ healed: '1' })).toMatchObject({ healed: true })
+  })
+
+  it('defaults healed to false when absent or non-canonical', () => {
+    expect(parseListingSearchParams({})).toMatchObject({ healed: false })
+    expect(parseListingSearchParams({ healed: '0' })).toMatchObject({ healed: false })
+    expect(parseListingSearchParams({ healed: 'true' })).toMatchObject({ healed: false })
+  })
+
+  it('parses healed alongside the other facets', () => {
+    expect(
+      parseListingSearchParams({
+        sort: 'rating',
+        budget: 'le3000',
+        service: 'flash',
+        q: 'bob',
+        minRating: '4.5',
+        healed: '1',
+      }),
+    ).toEqual({
+      sort: 'rating',
+      budget: 'le3000',
+      service: 'flash',
+      q: 'bob',
+      minRating: 4.5,
+      healed: true,
+    })
+  })
+})
+
+describe('hasActiveListingFilters — healed (HAR-479)', () => {
+  it('is true when only healed is set', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: null,
+        healed: true,
+      }),
+    ).toBe(true)
+  })
+
+  it('is false when healed is false and everything else is default', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: null,
+        healed: false,
+      }),
+    ).toBe(false)
+    // healed omitted entirely is also no filter
     expect(
       hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
     ).toBe(false)

@@ -84,6 +84,12 @@ export interface ArtistFilters {
    * the unfiltered query).
    */
   minRating?: number | null
+  /**
+   * Healed-work facet (HAR-479). When `true`, keeps only artists with at least
+   * one portfolio piece carrying a healed-work compare photo. Absent/`false` →
+   * no predicate. Type-only here; the query predicate lands in W1-B.
+   */
+  healed?: boolean
 }
 
 const DEFAULT_PAGE_SIZE = 12

@@ -117,6 +117,18 @@ export function parseMinRating(raw: unknown): number | null {
   return (ALLOWED_MIN_RATINGS as readonly number[]).includes(value) ? value : null
 }
 
+/**
+ * Parse a raw `healed` search param into a boolean facet flag (HAR-479).
+ * Mirrors the other facets' untrusted-string contract — the page reads the
+ * value straight off `searchParams` so this never throws. Returns `true` ONLY
+ * for the single canonical truthy URL value `'1'` (matching the `?healed=1`
+ * the control writes); every other input (absent, `'0'`, `'true'`, `'on'`,
+ * arbitrary strings, arrays, non-strings) → `false` (no predicate).
+ */
+export function parseHealed(raw: unknown): boolean {
+  return raw === '1'
+}
+
 export const listingSearchParamsSchema = z.object({
   sort: listingSortSchema,
   budget: listingBudgetSchema,
@@ -130,6 +142,8 @@ export type ListingSearchParams = {
   q: string | null
   /** Minimum rating threshold (`4` or `4.5`), or `null` for no filter (HAR-474). */
   minRating: number | null
+  /** Healed-work compare-photo facet; `true` only for `?healed=1` (HAR-479). */
+  healed: boolean
 }
 
 /**
@@ -147,6 +161,7 @@ export function parseListingSearchParams(
     service: parseArtistService(searchParams.service),
     q: parseListingQuery(searchParams.q),
     minRating: parseMinRating(searchParams.minRating),
+    healed: parseHealed(searchParams.healed),
   }
 }
 
@@ -155,8 +170,9 @@ export function parseListingSearchParams(
  * default view (HAR-435). True when a `style` or `city` is selected, the `sort`
  * is anything other than the `featured` default, the `budget` is anything other
  * than the `any` default, a `service` filter is set (HAR-446), a non-empty `q`
- * keyword search is active (HAR-455), or a `minRating` threshold is set
- * (HAR-474). Drives the `清除篩選` (clear-filters) affordance.
+ * keyword search is active (HAR-455), a `minRating` threshold is set
+ * (HAR-474), or the `healed` facet is on (HAR-479). Drives the `清除篩選`
+ * (clear-filters) affordance.
  */
 export function hasActiveListingFilters(filters: {
   style?: string | null
@@ -166,6 +182,7 @@ export function hasActiveListingFilters(filters: {
   service?: ArtistService | null
   q?: string | null
   minRating?: number | null
+  healed?: boolean
 }): boolean {
   return (
     Boolean(filters.style) ||
@@ -174,6 +191,7 @@ export function hasActiveListingFilters(filters: {
     filters.budget !== 'any' ||
     Boolean(filters.service) ||
     Boolean(filters.q && filters.q.trim()) ||
-    filters.minRating != null
+    filters.minRating != null ||
+    filters.healed === true
   )
 }
