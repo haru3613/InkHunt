@@ -13,7 +13,16 @@ interface ActiveFilterChipsProps {
 }
 
 /** URL param keys this row reflects (the full set ArtistFilters writes + search). */
-const FILTER_KEYS = ['style', 'city', 'sort', 'budget', 'service', 'minRating', 'q'] as const
+const FILTER_KEYS = [
+  'style',
+  'city',
+  'sort',
+  'budget',
+  'service',
+  'minRating',
+  'healed',
+  'q',
+] as const
 
 /**
  * Map a non-default option value to the existing `artists`-namespace i18n key
@@ -79,6 +88,7 @@ export function ActiveFilterChips({ styles }: ActiveFilterChipsProps) {
   const budget = searchParams.get('budget')
   const service = searchParams.get('service')
   const minRating = searchParams.get('minRating')
+  const healed = searchParams.get('healed')
   const q = searchParams.get('q')?.trim()
 
   const chips: ActiveChip[] = []
@@ -104,6 +114,10 @@ export function ActiveFilterChips({ styles }: ActiveFilterChipsProps) {
   }
   if (minRating && MIN_RATING_LABEL_KEYS[minRating]) {
     chips.push({ key: 'minRating', label: t(MIN_RATING_LABEL_KEYS[minRating]) })
+  }
+  // Boolean facet: only the literal '1' is active (mirrors parseHealed).
+  if (healed === '1') {
+    chips.push({ key: 'healed', label: t('filterHealed') })
   }
 
   if (chips.length === 0) return null
