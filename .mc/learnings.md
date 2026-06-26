@@ -91,3 +91,17 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   Mocked-suite caveat: the live PostgREST `!inner` + embedded-column-filter
   semantics aren't exercised by the unit test — a staging smoke is the final
   confirmation. Evidence: HAR-475 (`ARTIST_RATING_EMBED`; PR pending).
+- **To restrict parent rows by a child relationship that is ALREADY embedded
+  unaliased for rendering, add a SEPARATE ALIASED `!inner` embed — never put
+  `!inner` on the existing embed.** `ARTIST_PUBLIC_SELECT` embeds
+  `portfolio_items(*)` for the card; a bare `portfolio_items!inner(...)` +
+  `.not('portfolio_items.col', 'is', null)` would narrow THAT rendered embed to
+  matching children only (artist loses their non-matching portfolio items).
+  Fix: embed `healed_proof:portfolio_items!inner(id)` and filter
+  `.not('healed_proof.col', 'is', null)` — the alias restricts WHICH PARENTS
+  survive while the unaliased `portfolio_items(*)` stays complete. Gate the
+  alias behind the facet (compose embeds into one comma-joined string so rating
+  + healed can both be active) and apply the `.not` to BOTH count and data
+  queries or `total` drifts. `tsc` accepts the aliased embed + `.not` (select is
+  `as unknown as` cast). Mocked-suite caveat: live alias-scoped filter semantics
+  need a staging smoke. Evidence: HAR-480 (`HEALED_PROOF_EMBED`; PR pending).
