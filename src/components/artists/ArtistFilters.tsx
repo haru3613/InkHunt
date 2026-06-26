@@ -44,6 +44,9 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const activeService = searchParams.get('service')
   const activeMinRating = searchParams.get('minRating')
   const activeQuery = searchParams.get('q')
+  // HAR-481: healed-work facet is boolean — `?healed=1` is the only on-value
+  // (matches `parseHealed`, HAR-479); absence means off.
+  const activeHealed = searchParams.get('healed') === '1'
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
@@ -128,6 +131,12 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
     },
     [updateParams],
   )
+
+  const handleHealedToggle = useCallback(() => {
+    // Boolean facet (HAR-481): on → `healed=1`, off → drop the param entirely
+    // (mirrors `service=all` → param dropped). Toggle off the current state.
+    updateParams('healed', activeHealed ? null : '1')
+  }, [activeHealed, updateParams])
 
   return (
     <div className="flex flex-col gap-3">
@@ -217,6 +226,20 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectItem value="4.5">{t('rating45Plus')}</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* HAR-481: boolean healed-work facet — a toggle, not a Select. */}
+        <button
+          type="button"
+          onClick={handleHealedToggle}
+          aria-pressed={activeHealed}
+          className={`inline-flex h-9 w-auto min-w-[120px] items-center justify-center rounded-md border px-3 text-sm whitespace-nowrap transition-colors ${
+            activeHealed
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-input bg-background text-foreground hover:bg-accent'
+          }`}
+        >
+          {t('filterHealed')}
+        </button>
       </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">

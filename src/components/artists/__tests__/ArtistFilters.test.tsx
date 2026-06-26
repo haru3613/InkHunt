@@ -408,3 +408,64 @@ describe('ArtistFilters — minimum-rating control (HAR-477)', () => {
     expect(url).not.toContain('minRating=')
   })
 })
+
+describe('ArtistFilters — healed-work filter (HAR-481)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
+  })
+
+  /** The healed-work toggle, located by its (mocked-to-key) label. */
+  function healedToggle(): HTMLButtonElement {
+    return screen.getByRole('button', { name: 'filterHealed' }) as HTMLButtonElement
+  }
+
+  it('renders the healed-work filter control', () => {
+    render(<ArtistFilters styles={[]} />)
+    expect(healedToggle()).toBeInTheDocument()
+  })
+
+  it('writes ?healed=1 to the URL when toggled ON', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(healedToggle())
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('healed=1')
+  })
+
+  it('writes ?healed=1 and resets page when toggled ON', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(healedToggle())
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('healed=1')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('reflects an already-healed=1 URL in its active (pressed) state', () => {
+    mockSearchParams.set('healed', '1')
+    render(<ArtistFilters styles={[]} />)
+
+    expect(healedToggle()).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('is not pressed when no healed param is present', () => {
+    render(<ArtistFilters styles={[]} />)
+    expect(healedToggle()).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('drops the healed param when toggled OFF (from healed=1)', () => {
+    mockSearchParams.set('healed', '1')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(healedToggle())
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('healed=')
+  })
+})
