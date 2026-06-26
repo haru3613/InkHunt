@@ -1180,10 +1180,36 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
   `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
 - Outcome `drained-1`; markers refreshed below (`PICK=0`, only HAR-440 remains).
+### Round 39 (2026-06-27) — designated no-op detection round; v0.6 W1 drained, awaiting next-wave PM scope
+
+- **Wake cause:** Round 38's outcome was `drained-1` (not `noop`), so Step 1b did NOT
+  early-exit — this is the no-op detection round Round 38 designated. Scout confirmed the
+  signal has NOT moved since Round 38: `BL=2026-06-26T11:02:39.886Z`, `PICK=0`,
+  `MAIN=97854fab` all unchanged.
+- **Nothing pickable.** Project-scoped `getProjectIssues` (authoritative) returns one open
+  `Todo` — HAR-440 (`[PM Patrol R4]` local staging-checkout reconcile), already
+  `needs-human` + `from-haru-pm`, idempotent (no re-label/re-comment → preserves `BL`).
+  `PICK=0`.
+- **No auto-ideation, no exhaustion email.** v0.6 W1「恢復對比作品 (healed-work) filter」is
+  complete end-to-end (HAR-479/480/481/482, PRs #118–#121 on staging). The next wave (W2+)
+  is a product/taste call (the remaining discovery slices cluster on
+  `ArtistFilters.tsx` / `ActiveFilterChips.tsx` — collision + scatter + stay-the-author),
+  owned by the PM pass which refills the queue externally. Per Round 38: wave-completion ≠
+  milestone exhaustion, so Step 2's email is NOT triggered (it's reserved for genuine
+  exhaustion). Fleet visibility for the idle state is covered by the daily digest.
+- **Worktree hygiene:** ended/pruned 5 stranded bot worktree records left from the W1 wave
+  (the merged feature-rating-sort-chip / -parser / -480 / -482 phantoms whose dirs were
+  already gone, plus the orphan `feature-artists-healed-filter` HAR-481 worktree whose work
+  shipped via PR #120). No active bot worktrees remain; no human worktrees touched.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** — markers below now carry `mc-round-outcome: noop` with `BL`/`PICK`/`MAIN`
+  unchanged, so the NEXT identical fire WILL early-exit at Step 1b (no re-scout, no re-email)
+  until a new ticket, a removed `needs-human` label, or a main hotfix moves the signal.
 
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-bl: 2026-06-26T11:02:39.886Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: drained-1
+mc-round-outcome: noop
