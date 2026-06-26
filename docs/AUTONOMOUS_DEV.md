@@ -1154,9 +1154,36 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `mc-sync-flagged-main` debounce holds, not re-emailed.
 - Outcome `drained-1`; markers refreshed below (`PICK=3` = HAR-480/481/482 remaining).
 
+### Round 38 (2026-06-27) — v0.6 W1 healed-work filter wave COMPLETE; drained the chip (HAR-482 #121)
+
+- **Wake cause:** Round 36's outcome was `drained-1` (not `noop`), so Step 1b did NOT
+  early-exit. Scout found HAR-482 still `Todo`/`auto-claude` and the rest of the wave
+  already merged.
+- **Drained HAR-482 → PR #121 squash-merged to staging on green CI** — `?healed=1`
+  now surfaces a removable active-filter chip in `ActiveFilterChips.tsx` (`healed` added
+  to `FILTER_KEYS`, chip label reuses the `artists.filterHealed` i18n key, removable via
+  the existing key-delete path; consuming component test added). Already-shipped guard
+  ran first: `FILTER_KEYS` had no `healed` pre-merge, HAR-481's key existed → genuinely
+  unbuilt. `mc.qa wired` → `promotion_review` (advisory, not needs-human).
+- **v0.6 W1「恢復對比作品 (healed-work) filter」slice is now COMPLETE end-to-end** —
+  HAR-479 parser #118, HAR-480 query #119, HAR-481 control+page wiring #120, HAR-482 chip
+  #121 all on staging. Every facet a user can apply (`healed`) now has its parser, query,
+  control, and removable chip. (Interim round that drained #119/#120 did not write a doc
+  entry; recorded here for the trail.)
+- **No auto-ideation.** The only remaining `Todo` is HAR-440 (`[PM Patrol R4]` local
+  staging-checkout reconcile — an operational human call, already `needs-human` +
+  `from-haru-pm`, idempotent: no re-label/re-comment → preserves Step 1b `BL`). `PICK=0`.
+  Scoping v0.6's next wave (W2+) is a PM/Harvey product call, not dispatcher scope-creep,
+  and the PM pass feeds the queue externally — wave-completion ≠ milestone exhaustion, so
+  **no exhaustion email this productive round.** First `noop` fire after this is the
+  designated detection round.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- Outcome `drained-1`; markers refreshed below (`PICK=0`, only HAR-440 remains).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-26T03:38:15.014Z
-mc-round-pick: 3
+mc-round-bl: 2026-06-26T11:02:39.886Z
+mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-outcome: drained-1
