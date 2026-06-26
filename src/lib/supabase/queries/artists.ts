@@ -211,6 +211,21 @@ export const ARTIST_PUBLIC_SELECT = `
  */
 const ARTIST_RATING_EMBED = 'artist_rating_summary!inner(avg_rating, review_count)'
 
+/**
+ * Healed-work facet embed (HAR-480). An ALIASED `!inner` embed on the SAME
+ * `portfolio_items` relationship so a `.not('healed_proof.healed_image_url',
+ * 'is', null)` keeps only artists with ≥1 portfolio piece carrying a healed-work
+ * compare photo. The alias (`healed_proof:`) is deliberate: the card-rendering
+ * select already embeds the UNALIASED `portfolio_items(*)`, and a bare
+ * `portfolio_items!inner` filter would narrow THAT embed to healed-only rows —
+ * dropping the artist's other portfolio items from the card. The separate alias
+ * restricts WHICH ARTISTS appear while leaving the rendered `portfolio_items(*)`
+ * complete. Appended (and the predicate applied) ONLY when `filters.healed` is
+ * active so the no-facet query stays byte-identical, exactly like
+ * `ARTIST_RATING_EMBED` / `ratingEmbedNeeded`.
+ */
+const HEALED_PROOF_EMBED = 'healed_proof:portfolio_items!inner(id)'
+
 interface SupabaseArtistRow extends Omit<ArtistRow, 'admin_note' | 'line_user_id'> {
   artist_styles: Array<{ styles: StyleRow | null }>
   portfolio_items: PortfolioItemRow[]
@@ -322,12 +337,26 @@ export async function getArtists(
   // (the sort orders by the embed's column; the filter restricts via `!inner`).
   const ratingEmbedNeeded = ratingSort || minRating != null
 
+  // HAR-480: healed-work facet. When active, embed an ALIASED `!inner` on
+  // `portfolio_items` and apply the same `.not(healed_proof.healed_image_url is
+  // null)` predicate to BOTH queries so `total` matches the eligible rows. The
+  // alias keeps the card-rendering `portfolio_items(*)` embed complete (see
+  // HEALED_PROOF_EMBED). Absent/false → no embed, no predicate (byte-identical).
+  const healedNeeded = filters?.healed === true
+
+  // Compose the extra embeds appended to each select so both facets can be
+  // active at once. Empty string → the select stays byte-identical to today's.
+  const countEmbeds = [ratingEmbedNeeded ? ARTIST_RATING_EMBED : null, healedNeeded ? HEALED_PROOF_EMBED : null]
+    .filter(Boolean)
+    .join(', ')
+  const dataEmbeds = countEmbeds
+
   let countQuery = supabase
     .from('artists')
-    // Embed the rating view only when a rating facet is active so the count
-    // stays byte-identical to today's query otherwise. `!inner` makes the
-    // `.gte('avg_rating', …)` below restrict the counted rows.
-    .select(ratingEmbedNeeded ? `*, ${ARTIST_RATING_EMBED}` : '*', {
+    // Embed the rating view / healed-proof relationship only when the matching
+    // facet is active so the count stays byte-identical to today's query
+    // otherwise. `!inner` makes the predicates below restrict the counted rows.
+    .select(countEmbeds ? `*, ${countEmbeds}` : '*', {
       count: 'exact',
       head: true,
     })
@@ -346,6 +375,10 @@ export async function getArtists(
   // Same minRating floor on the count query as the data query → `total` matches
   // the rows returned (the predicate references the embedded view's column).
   if (minRating != null) countQuery = countQuery.gte('avg_rating', minRating)
+  // HAR-480: same healed-proof not-null predicate on the count query as the
+  // data query so an artist is counted only if ≥1 portfolio piece has a healed
+  // photo (predicate references the aliased inner embed's column).
+  if (healedNeeded) countQuery = countQuery.not('healed_proof.healed_image_url', 'is', null)
 
   const { count } = await countQuery
   const total = count ?? 0
@@ -357,9 +390,12 @@ export async function getArtists(
 
   let dataQuery = supabase
     .from('artists')
-    // Embed the rating view only when a rating facet is active so the unfiltered
-    // select stays byte-identical to today's query otherwise (HAR-475).
-    .select(ratingEmbedNeeded ? `${ARTIST_PUBLIC_SELECT}, ${ARTIST_RATING_EMBED}` : ARTIST_PUBLIC_SELECT)
+    // Embed the rating view / healed-proof relationship only when the matching
+    // facet is active so the unfiltered select stays byte-identical to today's
+    // query otherwise (HAR-475, HAR-480). The card-rendering `portfolio_items(*)`
+    // inside ARTIST_PUBLIC_SELECT is left untouched; the healed `!inner` is a
+    // SEPARATE aliased embed so the rendered portfolio stays complete.
+    .select(dataEmbeds ? `${ARTIST_PUBLIC_SELECT}, ${dataEmbeds}` : ARTIST_PUBLIC_SELECT)
     .eq('status', 'active')
 
   // HAR-433: branch the listing order. HAR-475 adds `rating` → order by the
@@ -406,6 +442,9 @@ export async function getArtists(
   if (searchOr) dataQuery = dataQuery.or(searchOr)
   // Same minRating floor as the count query (HAR-475) → rows match `total`.
   if (minRating != null) dataQuery = dataQuery.gte('avg_rating', minRating)
+  // Same healed-proof not-null predicate as the count query (HAR-480) → the
+  // returned rows are exactly the artists counted in `total`.
+  if (healedNeeded) dataQuery = dataQuery.not('healed_proof.healed_image_url', 'is', null)
 
   const { data, error } = await dataQuery
 

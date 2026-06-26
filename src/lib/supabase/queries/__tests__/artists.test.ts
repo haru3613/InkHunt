@@ -47,6 +47,7 @@ function makeThenable<T>(result: T) {
   chain.in = vi.fn().mockReturnValue(chain)
   chain.lte = vi.fn().mockReturnValue(chain)
   chain.gte = vi.fn().mockReturnValue(chain)
+  chain.not = vi.fn().mockReturnValue(chain)
   chain.or = vi.fn().mockReturnValue(chain)
   chain.order = vi.fn().mockReturnValue(chain)
   chain.range = vi.fn().mockReturnValue(chain)
@@ -825,6 +826,139 @@ describe('getArtists', () => {
         foreignTable: 'artist_rating_summary',
         nullsFirst: false,
       })
+      expect(dataChain.gte).toHaveBeenCalledWith('avg_rating', 4)
+      expect(countChain.gte).toHaveBeenCalledWith('avg_rating', 4)
+      // other facets still applied to the data query
+      expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
+      expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)
+      expect(dataChain.lte).toHaveBeenCalledWith('price_min', 6000)
+      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike."%bob%",bio.ilike."%bob%"')
+    })
+  })
+
+  describe('healed-work facet (HAR-480)', () => {
+    /**
+     * Wire the count chain (1st `from()`) + data chain (2nd) so the test can
+     * assert the SAME healed-proof inner-embed predicate lands on both — the
+     * filter must carry on the count query or `total` drifts from the rows.
+     *   1. count query   -> { count }
+     *   2. data query    -> { data: rows }
+     *   3. reviews query -> { data: [] }
+     */
+    function wireCountAndData() {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      const countChain = makeThenable({ count: 1, error: null })
+      const dataChain = makeThenable({ data: artistRows, error: null })
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return countChain
+        if (callNum === 2) return dataChain
+        return makeThenable({ data: [], error: null })
+      })
+      return { countChain, dataChain }
+    }
+
+    // AC-1: the healed-proof IS-NOT-NULL predicate lands on BOTH the count and
+    // data queries so `total` cannot drift from the eligible artists returned.
+    it("applies the healed-proof not-null predicate to BOTH queries for healed=true", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, healed: true })
+
+      expect(dataChain.not).toHaveBeenCalledWith('healed_proof.healed_image_url', 'is', null)
+      expect(countChain.not).toHaveBeenCalledWith('healed_proof.healed_image_url', 'is', null)
+    })
+
+    // AC-1: the parent rows are restricted via a `!inner` embed on the
+    // portfolio_items relationship (aliased so it does not narrow the rendered
+    // embed — see AC-4). Both queries must carry the inner embed.
+    it('embeds the healed-proof inner relationship on BOTH queries for healed=true', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, healed: true })
+
+      const countSelect = (countChain.select as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+      const dataSelect = (dataChain.select as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+      expect(countSelect).toContain('healed_proof:portfolio_items!inner')
+      expect(dataSelect).toContain('healed_proof:portfolio_items!inner')
+    })
+
+    // AC-4: the rendered embed `portfolio_items(*)` the card consumes must stay
+    // COMPLETE — the healed filter uses a SEPARATE aliased inner-embed, it does
+    // NOT narrow `portfolio_items(*)` to healed-only.
+    it('keeps the rendered portfolio_items(*) embed complete (not narrowed to healed-only)', async () => {
+      const { dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, healed: true })
+
+      const dataSelect = (dataChain.select as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+      // the card-rendering embed is the unaliased portfolio_items(*) — present
+      // and untouched by the healed alias.
+      expect(dataSelect).toContain('portfolio_items(*)')
+      // and the restricting embed is the distinct aliased inner one.
+      expect(dataSelect).toContain('healed_proof:portfolio_items!inner')
+    })
+
+    // AC-2: absent/false healed ⇒ byte-identical to today's query (no extra
+    // predicate, no aliased embed).
+    it('applies NO healed predicate or embed when healed is absent ({})', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      expect(dataChain.not).not.toHaveBeenCalledWith('healed_proof.healed_image_url', 'is', null)
+      expect(countChain.not).not.toHaveBeenCalledWith('healed_proof.healed_image_url', 'is', null)
+      const dataSelect = (dataChain.select as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+      expect(dataSelect).not.toContain('healed_proof')
+    })
+
+    it('applies NO healed predicate when healed is false', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, healed: false })
+
+      expect(dataChain.not).not.toHaveBeenCalledWith('healed_proof.healed_image_url', 'is', null)
+      expect(countChain.not).not.toHaveBeenCalledWith('healed_proof.healed_image_url', 'is', null)
+    })
+
+    // AC-1: sparse-safe — when count is 0 (no artist has healed proof), return
+    // empty without a data query.
+    it('returns { data: [], total: 0 } sparse-safe when no artist matches healed (count=0)', async () => {
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return makeThenable({ count: 0, error: null })
+        return makeThenable({ data: [], error: null })
+      })
+
+      const result = await getArtists({ page: 1, pageSize: 12, healed: true })
+
+      expect(result).toEqual({ data: [], total: 0 })
+    })
+
+    // AC-3: healed composes with the other facets — both predicates land on
+    // both queries.
+    it('composes healed with minRating + city + budget + service + q on BOTH queries', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({
+        city: '台北市',
+        page: 1,
+        pageSize: 12,
+        healed: true,
+        minRating: 4,
+        budget: 'le6000',
+        service: 'coverup',
+        q: 'bob',
+      })
+
+      // healed predicate on both queries
+      expect(dataChain.not).toHaveBeenCalledWith('healed_proof.healed_image_url', 'is', null)
+      expect(countChain.not).toHaveBeenCalledWith('healed_proof.healed_image_url', 'is', null)
+      // minRating still on both queries
       expect(dataChain.gte).toHaveBeenCalledWith('avg_rating', 4)
       expect(countChain.gte).toHaveBeenCalledWith('avg_rating', 4)
       // other facets still applied to the data query
