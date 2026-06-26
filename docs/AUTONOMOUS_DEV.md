@@ -1130,9 +1130,33 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   unchanged, so Step 1b WILL early-exit the next fire until new tickets, a removed
   `needs-human` label, or a main hotfix appears.
 
+### Round 36 (2026-06-26) — v0.6 W1 healed-work filter wave opened; drained the parser root (HAR-479 #118)
+
+- **Wake cause:** the PM refilled the backlog — `BL` moved `2026-06-25→2026-06-26`
+  and `PICK` `0→3` (4 new `auto-claude` Todos). Step 1b correctly did NOT early-exit.
+- **New milestone slice — v0.6 W1「恢復對比作品 (healed-work) filter」on `/artists`**:
+  a 4-ticket vertical wave — HAR-479 parser (`listing.ts`), HAR-480 query
+  (`getArtists`), HAR-481 control + page wiring (`ArtistFilters.tsx`), HAR-482 chip
+  (`ActiveFilterChips.tsx`). Serves InkHunt core_value #3「作品集驅動 — 恢復對比照」.
+- **Drained HAR-479 only this round.** The four are a tight dependency chain rooted at
+  HAR-479; crucially HAR-480 edits the SAME `ArtistFilters` type in `artists.ts` that
+  HAR-479 adds (parallel merge = guaranteed conflict), and HAR-481/482 semantically
+  consume HAR-479's `parseHealed`. So drain the independent pure root first; it unblocks
+  the rest. **HAR-479 → PR #118 squash-merged to staging on real green CI** (`parseHealed`
+  facet: `'1'`→true only, `hasActiveListingFilters` wired, `ArtistFilters.healed?` type
+  added). No conflicts, no deferrals.
+- **Next round:** with HAR-479 on staging, HAR-480 (`artists.ts` query) and HAR-481
+  (`ArtistFilters.tsx` + page + messages) are now genuinely independent modules → drain
+  both in parallel. HAR-482 (chip) consumes HAR-481's i18n key, so it follows.
+- HAR-440 (`[PM Patrol R4]` local-checkout reconcile) stays `needs-human` — already
+  labelled, no re-label (preserves Step 1b `BL` convergence).
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed.
+- Outcome `drained-1`; markers refreshed below (`PICK=3` = HAR-480/481/482 remaining).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-25T05:05:00.246Z
-mc-round-pick: 0
+mc-round-bl: 2026-06-26T03:38:15.014Z
+mc-round-pick: 3
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: noop
+mc-round-outcome: drained-1
