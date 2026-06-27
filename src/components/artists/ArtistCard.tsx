@@ -46,6 +46,35 @@ function CardReviewSummary({
 }
 
 /**
+ * Minimum saved-count before the social-proof badge shows (HAR-485). Low counts
+ * read as *negative* social proof (Fera / Convince&Convert 2026), so below this
+ * we render nothing — same calm-card principle as `CardReviewSummary` hiding at
+ * `count === 0`.
+ */
+const MIN_SAVED_COUNT = 3
+
+/**
+ * Threshold-gated「X 人收藏」/「X saved」social-proof badge (HAR-485). Renders
+ * nothing when `savedCount` is absent or below `MIN_SAVED_COUNT`. `t` is the
+ * resolved `artists` namespace translator.
+ */
+function SavedCountBadge({
+  savedCount,
+  t,
+}: {
+  readonly savedCount: ArtistWithDetails['savedCount']
+  readonly t: (key: string, vars: Record<string, number>) => string
+}) {
+  if (savedCount == null || savedCount < MIN_SAVED_COUNT) return null
+
+  return (
+    <span className="text-sm text-muted-foreground tabular-nums">
+      {t('savedCount', { count: savedCount })}
+    </span>
+  )
+}
+
+/**
  * Service-type badges for the discovery card (HAR-447): renders a 遮蓋
  * (cover-up) badge when `offers_coverup` is true and a Flash 圖 badge when
  * `has_flash_designs` is true, so a consumer who filtered by service sees
@@ -126,6 +155,8 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
             </div>
 
             <CardReviewSummary summary={artist.reviewSummary} />
+
+            <SavedCountBadge savedCount={artist.savedCount} t={t} />
 
             <div className="flex flex-wrap gap-1.5">
               {visibleStyles.map((style) => (
@@ -229,6 +260,11 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
       {artist.reviewSummary && artist.reviewSummary.count > 0 && (
         <div className="mt-2">
           <CardReviewSummary summary={artist.reviewSummary} />
+        </div>
+      )}
+      {artist.savedCount != null && artist.savedCount >= MIN_SAVED_COUNT && (
+        <div className="mt-2">
+          <SavedCountBadge savedCount={artist.savedCount} t={t} />
         </div>
       )}
       {artist.price_min !== null && artist.price_min !== undefined && (

@@ -12,7 +12,12 @@ import { render, screen } from '@testing-library/react'
  */
 
 vi.mock('next-intl/server', () => ({
-  getTranslations: vi.fn(async () => (key: string) => key),
+  // Echo the key, but interpolate `{count}` so the saved-count badge's
+  // `t('savedCount', { count })` produces an assertable string in tests.
+  getTranslations: vi.fn(
+    async () => (key: string, vars?: Record<string, unknown>) =>
+      vars && 'count' in vars ? `${key}:${vars.count}` : key,
+  ),
 }))
 
 vi.mock('next/image', () => ({
@@ -104,6 +109,10 @@ function withService(
   >,
 ): ArtistWithDetails {
   return { ...BASE, ...flags }
+}
+
+function withSavedCount(savedCount: number | undefined): ArtistWithDetails {
+  return { ...BASE, savedCount }
 }
 
 async function renderCard(
@@ -251,5 +260,79 @@ describe('ArtistCard — FavoriteButton (save from discovery, HAR-472)', () => {
       'data-initial-favorited',
       'false',
     )
+  })
+})
+
+/**
+ * Threshold-gated saved-count badge (HAR-485): the card surfaces a calm
+ * 「X 人收藏」/「X saved」social-proof badge, but ONLY when
+ * `savedCount >= MIN_SAVED_COUNT` (3). Low counts are negative social proof, so
+ * below threshold (and when the field is absent) the badge renders nothing —
+ * mirroring `CardReviewSummary` hiding at `count === 0`. `getTranslations` is
+ * mocked to echo `savedCount:{count}`, so we assert on that interpolated string.
+ */
+describe('ArtistCard — saved-count badge (HAR-485)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders the saved-count badge when savedCount >= 3 (default variant)', async () => {
+    await renderCard(withSavedCount(12))
+
+    expect(screen.getByText('savedCount:12')).toBeInTheDocument()
+  })
+
+  it('renders the saved-count badge in the compact variant too', async () => {
+    await renderCard(withSavedCount(12), 'compact')
+
+    expect(screen.getByText('savedCount:12')).toBeInTheDocument()
+  })
+
+  it('renders the badge at exactly the threshold (savedCount === 3)', async () => {
+    await renderCard(withSavedCount(3))
+
+    expect(screen.getByText('savedCount:3')).toBeInTheDocument()
+  })
+
+  it('shows NO badge below threshold (savedCount === 2)', async () => {
+    await renderCard(withSavedCount(2))
+
+    expect(screen.queryByText(/savedCount/)).not.toBeInTheDocument()
+  })
+
+  it('shows NO badge when savedCount === 0', async () => {
+    await renderCard(withSavedCount(0))
+
+    expect(screen.queryByText(/savedCount/)).not.toBeInTheDocument()
+  })
+
+  it('shows NO badge when savedCount is absent', async () => {
+    await renderCard(withSavedCount(undefined))
+
+    expect(screen.queryByText(/savedCount/)).not.toBeInTheDocument()
+  })
+
+  it('shows NO badge below threshold in the compact variant', async () => {
+    await renderCard(withSavedCount(2), 'compact')
+
+    expect(screen.queryByText(/savedCount/)).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * i18n parity (HAR-485): the `artists.savedCount` key must exist in BOTH locale
+ * files so neither locale falls back to a missing-message error.
+ */
+describe('ArtistCard — savedCount i18n parity (HAR-485)', () => {
+  it('defines artists.savedCount in both zh-TW and en', async () => {
+    const [zh, en] = await Promise.all([
+      import('../../../../messages/zh-TW.json'),
+      import('../../../../messages/en.json'),
+    ])
+
+    expect(zh.default.artists.savedCount).toBeTruthy()
+    expect(en.default.artists.savedCount).toBeTruthy()
+    expect(zh.default.artists.savedCount).toContain('{count}')
+    expect(en.default.artists.savedCount).toContain('{count}')
   })
 })
