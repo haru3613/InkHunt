@@ -105,3 +105,15 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   queries or `total` drifts. `tsc` accepts the aliased embed + `.not` (select is
   `as unknown as` cast). Mocked-suite caveat: live alias-scoped filter semantics
   need a staging smoke. Evidence: HAR-480 (`HEALED_PROOF_EMBED`; PR pending).
+- **A STANDALONE `.from(<view>)` read of a view absent from `database.ts`
+  (`Views: never`) needs a double cast — `as never` on the table name alone does
+  NOT type the result.** `supabase.from('artist_saved_count' as never)` compiles
+  but the chained `.select().in()` returns `never`, so cast the post-`.select()`
+  builder: `(supabase.from('v' as never).select('cols') as unknown as { in: (c:
+  string, ids: string[]) => Promise<{ data: Row[] | null; error: unknown }> })
+  .in('artist_id', ids)`, then map through a hand-written `Row` interface. This is
+  the read-helper analogue of the HAR-475/480 EMBED rules (those cast the whole
+  `getArtists` result; here the helper is its own `.from`). The helper degrades to
+  an empty map on error/null so a missing view is safe; the unit test is fully
+  mocked, so a staging smoke confirms real rows. Evidence: HAR-484
+  (`getSavedCountsByArtistIds`; PR pending).
