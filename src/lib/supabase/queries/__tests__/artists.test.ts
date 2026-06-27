@@ -986,8 +986,12 @@ describe('getArtists', () => {
         if (callNum === 1) return makeThenable({ count: artistRows.length, error: null })
         if (callNum === 2) return makeThenable({ data: artistRows, error: null })
         // 3rd call must be the reviews aggregation query
-        expect(table).toBe('reviews')
-        return reviewsChain
+        if (callNum === 3) {
+          expect(table).toBe('reviews')
+          return reviewsChain
+        }
+        // 4th call is the HAR-484 saved-count aggregation query
+        return makeThenable({ data: [], error: null })
       })
       return reviewsChain
     }
@@ -1062,6 +1066,98 @@ describe('getArtists', () => {
       expect(result.data[0].slug).toBe('artist-1')
       // no rating attached on the failure path
       expect(result.data[0].reviewSummary?.count ?? 0).toBe(0)
+    })
+  })
+
+  describe('saved count (HAR-484)', () => {
+    /**
+     * Wire the four `from()` calls `getArtists` makes (no filters):
+     *   1. count query            -> { count }
+     *   2. data query             -> { data: artistRows }
+     *   3. reviews query          -> { data: [] }            (HAR-417)
+     *   4. artist_saved_count     -> { data: savedRows }     (the new HAR-484 call)
+     * Returns the spy chain used for the saved-count call so the test can assert
+     * the single bounded `.in('artist_id', ids)` select.
+     */
+    function wireGetArtists(artistRows: unknown[], savedRows: unknown[], savedError: unknown = null) {
+      const savedChain = makeThenable({ data: savedRows, error: savedError })
+      let callNum = 0
+      mockFrom.mockImplementation((table: string) => {
+        callNum++
+        if (callNum === 1) return makeThenable({ count: artistRows.length, error: null })
+        if (callNum === 2) return makeThenable({ data: artistRows, error: null })
+        if (callNum === 3) return makeThenable({ data: [], error: null }) // reviews
+        // 4th call must be the saved-count aggregation query
+        expect(table).toBe('artist_saved_count')
+        return savedChain
+      })
+      return savedChain
+    }
+
+    it('fetches saved counts for the page artist ids in ONE bounded query (no N+1)', async () => {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+        { ...BASE_ARTIST, id: 'a2', slug: 'artist-2', artist_styles: [], portfolio_items: [] },
+      ]
+      const savedRows = [
+        { artist_id: 'a1', saved_count: 7 },
+        { artist_id: 'a2', saved_count: 2 },
+      ]
+      const savedChain = wireGetArtists(artistRows, savedRows)
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      // exactly one saved-count fetch, filtered to the page's ids (no per-artist call)
+      expect(savedChain.in).toHaveBeenCalledTimes(1)
+      expect(savedChain.in).toHaveBeenCalledWith('artist_id', ['a1', 'a2'])
+    })
+
+    it('attaches the matching savedCount to each artist', async () => {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+        { ...BASE_ARTIST, id: 'a2', slug: 'artist-2', artist_styles: [], portfolio_items: [] },
+      ]
+      const savedRows = [
+        { artist_id: 'a1', saved_count: 7 },
+        { artist_id: 'a2', saved_count: 2 },
+      ]
+      wireGetArtists(artistRows, savedRows)
+
+      const { data } = await getArtists({ page: 1, pageSize: 12 })
+
+      expect(data.find((a) => a.id === 'a1')?.savedCount).toBe(7)
+      expect(data.find((a) => a.id === 'a2')?.savedCount).toBe(2)
+    })
+
+    it('leaves savedCount 0/absent for an artist with no saved-count row (no crash)', async () => {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+        { ...BASE_ARTIST, id: 'a2', slug: 'artist-2', artist_styles: [], portfolio_items: [] },
+      ]
+      const savedRows = [{ artist_id: 'a1', saved_count: 4 }]
+      wireGetArtists(artistRows, savedRows)
+
+      const { data } = await getArtists({ page: 1, pageSize: 12 })
+
+      expect(data.find((a) => a.id === 'a1')?.savedCount).toBe(4)
+      // artist with no row → savedCount 0 or absent
+      expect(data.find((a) => a.id === 'a2')?.savedCount ?? 0).toBe(0)
+    })
+
+    it('degrades gracefully when the saved-count query errors (cards still render, no throw)', async () => {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      wireGetArtists(artistRows, [], { message: 'saved-count fetch failed' })
+
+      const result = await getArtists({ page: 1, pageSize: 12 })
+
+      // artists still returned despite the saved-count-fetch failure
+      expect(result.total).toBe(1)
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0].slug).toBe('artist-1')
+      // no saved count attached on the failure path
+      expect(result.data[0].savedCount ?? 0).toBe(0)
     })
   })
 })
