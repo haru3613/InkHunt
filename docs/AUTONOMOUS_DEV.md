@@ -1207,9 +1207,37 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   unchanged, so the NEXT identical fire WILL early-exit at Step 1b (no re-scout, no re-email)
   until a new ticket, a removed `needs-human` label, or a main hotfix moves the signal.
 
+### Round 40 (2026-06-28) — reconciled an orphaned v0.7 W1 social-proof ship + stale-worktree hygiene
+
+- **Wake cause:** Step 1b did NOT early-exit — `BL` moved `2026-06-26T11:02:39.886Z →
+  2026-06-27T11:07:38.802Z`. The mover was HAR-440's `updatedAt` bumping (the
+  `[PM Patrol R4]` ticket re-touched); it stays `needs-human`, so `PICK` is still `0`
+  and `MAIN` still `97854fab`. No genuinely-new pickable work.
+- **Recorded a previously-undocumented ship — v0.7 W1「探索頁社會證明 (saved-count)」.**
+  HAR-484 (`getArtists` attaches per-artist `savedCount` via one bounded `.in('artist_id',…)`
+  read of the `artist_saved_count` view, degrades to 0/absent — PR #124, merged
+  `2026-06-27T04:45Z`) + HAR-485 (threshold-gated「X 人收藏」badge on `ArtistCard`,
+  `MIN_SAVED_COUNT=3`, hidden below threshold — PR #123, merged `2026-06-27T10:36Z`).
+  Both squash-merged to `staging` on green CI; both tracker-Done. The round that drained
+  them (S3331) **died before its wrap-up**, so neither the doc nor the worktree records
+  were reconciled — done here for the trail.
+- **Worktree hygiene:** `wt end --merged` + `wt prune` cleared the 3 stranded bot worktree
+  records left by that dead round (`feature-getartists-saved-count` #124,
+  `feature-artist-card-saved-count-badge` #123, `feature-artist-saved-count-view` merged);
+  sibling dirs already gone from disk. No active bot worktrees remain. The many
+  `.claude/worktrees/*` trees are Harvey's interactive sessions — NOT mc-tracked, untouched.
+- **No drain, no auto-ideation, no exhaustion email.** Nothing pickable (`PICK=0`, only
+  `needs-human` HAR-440). v0.7 W1 just completed; per the standing rule (Rounds 38/39)
+  wave-completion ≠ milestone exhaustion — scoping the next wave is a PM/Harvey product
+  call fed externally (stay-the-author), and the idle state is covered by the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** (0 drained this round; the v0.7 ship was a prior round's). Markers
+  refreshed to current values below so the NEXT identical fire early-exits at Step 1b.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-26T11:02:39.886Z
+mc-round-bl: 2026-06-27T11:07:38.802Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-outcome: noop
