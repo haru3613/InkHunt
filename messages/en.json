@@ -64,6 +64,7 @@
     "badgeFlash": "Flash",
     "allStyles": "All",
     "recommended": "Featured",
+    "savedCount": "{count} saved",
     "priceFrom": "From {price}",
     "cityTaipei": "Taipei",
     "cityNewTaipei": "New Taipei",
