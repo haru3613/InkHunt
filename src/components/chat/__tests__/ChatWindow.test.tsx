@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import type { Message } from '@/types/database'
 import { ChatWindow } from '../ChatWindow'
+
+const NEXT_STEP_COPY = '先回覆需求，再送報價；成交或不適合時可關閉詢價。'
 
 vi.mock('@/hooks/useRealtimeMessages', () => ({
   useRealtimeMessages: vi.fn(),
@@ -156,5 +158,112 @@ describe('ChatWindow', () => {
     expect(screen.getByTestId('chat-input')).toBeInTheDocument()
     // No message bubbles rendered
     expect(screen.queryByTestId(/^msg-/)).not.toBeInTheDocument()
+  })
+
+  describe('artist close-lead thread header', () => {
+    beforeEach(() => {
+      mockUseRealtimeMessages.mockReturnValue({
+        messages: [],
+        isLoading: false,
+        sendMessage: makeSendMessage(),
+        refetch: vi.fn(),
+      })
+    })
+
+    it('shows next-step expectation copy + close action for an artist', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          onCloseLead={vi.fn()}
+        />,
+      )
+
+      expect(screen.getByText(NEXT_STEP_COPY)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '關閉詢價' })).toBeInTheDocument()
+    })
+
+    it('does NOT show the close control or artist copy to a consumer', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="user-1"
+          isArtist={false}
+          status="pending"
+        />,
+      )
+
+      expect(screen.queryByText(NEXT_STEP_COPY)).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '關閉詢價' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('fires onCloseLead when the artist clicks 關閉詢價', () => {
+      const onCloseLead = vi.fn()
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          onCloseLead={onCloseLead}
+        />,
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: '關閉詢價' }))
+      expect(onCloseLead).toHaveBeenCalledTimes(1)
+    })
+
+    it('reflects a closed lead with 已關閉 and hides the close action', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="closed"
+          onCloseLead={vi.fn()}
+        />,
+      )
+
+      expect(screen.getByText('已關閉')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '關閉詢價' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('surfaces a close error without crashing or marking the lead closed', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          onCloseLead={vi.fn()}
+          closeError="關閉失敗，請稍後再試"
+        />,
+      )
+
+      expect(screen.getByText('關閉失敗，請稍後再試')).toBeInTheDocument()
+      // still actionable — not falsely closed
+      expect(screen.getByRole('button', { name: '關閉詢價' })).toBeInTheDocument()
+      expect(screen.queryByText('已關閉')).not.toBeInTheDocument()
+    })
+
+    it('still renders ChatInput (message-send path intact) alongside the header', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          onCloseLead={vi.fn()}
+        />,
+      )
+
+      expect(screen.getByTestId('chat-input')).toBeInTheDocument()
+    })
   })
 })
