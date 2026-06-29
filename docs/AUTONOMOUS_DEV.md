@@ -1235,9 +1235,47 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - **Outcome `noop`** (0 drained this round; the v0.7 ship was a prior round's). Markers
   refreshed to current values below so the NEXT identical fire early-exits at Step 1b.
 
+### Round 41 (2026-06-29) — reconciled orphaned v0.8 W1 artist-inquiry-loop ship (HAR-496 + HAR-497)
+
+- **Wake cause:** Step 1b did NOT early-exit — `BL` moved `2026-06-27T11:07:38.802Z →
+  2026-06-28T05:04:10.096Z` (new `needs-human` PM-patrol ticket HAR-495 created). `MAIN`
+  unchanged (`97854fab`); `PICK` still `0` (HAR-495 + HAR-440 both `needs-human`).
+- **Reconciled v0.8 W1「Artist 詢價工作流」— the first slice of the v0.9 Artist-CRM/inquiry
+  line Harvey set (`A: Artist CRM / inquiry loop`, 2026-06-29 decision sync on both tickets).**
+  An earlier fire today had implemented both, opened PRs, and moved them to In Review, but
+  **died before the serial-merge wrap-up** (worktree records left `active`/no-PR; sweeper
+  missed them because `pr_number` was never written to `worktrees.json`):
+  - **HAR-496** — artist inquiries status filters (全部/待回覆/已報價/已接受/已關閉) +
+    per-filter count chip + status-specific empty-state; read-only `?status=` GET wiring.
+    PR #125 squash-merged → `staging` `8acef9e`. Auto-mergeable (no money/migration/batch).
+  - **HAR-497** — artist-only close-lead action + next-step copy on the thread header;
+    calls the pre-existing `PATCH /api/inquiries/:id {status:'closed'}` (single-record,
+    user-initiated, not a batch/cron write → not the irreversible-data gate). PR #126
+    squash-merged → `staging` `7fb0a29`.
+- **Merge-conflict resolution.** Both PRs edited `inquiries/page.tsx`; after #125 landed,
+  #126 went `CONFLICTING/DIRTY`. Rebased #126 onto `origin/staging` **inside the bot
+  worktree** (never the primary checkout), resolved both conflict hunks (kept #125's
+  status-filter state + empty-state render, kept #126's `isClosing`/`closeError` state,
+  `handleSelect`, and close-lead wiring), `tsc --noEmit` clean + 76/76 inquiries+chat
+  tests, force-pushed → green `ci-passed` → auto-merge.
+- **Worktree hygiene:** `wt end --merged` (#125, #126) + `wt prune` cleared the 2 stranded
+  bot worktree records. No active bot worktrees remain. `.claude/worktrees/*` are Harvey's
+  interactive sessions — NOT mc-tracked, untouched.
+- **No drain of new tickets, no auto-ideation, no exhaustion email.** `PICK=0` — the only
+  Todos are `needs-human` PM-patrol local-checkout drift tickets (HAR-495 supersedes
+  HAR-440; both correctly Harvey-gated, already labelled, idempotent — left untouched).
+  v0.8 W1 just shipped; per the standing rule (Rounds 38–40) wave-completion ≠ milestone
+  exhaustion — Harvey's 2026-06-29 decision sync explicitly hands W2+ scoping of the Artist
+  CRM/inquiry line to the PM pass, which refills the backlog externally (stay-the-author).
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `drained-2`** (HAR-496 + HAR-497 reconciled to merged this round). Markers below
+  refreshed; `BL`/`PICK`/`MAIN` now reflect the post-round Todo set so the NEXT identical
+  fire early-exits at Step 1b until a new ticket / un-labelled `needs-human` / main hotfix.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-27T11:07:38.802Z
+mc-round-bl: 2026-06-28T05:04:10.096Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: noop
+mc-round-outcome: drained-2
