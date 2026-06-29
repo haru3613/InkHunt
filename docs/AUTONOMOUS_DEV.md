@@ -1273,9 +1273,27 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   refreshed; `BL`/`PICK`/`MAIN` now reflect the post-round Todo set so the NEXT identical
   fire early-exits at Step 1b until a new ticket / un-labelled `needs-human` / main hotfix.
 
+### Round 42 (2026-06-30) — settling noop (Round 41's `drained-2` → `noop`); no new work
+
+- **Wake cause:** Step 1b did NOT early-exit, but only because last outcome was `drained-2`
+  (the markers themselves were already at rest). `BL` (`2026-06-28T05:04:10.096Z`), `PICK`
+  (`0`), and `MAIN` (`97854fab`) all matched the recorded values — nothing actionable moved
+  since Round 41. The mandatory scout confirmed it: the only Todos are the two `needs-human`
+  PM-patrol local-checkout-drift tickets (HAR-495 supersedes HAR-440), both correctly
+  Harvey-gated and already labelled — left untouched (idempotent, no re-label, no comment).
+- **No drain, no auto-ideation, no exhaustion email.** `PICK=0`. v0.8 W1 (Artist
+  CRM/inquiry loop) shipped in Round 41; per the standing rule (Rounds 38–41) wave-completion
+  ≠ milestone exhaustion — next-wave scoping of the Artist-CRM line is Harvey's/the PM pass's
+  product call, fed externally (stay-the-author). Idle state is covered by the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** (0 drained). This commit's ONLY purpose is to flip the outcome marker
+  `drained-2 → noop` so the NEXT identical fire early-exits at Step 1b instead of re-scouting.
+  `BL`/`PICK`/`MAIN` unchanged below.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-bl: 2026-06-28T05:04:10.096Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: drained-2
+mc-round-outcome: noop
