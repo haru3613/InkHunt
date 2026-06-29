@@ -32,6 +32,8 @@ export default function InquiriesPage() {
   const [quoteModalOpen, setQuoteModalOpen] = useState(false)
   const [templates, setTemplates] = useState<QuoteTemplate[]>([])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [isClosing, setIsClosing] = useState(false)
+  const [closeError, setCloseError] = useState<string | null>(null)
 
   const fetchInquiries = useCallback(async () => {
     try {
@@ -104,6 +106,38 @@ export default function InquiriesPage() {
     [selectedId],
   )
 
+  const handleCloseLead = useCallback(async () => {
+    if (!selectedId) return
+    setIsClosing(true)
+    setCloseError(null)
+    try {
+      const response = await fetch(`/api/inquiries/${selectedId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'closed' }),
+      })
+      if (!response.ok) throw new Error(`Close failed: ${response.status}`)
+      // Reflect closure locally so the list badge + dimming update without reload.
+      setInquiries((prev) =>
+        prev.map((item) =>
+          item.inquiry.id === selectedId
+            ? { ...item, inquiry: { ...item.inquiry, status: 'closed' } }
+            : item,
+        ),
+      )
+    } catch {
+      setCloseError('關閉失敗，請稍後再試')
+    } finally {
+      setIsClosing(false)
+    }
+  }, [selectedId])
+
+  // Reset transient close UI when switching threads.
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id)
+    setCloseError(null)
+  }, [])
+
   const selectedItem = inquiries.find((item) => item.inquiry.id === selectedId)
   const activeFilter =
     STATUS_FILTERS.find((f) => f.value === statusFilter) ?? STATUS_FILTERS[0]
@@ -160,7 +194,7 @@ export default function InquiriesPage() {
           <ChatList
             items={inquiries}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleSelect}
             viewAs="artist"
           />
         )}
@@ -186,6 +220,10 @@ export default function InquiriesPage() {
               isArtist={true}
               onSendQuote={() => setQuoteModalOpen(true)}
               onQuoteAction={handleQuoteAction}
+              status={selectedItem?.inquiry.status}
+              onCloseLead={handleCloseLead}
+              isClosing={isClosing}
+              closeError={closeError}
             />
           </>
         ) : (
