@@ -1291,9 +1291,56 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `drained-2 → noop` so the NEXT identical fire early-exits at Step 1b instead of re-scouting.
   `BL`/`PICK`/`MAIN` unchanged below.
 
+### Round 43 (2026-07-01) — reconciled a died drain round; v0.9 W1 (asker inquiry status-filter loop) fully shipped
+
+- **Wake cause / why NOT an early-exit:** Step 1b's signal (`BL`=`2026-06-28T05:04:10.096Z`,
+  `PICK`=`0`, `MAIN`=`97854fab`) all matched Round 42 with `mc-round-outcome: noop` — on the
+  surface an early-exit. But Step 1 reposition found **3 active bot worktrees**
+  (HAR-507/508/509) + 1 stale (HAR-506) and **2 open PRs** left by a prior drain session that
+  died AFTER opening PRs #127–#130 (v0.9 W1 Slices A–D) but BEFORE the serial-merge wrap-up.
+  That in-flight work is invisible to the Todo/main signal, so the round proceeded to finish it.
+  (The died round itself left no log entry — this section also documents its merges.)
+- **The died round had drained v0.9 W1 = consumer inquiry status-filter loop (Slices A–D):**
+  - **HAR-506** (Slice A) — `getInquiriesForConsumer` gains optional `status?` param (symmetry
+    with the artist query). PR **#128** squash-merged → `staging` `c032429`.
+  - **HAR-508** (Slice C) — `inquiry.filters.*` i18n keys (zh-TW + en, asker POV). PR **#127**
+    squash-merged → `staging`.
+  - **HAR-507** (Slice B) — `GET /api/inquiries` threads validated `status` into the consumer
+    branch (1-token route edit). PR **#129** — was left **OPEN**.
+  - **HAR-509** (Slice D) — consumer `(public)/inquiries/page.tsx` gains the artist board's
+    status-filter chip row + result count + per-status localized empty copy (the user-facing
+    payoff; consuming component test asserts the `&status=` request param). PR **#130** — was
+    left **OPEN**.
+  #127/#128 had already merged but their worktrees were stranded (no `pr_number` in
+  `worktrees.json` → the round-start sweeper saw "nothing to reconcile").
+- **This round's reconciliation (the wrap-up the died session skipped):**
+  - Verified #129 + #130 MERGEABLE/CLEAN, all 5 checks green incl. `ci-passed`; the two PRs
+    touch **disjoint** files (#129 = `api/inquiries/route.ts`; #130 = `(public)/inquiries/page.tsx`).
+  - Serial-merged on the green gate: **#129** (HAR-507) → then **#130** (HAR-509) went `BEHIND`,
+    `gh pr update-branch` (disjoint → no conflict) → CI re-greened → auto-merge → `staging`
+    `7d2c9e7`. Never touched the primary checkout.
+  - Cleaned all 4 stranded bot worktrees (`wt end --merged --pr N` for 507/508/509; 506 already
+    stale) + `wt prune` (4 records). No active bot worktrees remain. `.claude/worktrees/*` are
+    Harvey's interactive sessions — NOT mc-tracked, untouched.
+  - Tracker reconciled: all 4 → **Done** (507/509 auto-flipped via GitHub↔Linear on merge;
+    506/508 already Done). Added a shipped-comment to HAR-509.
+  - **v0.9 W1 is now fully shipped:** the asker can filter their own 詢價 by status (全部 / 待回覆 /
+    已報價 / 已接受 / 已關閉) — parity with the artist board (v0.8 HAR-496).
+- **No new drain, no auto-ideation, no exhaustion email.** `PICK=0` — the only Todos are the two
+  `needs-human` PM-patrol local-checkout-drift tickets (HAR-495 supersedes HAR-440), both correctly
+  Harvey-gated + already labelled, left untouched (idempotent, no re-label/comment). Per the standing
+  rule (Rounds 38–42) wave-completion ≠ milestone exhaustion; Harvey's 2026-06-29 decision hands
+  v0.9 W2+ scoping of the Artist-CRM/inquiry line to the PM pass, fed externally (stay-the-author).
+  Idle state is covered by the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `drained-2`** (HAR-507 #129 + HAR-509 #130 merged this round). Markers below refreshed;
+  `BL`/`PICK`/`MAIN` are unchanged (no Todo edited this round) so the NEXT identical fire early-exits
+  at Step 1b until a new ticket / un-labelled `needs-human` / main hotfix.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-bl: 2026-06-28T05:04:10.096Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: noop
+mc-round-outcome: drained-2
