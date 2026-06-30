@@ -129,17 +129,21 @@ export async function getInquiriesForArtist(
 
 export async function getInquiriesForConsumer(
   consumerLineId: string,
+  status?: InquiryStatus,
   page = 1,
   limit = 20,
 ): Promise<{ data: Inquiry[]; total: number }> {
   const supabase = await createServerClient()
-  const { data, count, error } = await supabase
+  let query = supabase
     .from('inquiries')
     .select('*', { count: 'exact' })
     .eq('consumer_line_id', consumerLineId)
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)
 
+  if (status) query = query.eq('status', status)
+
+  const { data, count, error } = await query
   if (error) throw new Error(`Failed to fetch inquiries: ${error.message}`)
   return { data: data ?? [], total: count ?? 0 }
 }

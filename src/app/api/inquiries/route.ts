@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ...result, data })
     }
 
-    const result = await getInquiriesForConsumer(user.lineUserId, page)
+    const result = await getInquiriesForConsumer(user.lineUserId, undefined, page)
     return NextResponse.json(result)
   } catch (err) {
     return handleApiError(err)

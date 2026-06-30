@@ -448,6 +448,39 @@ describe('getInquiriesForConsumer', () => {
     expect(mockServerFrom).toHaveBeenCalledWith('inquiries')
   })
 
+  it('applies status filter when status is provided', async () => {
+    const { getInquiriesForConsumer } = await import('../inquiries')
+
+    const inquiries = [makeInquiry({ status: 'quoted' })]
+    const chain = makeThenable({ data: inquiries, count: 1, error: null })
+    mockServerFrom.mockReturnValueOnce(chain)
+
+    const result = await getInquiriesForConsumer('U123', 'quoted')
+
+    expect(result.data).toEqual(inquiries)
+    expect(result.total).toBe(1)
+    const eqCalls = (chain.eq as ReturnType<typeof vi.fn>).mock.calls as Array<[string, unknown]>
+    const consumerCall = eqCalls.find(([field]) => field === 'consumer_line_id')
+    expect(consumerCall).toBeDefined()
+    expect(consumerCall![1]).toBe('U123')
+    const statusCall = eqCalls.find(([field]) => field === 'status')
+    expect(statusCall).toBeDefined()
+    expect(statusCall![1]).toBe('quoted')
+  })
+
+  it('does not apply a status filter when status is omitted', async () => {
+    const { getInquiriesForConsumer } = await import('../inquiries')
+
+    const chain = makeThenable({ data: [makeInquiry()], count: 1, error: null })
+    mockServerFrom.mockReturnValueOnce(chain)
+
+    await getInquiriesForConsumer('U123')
+
+    const eqCalls = (chain.eq as ReturnType<typeof vi.fn>).mock.calls as Array<[string, unknown]>
+    const statusCall = eqCalls.find(([field]) => field === 'status')
+    expect(statusCall).toBeUndefined()
+  })
+
   it('throws when the query returns an error', async () => {
     const { getInquiriesForConsumer } = await import('../inquiries')
 
