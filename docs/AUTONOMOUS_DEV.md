@@ -1337,10 +1337,33 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - **Outcome `drained-2`** (HAR-507 #129 + HAR-509 #130 merged this round). Markers below refreshed;
   `BL`/`PICK`/`MAIN` are unchanged (no Todo edited this round) so the NEXT identical fire early-exits
   at Step 1b until a new ticket / un-labelled `needs-human` / main hotfix.
+### Round 44 (2026-07-01) — settling noop (Round 43's `drained-2` → `noop`); no new work
+
+- **Wake cause / why NOT an early-exit:** Step 1b's signal (`BL`=`2026-06-28T05:04:10.096Z`,
+  `PICK`=`0`, `MAIN`=`97854fab`) all matched Round 43, but Round 43's outcome was `drained-2`
+  (the reconciled died-drain ship), so Step 1b did NOT early-exit — this is the designated
+  no-op settling round (the exact analog of Round 42 settling Round 41).
+- **Reposition found NOTHING in flight:** harness `status` reports no active bot worktrees;
+  `gh pr list --state open` returns `[]` (Round 43 already reconciled & merged #129/#130 and
+  cleaned all four stranded HAR-506/507/508/509 worktrees). The only mc-tracked admin
+  worktrees are the primary checkout + `InkHunt-mcdispatch`. The `.claude/worktrees/*` trees
+  are Harvey's interactive sessions — NOT mc-tracked, untouched.
+- **No drain, no auto-ideation, no exhaustion email.** Mandatory scout confirms `PICK=0` —
+  the only Todos are the two `needs-human` PM-patrol local-checkout-drift tickets (HAR-495
+  supersedes HAR-440), both correctly Harvey-gated + already labelled, left untouched
+  (idempotent, no re-label/comment → preserves `BL`). v0.9 W1 (asker inquiry status-filter
+  loop) shipped in Round 43; per the standing rule (Rounds 38–43) wave-completion ≠ milestone
+  exhaustion — v0.9 W2+ scoping of the Artist-CRM/inquiry line is Harvey's/the PM pass's
+  product call, fed externally (stay-the-author). Idle state is covered by the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** (0 drained). This commit's ONLY purpose is to flip the outcome marker
+  `drained-2 → noop` so the NEXT identical fire early-exits at Step 1b instead of re-scouting.
+  `BL`/`PICK`/`MAIN` unchanged below.
 
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-bl: 2026-06-28T05:04:10.096Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: drained-2
+mc-round-outcome: noop
