@@ -197,7 +197,7 @@ describe('GET /api/inquiries', () => {
     const body = await res.json()
     expect(body.data).toHaveLength(1)
     expect(body.data[0].id).toBe('inquiry-1')
-    expect(mockGetInquiriesForConsumer).toHaveBeenCalledWith('Uconsumer123', 1)
+    expect(mockGetInquiriesForConsumer).toHaveBeenCalledWith('Uconsumer123', undefined, 1)
   })
 
   it('returns artist inquiries with unread counts when role=artist', async () => {
