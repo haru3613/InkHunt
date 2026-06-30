@@ -260,4 +260,34 @@ describe('GET /api/inquiries', () => {
 
     expect(mockGetInquiriesForArtist).toHaveBeenCalledWith('artist-uuid-1', undefined, 1)
   })
+
+  it('passes status filter to getInquiriesForConsumer when role=consumer', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetInquiriesForConsumer.mockResolvedValueOnce({ data: [], total: 0 })
+
+    const req = makeRequest('GET', '/api/inquiries?role=consumer&status=quoted')
+    await GET(req)
+
+    expect(mockGetInquiriesForConsumer).toHaveBeenCalledWith(MOCK_USER.lineUserId, 'quoted', 1)
+  })
+
+  it('ignores invalid status values for role=consumer (parity with artist)', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetInquiriesForConsumer.mockResolvedValueOnce({ data: [], total: 0 })
+
+    const req = makeRequest('GET', '/api/inquiries?role=consumer&status=bogus')
+    await GET(req)
+
+    expect(mockGetInquiriesForConsumer).toHaveBeenCalledWith(MOCK_USER.lineUserId, undefined, 1)
+  })
+
+  it('passes undefined status to getInquiriesForConsumer when role=consumer and no status', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetInquiriesForConsumer.mockResolvedValueOnce({ data: [], total: 0 })
+
+    const req = makeRequest('GET', '/api/inquiries?role=consumer')
+    await GET(req)
+
+    expect(mockGetInquiriesForConsumer).toHaveBeenCalledWith(MOCK_USER.lineUserId, undefined, 1)
+  })
 })
