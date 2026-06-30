@@ -112,7 +112,19 @@
     "removeImage": "Remove image",
     "invalidImageType": "Only JPG, PNG, and WebP files are supported",
     "imageTooLarge": "Image must be under 5MB",
-    "uploadFailed": "Upload failed, please try again"
+    "uploadFailed": "Upload failed, please try again",
+    "filters": {
+      "all": "All",
+      "pending": "Awaiting reply",
+      "quoted": "Quoted",
+      "accepted": "Accepted",
+      "closed": "Closed",
+      "emptyAll": "You haven't sent any inquiries yet",
+      "emptyPending": "No inquiries awaiting a reply",
+      "emptyQuoted": "No quoted inquiries",
+      "emptyAccepted": "No accepted inquiries",
+      "emptyClosed": "No closed inquiries"
+    }
   },
   "style": {
     "recommendTitle": "{styleName} Tattoo Artists",
