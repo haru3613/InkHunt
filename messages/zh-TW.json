@@ -112,7 +112,19 @@
     "removeImage": "移除",
     "invalidImageType": "只支援 JPG、PNG、WebP 格式",
     "imageTooLarge": "圖片大小不能超過 5MB",
-    "uploadFailed": "上傳失敗，請重試"
+    "uploadFailed": "上傳失敗，請重試",
+    "filters": {
+      "all": "全部",
+      "pending": "待回覆",
+      "quoted": "已報價",
+      "accepted": "已接受",
+      "closed": "已關閉",
+      "emptyAll": "你還沒有送出任何詢價",
+      "emptyPending": "目前沒有待回覆的詢價",
+      "emptyQuoted": "目前沒有已報價的詢價",
+      "emptyAccepted": "目前沒有已接受的詢價",
+      "emptyClosed": "目前沒有已關閉的詢價"
+    }
   },
   "style": {
     "recommendTitle": "{styleName}刺青師推薦",
