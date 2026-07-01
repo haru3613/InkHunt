@@ -1393,9 +1393,50 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - **Outcome `drained-1`.** Markers refreshed to what the next round recomputes (HAR-511 now
   Done → out of the Todo set): `BL`=HAR-513's `updatedAt`, `PICK`=2 (HAR-512 + HAR-513).
 
+### Round 46 (2026-07-01/02) — reconcile orphaned Slice B/C drain; v0.10 W1 wave COMPLETE end-to-end
+
+- **Wake cause / why NOT an early-exit:** Round 45's recorded outcome was `drained-1`
+  (productive), so Step 1b did not early-exit — scouted. Reposition then found the tracker/git
+  state had moved past what Round 45's markers describe: a Round-45.5 drain dispatched Slice B
+  (HAR-512) + Slice C (HAR-513), **both squash-merged to `staging`** (PR **#132** `20ccd5d`,
+  PR **#133** `e7bb3e0`, merged 2026-07-01 ~16:38Z), but that drain **died before wrap-up** —
+  no round doc commit, worktrees left stranded. This round reconciles it (the exact analog of
+  Round 41 / Round 43 orphaned-drain reconciliations). No re-implement, no re-open.
+- **Reconciled ships (already on `staging`, tracker already `Done`):**
+  - **HAR-512 #132** — `ChatList` status pill label now resolves from Slice A's
+    `inquiry.status.*` via `useTranslations` (color stays single-source in `STATUS_CONFIG`);
+    shared component, so both the artist inbox and consumer inquiry list localize. Re-scoped in
+    the Round-45.5 dispatch by an already-shipped audit (the per-row pill already rendered; the
+    real delta was localizing the hardcoded zh-TW labels for `/en`). Consuming vitest green.
+  - **HAR-513 #133** — consumer inquiry thread `[id]/page.tsx` renders a per-status next-step
+    line from Slice A's `inquiry.nextStep.*`; implemented standalone (the HAR-497 artist-side
+    "mirror" it referenced was never shipped — `nextStep` was consumed nowhere). Consuming test
+    (`it.each` over 4 statuses + switch) green.
+  - With A (HAR-511 #131) + B + C all merged, the **v0.10 W1 ASKER LOOP CLARITY wave is
+    complete end-to-end**: localized status pills on both inquiry lists + per-status next-step
+    expectation copy on both the asker and (via the shared surface) artist threads.
+- **Reposition cleanup:** ended + pruned the three stranded bot worktrees
+  (`feature-har-511-…`, `feature-localize-chatlist-status-pill` [HAR-512, had no recorded
+  `pr_number` → `wt end --pr 132`], `feature-har-513-…`); harness `status` now reports no
+  active worktrees. `gh pr list --state open` = `[]`. Never touched the primary checkout; the
+  `.claude/worktrees/*` trees are Harvey's interactive sessions, untouched.
+- **No drain, no auto-ideation, no exhaustion email this round.** Mandatory scout: `PICK=0` —
+  the only Todos are the two standing `needs-human` PM-patrol local-checkout-drift tickets
+  (HAR-495 supersedes HAR-440), both already labelled, left untouched (idempotent → preserves
+  `BL`). Per the standing rule (Rounds 38–45) **wave-completion ≠ milestone exhaustion**: the
+  next v0.10 wave's scoping (which asker/inquiry-loop lever next) is Harvey's / the PM pass's
+  product call, fed externally (stay-the-author) — the dispatcher does not self-ideate the
+  next product wave here. Idle state is surfaced by the daily digest, not an email.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** (0 tickets drained THIS round; the B/C ship credit belongs to the
+  reconciled Round-45.5 drain). Markers refreshed to what the next round recomputes now that
+  A/B/C are all `Done` and out of the Todo set: `BL`=HAR-495's `updatedAt` (the later of the
+  two needs-human Todos), `PICK`=0. The next identical fire early-exits at Step 1b.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-07-01T03:37:50.738Z
-mc-round-pick: 2
+mc-round-bl: 2026-06-28T05:04:10.096Z
+mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: drained-1
+mc-round-outcome: noop
