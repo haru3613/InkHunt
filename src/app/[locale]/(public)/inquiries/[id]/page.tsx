@@ -2,15 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { ArrowLeft } from 'lucide-react'
+import type { Inquiry } from '@/types/database'
 
 export default function ConsumerChatPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const t = useTranslations('inquiry')
   const { user, isLoggedIn, isLoading: authLoading } = useAuth()
   const [artistName, setArtistName] = useState('')
+  const [status, setStatus] = useState<Inquiry['status'] | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -22,9 +26,12 @@ export default function ConsumerChatPage() {
           setArtistName(
             (data.artist?.display_name as string | undefined) ?? '刺青師',
           )
+          setStatus(
+            (data.inquiry?.status as Inquiry['status'] | undefined) ?? null,
+          )
         }
       } catch {
-        // Silently handle fetch failure; artistName stays empty
+        // Silently handle fetch failure; artistName/status stay empty
       }
     }
     loadInquiry()
@@ -62,6 +69,11 @@ export default function ConsumerChatPage() {
         </button>
         <h1 className="text-lg font-semibold text-[#F5F0EB]">{artistName}</h1>
       </div>
+      {status && (
+        <p className="px-4 py-2 text-[13px] text-[#F5F0EB]/50 border-b border-[#1F1F1F]">
+          {t(`nextStep.${status}`)}
+        </p>
+      )}
       <ChatWindow
         inquiryId={id}
         currentUserId={user.lineUserId}
