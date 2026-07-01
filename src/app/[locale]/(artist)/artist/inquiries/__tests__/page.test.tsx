@@ -3,6 +3,23 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import InquiriesPage from '../page'
 import type { Inquiry } from '@/types/database'
+import zhTW from '../../../../../../../messages/zh-TW.json'
+
+// ChatList's StatusBadge now resolves its pill label via useTranslations
+// ('inquiry.status.*'). This page test renders the real ChatList without a
+// NextIntlClientProvider, so stub next-intl to return the zh-TW label — keeps
+// the rendered pill identical to the pre-i18n literal (待回覆 …).
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string) => {
+    const scope = namespace
+      .split('.')
+      .reduce<Record<string, unknown>>(
+        (acc, part) => (acc?.[part] as Record<string, unknown>) ?? {},
+        zhTW as unknown as Record<string, unknown>,
+      )
+    return (scope as Record<string, string>)[key] ?? `${namespace}.${key}`
+  },
+}))
 
 // useAuth: logged-in artist user
 vi.mock('@/hooks/useAuth', () => ({
