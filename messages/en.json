@@ -124,6 +124,18 @@
       "emptyQuoted": "No quoted inquiries",
       "emptyAccepted": "No accepted inquiries",
       "emptyClosed": "No closed inquiries"
+    },
+    "status": {
+      "pending": "Awaiting reply",
+      "quoted": "Quoted",
+      "accepted": "Accepted",
+      "closed": "Closed"
+    },
+    "nextStep": {
+      "pending": "The artist usually replies with a quote within a few days — keep an eye on your notifications.",
+      "quoted": "The artist has sent a quote. Review the details and decide whether to accept.",
+      "accepted": "You've accepted the quote. Arrange the remaining details with the artist.",
+      "closed": "This inquiry is closed. Send a new inquiry if you still need one."
     }
   },
   "style": {

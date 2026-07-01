@@ -124,6 +124,18 @@
       "emptyQuoted": "目前沒有已報價的詢價",
       "emptyAccepted": "目前沒有已接受的詢價",
       "emptyClosed": "目前沒有已關閉的詢價"
+    },
+    "status": {
+      "pending": "待回覆",
+      "quoted": "已報價",
+      "accepted": "已接受",
+      "closed": "已關閉"
+    },
+    "nextStep": {
+      "pending": "刺青師通常會在數日內回覆報價，可留意通知。",
+      "quoted": "刺青師已回覆報價，查看內容並決定是否接受。",
+      "accepted": "你已接受報價，可與刺青師約定後續細節。",
+      "closed": "這則詢價已關閉，如仍有需求可重新送出詢價。"
     }
   },
   "style": {
