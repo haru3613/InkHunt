@@ -1361,9 +1361,41 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `drained-2 → noop` so the NEXT identical fire early-exits at Step 1b instead of re-scouting.
   `BL`/`PICK`/`MAIN` unchanged below.
 
+### Round 45 (2026-07-01) — v0.10 W1 ASKER LOOP CLARITY opened by PM; drained Slice A i18n root (HAR-511 #131)
+
+- **Wake cause / why NOT an early-exit:** the autonomous-PM pass refilled the backlog with
+  the v0.10 W1 "asker loop clarity" wave (3 slices). Step 1b's signal moved off Round 44:
+  `BL` `2026-06-28T05:04:10.096Z → 2026-07-01T03:37:50.738Z` and `PICK` `0 → 3`
+  (`MAIN` `97854fab` unchanged) → not an early-exit, scouted and dispatched.
+- **Backlog:** 3 new `auto-claude` Todos + the 2 standing `needs-human` PM-patrol
+  local-checkout-drift tickets (HAR-495 supersedes HAR-440, both already labelled, left
+  untouched — idempotent). The wave is a staged vertical slice:
+  - **Slice A (HAR-511)** — `inquiry.status.*` pill labels + `inquiry.nextStep.*` expectation
+    copy in both locales (the author-designated "drains first" pure-i18n root);
+  - **Slice B (HAR-512)** — consumer inquiry list per-row status pill (reuse `ChatList`
+    `STATUS_CONFIG`), **depends on A**;
+  - **Slice C (HAR-513)** — consumer inquiry thread per-status next-step copy, **depends on A**.
+- **Dispatched Slice A ALONE this round.** B and C both hard-consume A's i18n keys, and the
+  drain gives each ticket an isolated worktree branched off `staging` with no sibling work —
+  so B/C dispatched before A lands would hit red CI (keys absent) or a `messages/*.json`
+  merge conflict (each re-adds the keys). A is file-disjoint and self-contained; once in
+  `staging`, B and C become a genuinely independent file-disjoint pair for next round.
+- Already-shipped guard: the `inquiry` block held only v0.9's `filters.*`; no
+  `inquiry.status.*` / `inquiry.nextStep.*` present → Slice A was a real delta, not rework.
+- **Drain result: 1/1 merged, 0 deferred.** HAR-511 → PR **#131** squash-merged to `staging`
+  `1365020` at 04:25Z; all required checks green (`ci-passed` + build / lint-and-typecheck /
+  migration-check / test), no rebase needed. Worktree ended + remote branch deleted; Linear
+  auto-transitioned to Done on merge (shipped comment added). Never touched the primary checkout.
+- **No auto-ideation / no exhaustion email** — B (HAR-512) + C (HAR-513) already sit in the
+  backlog as the natural next dispatch (healthy ~2 auto-eligible in flight).
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `drained-1`.** Markers refreshed to what the next round recomputes (HAR-511 now
+  Done → out of the Todo set): `BL`=HAR-513's `updatedAt`, `PICK`=2 (HAR-512 + HAR-513).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-28T05:04:10.096Z
-mc-round-pick: 0
+mc-round-bl: 2026-07-01T03:37:50.738Z
+mc-round-pick: 2
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: noop
+mc-round-outcome: drained-1
