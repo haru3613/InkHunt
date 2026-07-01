@@ -1,6 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { Inquiry } from '@/types/database'
+import zhTW from '../../../../../../../messages/zh-TW.json'
+
+// ChatList's StatusBadge now resolves its pill label via useTranslations
+// ('inquiry.status.*'). This page test renders the real ChatList without a
+// NextIntlClientProvider, so stub next-intl to return the zh-TW label — keeps
+// the closed-lead pill showing 已關閉 as the test asserts.
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string) => {
+    const scope = namespace
+      .split('.')
+      .reduce<Record<string, unknown>>(
+        (acc, part) => (acc?.[part] as Record<string, unknown>) ?? {},
+        zhTW as unknown as Record<string, unknown>,
+      )
+    return (scope as Record<string, string>)[key] ?? `${namespace}.${key}`
+  },
+}))
 
 // useAuth → a logged-in artist.
 vi.mock('@/hooks/useAuth', () => ({

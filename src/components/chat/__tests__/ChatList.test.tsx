@@ -4,12 +4,34 @@ import userEvent from '@testing-library/user-event'
 import { ChatList } from '../ChatList'
 import type { ChatListItem } from '../ChatList'
 import type { Inquiry } from '@/types/database'
+import zhTW from '../../../../messages/zh-TW.json'
+import en from '../../../../messages/en.json'
 
-// Stub utils so tests are not sensitive to timestamp formatting or initials logic
+// Stub utils so tests are not sensitive to timestamp formatting or initials logic.
+// Keep `cn` a real join so we can assert the STATUS_CONFIG color className.
 vi.mock('@/lib/utils', () => ({
   cn: (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' '),
   formatRelativeTime: () => '剛才',
   getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
+}))
+
+// Resolve the pill label from the REAL messages files so the test proves the
+// label comes from Slice A's `inquiry.status.*` keys (not a hardcoded string).
+// `setLocaleMessages` picks the active locale before each render.
+let localeMessages: typeof zhTW = zhTW
+function setLocaleMessages(messages: typeof zhTW) {
+  localeMessages = messages
+}
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace: string) => (key: string) => {
+    const scope = namespace
+      .split('.')
+      .reduce<Record<string, unknown>>(
+        (acc, part) => (acc?.[part] as Record<string, unknown>) ?? {},
+        localeMessages as unknown as Record<string, unknown>,
+      )
+    return (scope as Record<string, string>)[key] ?? `${namespace}.${key}`
+  },
 }))
 
 function makeInquiry(overrides: Partial<Inquiry> = {}): Inquiry {
@@ -49,6 +71,7 @@ describe('ChatList', () => {
 
   beforeEach(() => {
     onSelect.mockClear()
+    setLocaleMessages(zhTW)
   })
 
   it('renders empty state when items array is empty', () => {
@@ -106,41 +129,54 @@ describe('ChatList', () => {
     expect(screen.queryByLabelText('未讀訊息')).not.toBeInTheDocument()
   })
 
-  it('shows "待回覆" status badge for pending inquiries', () => {
-    const item = makeItem({ inquiry: makeInquiry({ status: 'pending' }) })
-    render(
-      <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
-    )
+  // Per-status pill: label comes from the i18n `inquiry.status.*` key, color
+  // stays in the shared STATUS_CONFIG map. `colorClass` mirrors STATUS_CONFIG
+  // in ChatList.tsx — if the color source is forked/removed, this fails.
+  const STATUS_CASES: {
+    status: Inquiry['status']
+    zhLabel: string
+    enLabel: string
+    colorClass: string
+  }[] = [
+    { status: 'pending', zhLabel: '待回覆', enLabel: 'Awaiting reply', colorClass: 'bg-[#C8A97E]' },
+    { status: 'quoted', zhLabel: '已報價', enLabel: 'Quoted', colorClass: 'text-[#8A8A8A]' },
+    { status: 'accepted', zhLabel: '已接受', enLabel: 'Accepted', colorClass: 'text-[#4ADE80]' },
+    { status: 'closed', zhLabel: '已關閉', enLabel: 'Closed', colorClass: 'text-[#555555]' },
+  ]
 
-    expect(screen.getByText('待回覆')).toBeInTheDocument()
-  })
+  for (const { status, zhLabel, enLabel, colorClass } of STATUS_CASES) {
+    it(`renders the localized zh-TW pill label for ${status} inquiries`, () => {
+      // zh-TW value must equal the current pill (no visual regression on /zh-TW)
+      expect(zhTW.inquiry.status[status]).toBe(zhLabel)
 
-  it('shows "已報價" status badge for quoted inquiries', () => {
-    const item = makeItem({ inquiry: makeInquiry({ status: 'quoted' }) })
-    render(
-      <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
-    )
+      const item = makeItem({ inquiry: makeInquiry({ status }) })
+      render(
+        <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
+      )
 
-    expect(screen.getByText('已報價')).toBeInTheDocument()
-  })
+      const pill = screen.getByText(zhLabel)
+      expect(pill).toBeInTheDocument()
+      // Label is driven by i18n, not the hardcoded STATUS_CONFIG.label field
+      expect(pill.textContent).toBe(zhTW.inquiry.status[status])
+      // Color still comes from the shared STATUS_CONFIG map
+      expect(pill.className).toContain(colorClass)
+    })
 
-  it('shows "已接受" status badge for accepted inquiries', () => {
-    const item = makeItem({ inquiry: makeInquiry({ status: 'accepted' }) })
-    render(
-      <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
-    )
+    it(`renders the localized /en pill label for ${status} inquiries`, () => {
+      setLocaleMessages(en)
+      const item = makeItem({ inquiry: makeInquiry({ status }) })
+      render(
+        <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
+      )
 
-    expect(screen.getByText('已接受')).toBeInTheDocument()
-  })
-
-  it('shows "已關閉" status badge for closed inquiries', () => {
-    const item = makeItem({ inquiry: makeInquiry({ status: 'closed' }) })
-    render(
-      <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
-    )
-
-    expect(screen.getByText('已關閉')).toBeInTheDocument()
-  })
+      // On /en the pill shows the English label, NOT the Chinese one
+      const pill = screen.getByText(enLabel)
+      expect(pill).toBeInTheDocument()
+      expect(screen.queryByText(zhLabel)).not.toBeInTheDocument()
+      // Color is locale-independent (still from STATUS_CONFIG)
+      expect(pill.className).toContain(colorClass)
+    })
+  }
 
   it('calls onSelect with inquiry id when a list item is clicked', async () => {
     const item = makeItem({ inquiry: makeInquiry({ id: 'inq-42' }) })
