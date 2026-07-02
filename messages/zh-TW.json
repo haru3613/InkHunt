@@ -104,6 +104,19 @@
     "budget": "預算範圍（NTD）",
     "budgetMin": "最低",
     "budgetMax": "最高",
+    "budgetRange": {
+      "label": "預算範圍（選填）",
+      "helper": "提供大概預算能讓刺青師更快給你合適的報價",
+      "notSpecified": "未提供",
+      "options": {
+        "under_3k": "3,000 以下",
+        "3k_8k": "3,000–8,000",
+        "8k_20k": "8,000–20,000",
+        "20k_50k": "20,000–50,000",
+        "over_50k": "50,000 以上",
+        "unsure": "不確定 / 想先問"
+      }
+    },
     "submit": "送出詢價",
     "required": "*",
     "comingSoon": "即將開放",

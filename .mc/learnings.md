@@ -117,3 +117,9 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   an empty map on error/null so a missing view is safe; the unit test is fully
   mocked, so a staging smoke confirms real rows. Evidence: HAR-484
   (`getSavedCountsByArtistIds`; PR pending).
+- **CI lint gate is `npx eslint src/` — SCOPED to `src/` only.** `npm run lint`
+  (bare `eslint`) lints the whole repo and surfaces pre-existing errors under
+  `e2e/` (e.g. `e2e/fixtures/auth.fixture.ts` rules-of-hooks) that do NOT block
+  CI. Don't panic at `npm run lint` red and don't drive-by-fix unrelated `e2e/`
+  files — verify against the real gate: `npx eslint src/` must be 0 errors.
+  Evidence: HAR-529 (5 pre-existing e2e/ errors, `npx eslint src/` exit 0).
