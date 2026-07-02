@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 // --- Mocks (must be declared before component imports) ---
@@ -59,15 +59,20 @@ vi.mock('@/components/ui/select', () => ({
     children,
     onValueChange,
     value,
+    name,
   }: {
     children: React.ReactNode
     onValueChange?: (value: string) => void
     value?: string
+    name?: string
   }) => (
     <div data-testid="select">
-      {/* Render a native select so tests can fireEvent.change on it */}
+      {/* Render a native select so tests can fireEvent.change on it. The
+          aria-label is derived from the Radix/Base-UI `name` prop so multiple
+          Select fields (body_part, budget_range) are addressable individually;
+          the un-named body_part Select keeps its historical label. */}
       <select
-        aria-label="body-part-select"
+        aria-label={name ?? 'body-part-select'}
         value={value ?? ''}
         onChange={(e) => onValueChange?.(e.target.value)}
       >
@@ -482,6 +487,86 @@ describe('InquiryForm', () => {
       const reopenedInput = screen.getByRole('textbox', { name: /description/i }) as HTMLTextAreaElement
       // handleOpenChange reset the state, so description should be empty now
       expect(reopenedInput.value).toBe('')
+    })
+  })
+
+  describe('budget range (HAR-530)', () => {
+    // Canonical codes, in render order. Labels resolve via the
+    // useTranslations('inquiry.budgetRange') mock which echoes `options.<code>`.
+    const BUDGET_CODES = ['under_3k', '3k_8k', '8k_20k', '20k_50k', 'over_50k', 'unsure']
+
+    beforeEach(() => {
+      makeAuthLoggedIn()
+    })
+
+    async function fillRequired() {
+      await userEvent.type(
+        screen.getByRole('textbox', { name: /description/i }),
+        '希望刺一個極簡風格的玫瑰花，放在手腕內側',
+      )
+      await userEvent.type(screen.getByLabelText(/sizeEstimate/i), '5cm x 5cm')
+      fireEvent.change(screen.getByRole('combobox', { name: 'body-part-select' }), {
+        target: { value: '手腕' },
+      })
+    }
+
+    it('renders the budget select with label, helper and the 6 localized options', () => {
+      render(<InquiryForm {...defaultProps} />)
+
+      // label + helper resolve from useTranslations('inquiry.budgetRange')
+      expect(screen.getByText('label')).toBeInTheDocument()
+      expect(screen.getByText('helper')).toBeInTheDocument()
+
+      const budgetSelect = screen.getByRole('combobox', { name: 'budget_range' })
+      const options = within(budgetSelect).getAllByRole('option')
+
+      expect(options).toHaveLength(6)
+      expect(options.map((o) => (o as HTMLOptionElement).value)).toEqual(BUDGET_CODES)
+      expect(options.map((o) => o.textContent)).toEqual(
+        BUDGET_CODES.map((code) => `options.${code}`),
+      )
+    })
+
+    it('POSTs the chosen budget_range code in the request body', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'inquiry-uuid-b1' }),
+      })
+
+      render(<InquiryForm {...defaultProps} />)
+      await fillRequired()
+      fireEvent.change(screen.getByRole('combobox', { name: 'budget_range' }), {
+        target: { value: '8k_20k' },
+      })
+
+      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
+
+      await waitFor(() => {
+        const body = JSON.parse(
+          (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+        )
+        expect(body.budget_range).toBe('8k_20k')
+      })
+    })
+
+    it('omits budget_range from the body when left untouched', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'inquiry-uuid-b2' }),
+      })
+
+      render(<InquiryForm {...defaultProps} />)
+      await fillRequired()
+
+      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
+
+      await waitFor(() => {
+        const body = JSON.parse(
+          (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
+        )
+        expect(body.budget_range).toBeUndefined()
+        expect('budget_range' in body).toBe(false)
+      })
     })
   })
 })

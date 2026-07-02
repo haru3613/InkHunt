@@ -19,3 +19,12 @@ export const BODY_PARTS = [
   '腿部（大腿）', '腿部（小腿）', '腳踝',
   '背部', '胸部', '肩膀', '頸部', '手指', '腹部', '其他',
 ] as const
+
+// HAR-530 (v0.11 Slice C): canonical budget-range CODES. Shared by the consumer
+// inquiry form (option values) and the server-side create validator so the two
+// can never drift. i18n labels live under `inquiry.budgetRange.options.<code>`.
+export const BUDGET_RANGES = [
+  'under_3k', '3k_8k', '8k_20k', '20k_50k', 'over_50k', 'unsure',
+] as const
+
+export type BudgetRange = (typeof BUDGET_RANGES)[number]
