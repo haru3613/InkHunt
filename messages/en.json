@@ -104,6 +104,19 @@
     "budget": "Budget range (NTD)",
     "budgetMin": "Min",
     "budgetMax": "Max",
+    "budgetRange": {
+      "label": "Budget range (optional)",
+      "helper": "Sharing a rough budget helps the artist give you a fitting quote faster",
+      "notSpecified": "Not specified",
+      "options": {
+        "under_3k": "Under NT$3,000",
+        "3k_8k": "NT$3,000–8,000",
+        "8k_20k": "NT$8,000–20,000",
+        "20k_50k": "NT$20,000–50,000",
+        "over_50k": "Over NT$50,000",
+        "unsure": "Not sure / just asking"
+      }
+    },
     "submit": "Submit Inquiry",
     "required": "*",
     "comingSoon": "Coming soon",
