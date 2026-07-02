@@ -117,3 +117,13 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   an empty map on error/null so a missing view is safe; the unit test is fully
   mocked, so a staging smoke confirms real rows. Evidence: HAR-484
   (`getSavedCountsByArtistIds`; PR pending).
+- **Add a new nullable column to a `database.ts` `Row` type as OPTIONAL
+  (`col?: string | null`), not the true codegen shape (`col: string | null`).**
+  Existing tests construct full `Inquiry`/table-Row object literals WITHOUT the
+  new field; a required-nullable Row makes `tsc --noEmit` (a CI gate) fail on
+  every such fixture (`TS2741 property missing`) plus `TS2719` where a consumer
+  built the object optionally. Declaring the field optional in Row AND
+  Insert/Update lands a purely-additive column with ZERO fixture churn and build
+  stays green. Trade-off vs. real Supabase codegen (which emits required-nullable
+  Row) is acceptable for a hand-added additive slice. Evidence: HAR-528
+  (`inquiries.budget_range`; PR pending).
