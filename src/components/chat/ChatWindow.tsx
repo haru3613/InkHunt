@@ -1,12 +1,25 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { MessageBubble } from './MessageBubble'
 import { ChatInput } from './ChatInput'
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'
 import type { Inquiry } from '@/types/database'
 
 const NEXT_STEP_COPY = '先回覆需求，再送報價；成交或不適合時可關閉詢價。'
+
+// The budget-range codes an asker can pick (Slice B / HAR-529 owns their
+// labels). An inquiry whose stored code is not in this set (null, legacy, or
+// unknown) falls back to the notSpecified copy — never renders the raw code.
+const BUDGET_RANGE_CODES: ReadonlySet<string> = new Set([
+  'under_3k',
+  '3k_8k',
+  '8k_20k',
+  '20k_50k',
+  'over_50k',
+  'unsure',
+])
 
 interface ChatWindowProps {
   readonly inquiryId: string
@@ -22,6 +35,8 @@ interface ChatWindowProps {
   readonly isClosing?: boolean
   /** Visible error message if the last close attempt failed. */
   readonly closeError?: string | null
+  /** Asker's budget-range code (nullable) — shown to the artist for triage. */
+  readonly budgetRange?: string | null
 }
 
 export function ChatWindow({
@@ -34,8 +49,10 @@ export function ChatWindow({
   onCloseLead,
   isClosing,
   closeError,
+  budgetRange,
 }: ChatWindowProps) {
   const { messages, isLoading, sendMessage } = useRealtimeMessages(inquiryId)
+  const t = useTranslations('inquiry.budgetRange')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -53,6 +70,10 @@ export function ChatWindow({
   }
 
   const isClosed = status === 'closed'
+  const budgetLabel =
+    budgetRange && BUDGET_RANGE_CODES.has(budgetRange)
+      ? t(`options.${budgetRange}`)
+      : t('notSpecified')
 
   return (
     <div className="flex flex-col h-full">
@@ -77,6 +98,9 @@ export function ChatWindow({
               </button>
             )}
           </div>
+          <p className="mx-auto mt-1 max-w-2xl text-[12px] text-[#F5F0EB]/40">
+            預算範圍：{budgetLabel}
+          </p>
           {closeError && (
             <p className="mx-auto mt-1 max-w-2xl text-[12px] text-[#E25C5C]" role="alert">
               {closeError}

@@ -19,6 +19,25 @@ vi.mock('../ChatInput', () => ({
   ChatInput: () => <div data-testid="chat-input" />,
 }))
 
+// next-intl: resolve the budget-range labels from a fixed dict so the artist
+// budget line renders localized copy. Repo convention — the component test
+// asserts the wired label; the real messages live in Slice B (HAR-529,
+// `inquiry.budgetRange.*`).
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    const dict: Record<string, string> = {
+      'options.under_3k': '3,000 以下',
+      'options.3k_8k': '3,000–8,000',
+      'options.8k_20k': '8,000–20,000',
+      'options.20k_50k': '20,000–50,000',
+      'options.over_50k': '50,000 以上',
+      'options.unsure': '不確定 / 想先問',
+      notSpecified: '未提供',
+    }
+    return dict[key] ?? key
+  },
+}))
+
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'
 
 const mockUseRealtimeMessages = vi.mocked(useRealtimeMessages)
@@ -264,6 +283,75 @@ describe('ChatWindow', () => {
       )
 
       expect(screen.getByTestId('chat-input')).toBeInTheDocument()
+    })
+  })
+
+  describe('artist budget-range display (HAR-531)', () => {
+    beforeEach(() => {
+      mockUseRealtimeMessages.mockReturnValue({
+        messages: [],
+        isLoading: false,
+        sendMessage: makeSendMessage(),
+        refetch: vi.fn(),
+      })
+    })
+
+    it('renders the localized budget label for a known code (not the raw code)', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          budgetRange="8k_20k"
+        />,
+      )
+
+      expect(screen.getByText('預算範圍：8,000–20,000')).toBeInTheDocument()
+      expect(screen.queryByText('8k_20k')).not.toBeInTheDocument()
+    })
+
+    it('renders the notSpecified copy (未提供) when budget_range is null', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          budgetRange={null}
+        />,
+      )
+
+      expect(screen.getByText('預算範圍：未提供')).toBeInTheDocument()
+    })
+
+    it('falls back to notSpecified for an unknown/legacy code (never the raw code)', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          budgetRange="legacy_9000"
+        />,
+      )
+
+      expect(screen.getByText('預算範圍：未提供')).toBeInTheDocument()
+      expect(screen.queryByText(/legacy_9000/)).not.toBeInTheDocument()
+    })
+
+    it('does NOT show the budget line to a consumer', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="user-1"
+          isArtist={false}
+          status="pending"
+          budgetRange="8k_20k"
+        />,
+      )
+
+      expect(screen.queryByText(/預算範圍/)).not.toBeInTheDocument()
     })
   })
 })
