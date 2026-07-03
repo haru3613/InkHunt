@@ -1434,9 +1434,56 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   A/B/C are all `Done` and out of the Todo set: `BL`=HAR-495's `updatedAt` (the later of the
   two needs-human Todos), `PICK`=0. The next identical fire early-exits at Step 1b.
 
+### Round 47 (2026-07-03) — reconcile orphaned v0.11 W1 Slice C/D drain; budget-range wave COMPLETE end-to-end
+
+- **Wake cause / why NOT an early-exit:** the recorded markers matched (`BL`/`PICK=0`/`MAIN`),
+  but Reposition found tracker/git state past what the Round-46 markers describe — two bot PRs
+  sitting **open + green** that a prior drain never merged. The v0.11 rounds that dispatched the
+  budget-range slices (Slices A HAR-528, B HAR-529, C HAR-530, D HAR-531) all **died before
+  wrap-up** — no round doc commit (the doc jumps straight from Round 46 to here), worktrees left
+  active, PRs #136/#137 left open. This round reconciles + finishes the merge (analog of Rounds
+  41/43/46; here the PRs were not even merged yet, so this round completed the merge too). No
+  re-implement, no re-open.
+- **Completed the skipped merge (both green, CLEAN/MERGEABLE against `staging`, reviewed = In
+  Review, all 5 required checks incl `ci-passed` SUCCESS since 2026-07-02 23:0xZ; `autoMerge=null`
+  → the dead drain never enabled auto-merge):**
+  - **HAR-530 #137 (Slice C)** — optional budget-range `<select>` on the consumer inquiry form +
+    thread `budget_range` (nullable text, validated to 6 known codes else `null`, never 400s)
+    through `POST /api/inquiries` into the insert. Files: `InquiryForm.tsx` (+ test),
+    `inquiries.ts` query (+ test), `validations/inquiry.ts`. Squash-merged `43bd7e6d`.
+  - **HAR-531 #136 (Slice D)** — artist thread header shows the asker's budget range via
+    `useTranslations('inquiry.budgetRange')` (`ChatWindow` gets a nullable `budgetRange` prop;
+    null/legacy/unknown → `未提供`). Files: `ChatWindow.tsx` (+ test),
+    `(artist)/artist/inquiries/page.tsx`. Squash-merged `d1b7a2de`.
+  - With A (HAR-528) + B (HAR-529, already on staging) + C + D all merged, the **v0.11 W1
+    budget-range vertical slice is complete end-to-end**: the asker optionally states a budget
+    range on the 詢價 form → it persists → the artist sees it on the inquiry thread. Both PRs are
+    additive UI/app code (no migration/money/cron/destructive surface) with consuming component
+    tests — auto-mergeable on the `staging` base.
+- **Reconcile:** HAR-530 + HAR-531 → **Done** (reconcile comment added to each pointing at the
+  squash SHA). Worktrees ended (`feature-har-530-…` `--pr 137`, `feature-har-531-…` `--pr 136` —
+  the dead drain recorded no `pr_number`) + two already-merged stale trees (HAR-529,
+  `feature-inquiry-budget-range`) cleaned; `git worktree prune` + sibling dirs gone; harness
+  `status` = no active worktrees; `gh pr list --state open` = `[]`. Never touched the primary
+  checkout; the `.claude/worktrees/*` trees are Harvey's interactive sessions, untouched.
+- **PM steer captured (for the PM pass, not acted on here):** Harvey 2026-07-02 on HAR-531 —
+  `InkHunt trust loop 優先` (prioritize trust-building / close-the-loop slices over generic
+  workflow polish). Per the standing InkHunt discipline (Rounds 38–46) **wave-completion ≠
+  milestone exhaustion**, and the next product wave's scoping is Harvey's / the autonomous-pm
+  pass's product call (stay-the-author) — the dispatcher does NOT self-ideate the next wave. So
+  **no auto-ideation, no exhaustion email** this round; the `PICK=0` idle state is surfaced by
+  the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `drained-2`.** Markers: HAR-530/531 were In Review (never in the Todo set), so the
+  Todo set is unchanged — the two standing `needs-human` PM-patrol local-checkout-drift Todos
+  (HAR-495 supersedes HAR-440), both already labelled, untouched. `BL`=HAR-495's `updatedAt`,
+  `PICK`=0, `MAIN`=`97854fab` all unchanged; only the outcome flips to `drained-2` (so the next
+  fire re-scouts once rather than early-exiting, then settles to `noop`).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
 mc-round-bl: 2026-06-28T05:04:10.096Z
 mc-round-pick: 0
 mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: noop
+mc-round-outcome: drained-2
