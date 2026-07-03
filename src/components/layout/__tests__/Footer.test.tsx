@@ -41,9 +41,10 @@ describe('Footer', () => {
     expect(nav).toBeInTheDocument()
 
     const links = nav.querySelectorAll('a')
-    expect(links).toHaveLength(3)
+    expect(links).toHaveLength(4)
 
     const hrefs = Array.from(links).map((a) => a.getAttribute('href'))
+    expect(hrefs).toContain('/artist')
     expect(hrefs).toContain('/about')
     expect(hrefs).toContain('/privacy')
     expect(hrefs).toContain('/terms')
@@ -54,6 +55,7 @@ describe('Footer', () => {
     render(<Footer />)
 
     // useTranslations mock returns the key itself, so we expect the i18n key strings
+    expect(screen.getByText('becomeArtist')).toBeInTheDocument()
     expect(screen.getByText('about')).toBeInTheDocument()
     expect(screen.getByText('privacy')).toBeInTheDocument()
     expect(screen.getByText('terms')).toBeInTheDocument()
