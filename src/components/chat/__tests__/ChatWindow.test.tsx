@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import type { Message } from '@/types/database'
 import { ChatWindow } from '../ChatWindow'
+
+const NEXT_STEP_COPY = '先回覆需求，再送報價；成交或不適合時可關閉詢價。'
 
 vi.mock('@/hooks/useRealtimeMessages', () => ({
   useRealtimeMessages: vi.fn(),
@@ -15,6 +17,25 @@ vi.mock('../MessageBubble', () => ({
 
 vi.mock('../ChatInput', () => ({
   ChatInput: () => <div data-testid="chat-input" />,
+}))
+
+// next-intl: resolve the budget-range labels from a fixed dict so the artist
+// budget line renders localized copy. Repo convention — the component test
+// asserts the wired label; the real messages live in Slice B (HAR-529,
+// `inquiry.budgetRange.*`).
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    const dict: Record<string, string> = {
+      'options.under_3k': '3,000 以下',
+      'options.3k_8k': '3,000–8,000',
+      'options.8k_20k': '8,000–20,000',
+      'options.20k_50k': '20,000–50,000',
+      'options.over_50k': '50,000 以上',
+      'options.unsure': '不確定 / 想先問',
+      notSpecified: '未提供',
+    }
+    return dict[key] ?? key
+  },
 }))
 
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'
@@ -156,5 +177,181 @@ describe('ChatWindow', () => {
     expect(screen.getByTestId('chat-input')).toBeInTheDocument()
     // No message bubbles rendered
     expect(screen.queryByTestId(/^msg-/)).not.toBeInTheDocument()
+  })
+
+  describe('artist close-lead thread header', () => {
+    beforeEach(() => {
+      mockUseRealtimeMessages.mockReturnValue({
+        messages: [],
+        isLoading: false,
+        sendMessage: makeSendMessage(),
+        refetch: vi.fn(),
+      })
+    })
+
+    it('shows next-step expectation copy + close action for an artist', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          onCloseLead={vi.fn()}
+        />,
+      )
+
+      expect(screen.getByText(NEXT_STEP_COPY)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '關閉詢價' })).toBeInTheDocument()
+    })
+
+    it('does NOT show the close control or artist copy to a consumer', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="user-1"
+          isArtist={false}
+          status="pending"
+        />,
+      )
+
+      expect(screen.queryByText(NEXT_STEP_COPY)).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '關閉詢價' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('fires onCloseLead when the artist clicks 關閉詢價', () => {
+      const onCloseLead = vi.fn()
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          onCloseLead={onCloseLead}
+        />,
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: '關閉詢價' }))
+      expect(onCloseLead).toHaveBeenCalledTimes(1)
+    })
+
+    it('reflects a closed lead with 已關閉 and hides the close action', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="closed"
+          onCloseLead={vi.fn()}
+        />,
+      )
+
+      expect(screen.getByText('已關閉')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: '關閉詢價' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('surfaces a close error without crashing or marking the lead closed', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          onCloseLead={vi.fn()}
+          closeError="關閉失敗，請稍後再試"
+        />,
+      )
+
+      expect(screen.getByText('關閉失敗，請稍後再試')).toBeInTheDocument()
+      // still actionable — not falsely closed
+      expect(screen.getByRole('button', { name: '關閉詢價' })).toBeInTheDocument()
+      expect(screen.queryByText('已關閉')).not.toBeInTheDocument()
+    })
+
+    it('still renders ChatInput (message-send path intact) alongside the header', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          onCloseLead={vi.fn()}
+        />,
+      )
+
+      expect(screen.getByTestId('chat-input')).toBeInTheDocument()
+    })
+  })
+
+  describe('artist budget-range display (HAR-531)', () => {
+    beforeEach(() => {
+      mockUseRealtimeMessages.mockReturnValue({
+        messages: [],
+        isLoading: false,
+        sendMessage: makeSendMessage(),
+        refetch: vi.fn(),
+      })
+    })
+
+    it('renders the localized budget label for a known code (not the raw code)', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          budgetRange="8k_20k"
+        />,
+      )
+
+      expect(screen.getByText('預算範圍：8,000–20,000')).toBeInTheDocument()
+      expect(screen.queryByText('8k_20k')).not.toBeInTheDocument()
+    })
+
+    it('renders the notSpecified copy (未提供) when budget_range is null', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          budgetRange={null}
+        />,
+      )
+
+      expect(screen.getByText('預算範圍：未提供')).toBeInTheDocument()
+    })
+
+    it('falls back to notSpecified for an unknown/legacy code (never the raw code)', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="artist-1"
+          isArtist={true}
+          status="pending"
+          budgetRange="legacy_9000"
+        />,
+      )
+
+      expect(screen.getByText('預算範圍：未提供')).toBeInTheDocument()
+      expect(screen.queryByText(/legacy_9000/)).not.toBeInTheDocument()
+    })
+
+    it('does NOT show the budget line to a consumer', () => {
+      render(
+        <ChatWindow
+          inquiryId="inq-1"
+          currentUserId="user-1"
+          isArtist={false}
+          status="pending"
+          budgetRange="8k_20k"
+        />,
+      )
+
+      expect(screen.queryByText(/預算範圍/)).not.toBeInTheDocument()
+    })
   })
 })

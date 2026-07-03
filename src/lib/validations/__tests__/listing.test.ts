@@ -5,21 +5,25 @@ import {
   listingBudgetSchema,
   parseArtistService,
   parseListingQuery,
+  parseMinRating,
+  parseHealed,
   hasActiveListingFilters,
 } from '../listing'
 
 describe('listingSortSchema', () => {
-  it('passes the four valid sort values through unchanged', () => {
+  it('passes the five valid sort values through unchanged', () => {
     expect(listingSortSchema.parse('featured')).toBe('featured')
     expect(listingSortSchema.parse('price_low')).toBe('price_low')
     expect(listingSortSchema.parse('price_high')).toBe('price_high')
     expect(listingSortSchema.parse('newest')).toBe('newest')
+    // HAR-474: rating is now a valid sort value (評分最高).
+    expect(listingSortSchema.parse('rating')).toBe('rating')
   })
 
   it('coerces an unknown value to featured', () => {
     expect(listingSortSchema.parse('garbage')).toBe('featured')
-    expect(listingSortSchema.parse('rating')).toBe('featured')
     expect(listingSortSchema.parse('PRICE_LOW')).toBe('featured')
+    expect(listingSortSchema.parse('RATING')).toBe('featured')
   })
 
   it('coerces absent / non-string input to featured', () => {
@@ -85,6 +89,8 @@ describe('parseListingSearchParams', () => {
       budget: 'le3000',
       service: null,
       q: null,
+      minRating: null,
+      healed: false,
     })
   })
 
@@ -94,6 +100,8 @@ describe('parseListingSearchParams', () => {
       budget: 'any',
       service: null,
       q: null,
+      minRating: null,
+      healed: false,
     })
   })
 })
@@ -220,6 +228,8 @@ describe('parseListingSearchParams — service (HAR-446)', () => {
       budget: 'le3000',
       service: 'flash',
       q: null,
+      minRating: null,
+      healed: false,
     })
   })
 })
@@ -281,6 +291,8 @@ describe('parseListingSearchParams — q (HAR-455)', () => {
       budget: 'le3000',
       service: 'flash',
       q: 'bob',
+      minRating: null,
+      healed: false,
     })
   })
 })
@@ -326,6 +338,252 @@ describe('hasActiveListingFilters — q (HAR-455)', () => {
         service: null,
         q: '',
       }),
+    ).toBe(false)
+  })
+})
+
+describe('listingSortSchema — rating (HAR-474)', () => {
+  it('maps ?sort=rating to rating', () => {
+    expect(listingSortSchema.parse('rating')).toBe('rating')
+  })
+
+  it('still maps the existing sort values and falls back to featured on invalid', () => {
+    expect(listingSortSchema.parse('featured')).toBe('featured')
+    expect(listingSortSchema.parse('price_low')).toBe('price_low')
+    expect(listingSortSchema.parse('price_high')).toBe('price_high')
+    expect(listingSortSchema.parse('newest')).toBe('newest')
+    expect(listingSortSchema.parse('garbage')).toBe('featured')
+    expect(listingSortSchema.parse(undefined)).toBe('featured')
+  })
+})
+
+describe('parseMinRating (HAR-474)', () => {
+  it('returns 4 for the numeric and string forms of 4', () => {
+    expect(parseMinRating(4)).toBe(4)
+    expect(parseMinRating('4')).toBe(4)
+  })
+
+  it('returns 4.5 for the numeric and string forms of 4.5', () => {
+    expect(parseMinRating(4.5)).toBe(4.5)
+    expect(parseMinRating('4.5')).toBe(4.5)
+  })
+
+  it('returns null for absent input', () => {
+    expect(parseMinRating(undefined)).toBeNull()
+    expect(parseMinRating(null)).toBeNull()
+    expect(parseMinRating('')).toBeNull()
+  })
+
+  it('returns null for out-of-allowlist values', () => {
+    expect(parseMinRating('3')).toBeNull()
+    expect(parseMinRating('5')).toBeNull()
+    expect(parseMinRating(3)).toBeNull()
+    expect(parseMinRating(5)).toBeNull()
+    expect(parseMinRating(4.2)).toBeNull()
+    expect(parseMinRating('4.2')).toBeNull()
+    expect(parseMinRating(0)).toBeNull()
+    expect(parseMinRating(-4)).toBeNull()
+    expect(parseMinRating('-4')).toBeNull()
+  })
+
+  it('returns null for non-numeric / wrong-typed input', () => {
+    expect(parseMinRating('abc')).toBeNull()
+    expect(parseMinRating(NaN)).toBeNull()
+    expect(parseMinRating(Infinity)).toBeNull()
+    expect(parseMinRating([])).toBeNull()
+    expect(parseMinRating(['4'])).toBeNull()
+    expect(parseMinRating({})).toBeNull()
+    expect(parseMinRating(true)).toBeNull()
+  })
+
+  it('does not coerce surrounding whitespace into a valid value', () => {
+    expect(parseMinRating(' 4 ')).toBeNull()
+    expect(parseMinRating('4 ')).toBeNull()
+  })
+})
+
+describe('parseListingSearchParams — minRating (HAR-474)', () => {
+  it('extracts a valid minRating value', () => {
+    expect(parseListingSearchParams({ minRating: '4' })).toMatchObject({ minRating: 4 })
+    expect(parseListingSearchParams({ minRating: '4.5' })).toMatchObject({ minRating: 4.5 })
+  })
+
+  it('defaults minRating to null when absent or invalid', () => {
+    expect(parseListingSearchParams({})).toMatchObject({ minRating: null })
+    expect(parseListingSearchParams({ minRating: '3' })).toMatchObject({ minRating: null })
+    expect(parseListingSearchParams({ minRating: 'nope' })).toMatchObject({ minRating: null })
+  })
+
+  it('parses minRating alongside sort, budget, service and q', () => {
+    expect(
+      parseListingSearchParams({
+        sort: 'rating',
+        budget: 'le3000',
+        service: 'flash',
+        q: 'bob',
+        minRating: '4.5',
+      }),
+    ).toEqual({
+      sort: 'rating',
+      budget: 'le3000',
+      service: 'flash',
+      q: 'bob',
+      minRating: 4.5,
+      healed: false,
+    })
+  })
+})
+
+describe('hasActiveListingFilters — minRating + rating sort (HAR-474)', () => {
+  it('is true when only minRating is set', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: 4,
+      }),
+    ).toBe(true)
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: 4.5,
+      }),
+    ).toBe(true)
+  })
+
+  it('is true when only the rating sort is set (non-default sort)', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'rating',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: null,
+      }),
+    ).toBe(true)
+  })
+
+  it('is false when minRating is null and everything else is default', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: null,
+      }),
+    ).toBe(false)
+    // minRating omitted entirely is also no filter
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
+    ).toBe(false)
+  })
+})
+
+describe('parseHealed (HAR-479)', () => {
+  it('returns true ONLY for the canonical "1" value', () => {
+    expect(parseHealed('1')).toBe(true)
+  })
+
+  it('returns false for every other string', () => {
+    expect(parseHealed('0')).toBe(false)
+    expect(parseHealed('true')).toBe(false)
+    expect(parseHealed('on')).toBe(false)
+    expect(parseHealed('yes')).toBe(false)
+    expect(parseHealed('')).toBe(false)
+    expect(parseHealed('garbage')).toBe(false)
+    expect(parseHealed(' 1 ')).toBe(false)
+    expect(parseHealed('1 ')).toBe(false)
+  })
+
+  it('returns false for absent / non-string / array input', () => {
+    expect(parseHealed(undefined)).toBe(false)
+    expect(parseHealed(null)).toBe(false)
+    expect(parseHealed(1)).toBe(false)
+    expect(parseHealed(true)).toBe(false)
+    expect(parseHealed([])).toBe(false)
+    expect(parseHealed(['1'])).toBe(false)
+    expect(parseHealed({})).toBe(false)
+  })
+})
+
+describe('parseListingSearchParams — healed (HAR-479)', () => {
+  it('surfaces healed:true only for "1"', () => {
+    expect(parseListingSearchParams({ healed: '1' })).toMatchObject({ healed: true })
+  })
+
+  it('defaults healed to false when absent or non-canonical', () => {
+    expect(parseListingSearchParams({})).toMatchObject({ healed: false })
+    expect(parseListingSearchParams({ healed: '0' })).toMatchObject({ healed: false })
+    expect(parseListingSearchParams({ healed: 'true' })).toMatchObject({ healed: false })
+  })
+
+  it('parses healed alongside the other facets', () => {
+    expect(
+      parseListingSearchParams({
+        sort: 'rating',
+        budget: 'le3000',
+        service: 'flash',
+        q: 'bob',
+        minRating: '4.5',
+        healed: '1',
+      }),
+    ).toEqual({
+      sort: 'rating',
+      budget: 'le3000',
+      service: 'flash',
+      q: 'bob',
+      minRating: 4.5,
+      healed: true,
+    })
+  })
+})
+
+describe('hasActiveListingFilters — healed (HAR-479)', () => {
+  it('is true when only healed is set', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: null,
+        healed: true,
+      }),
+    ).toBe(true)
+  })
+
+  it('is false when healed is false and everything else is default', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: null,
+        healed: false,
+      }),
+    ).toBe(false)
+    // healed omitted entirely is also no filter
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
     ).toBe(false)
   })
 })

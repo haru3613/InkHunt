@@ -33,13 +33,22 @@ export type ArtistWithDetails = Omit<ArtistRow, 'admin_note' | 'line_user_id'> &
    * clean for unreviewed artists.
    */
   reviewSummary?: ArtistReviewSummary
+  /**
+   * Per-artist saved-count for the browse/compare surface (HAR-484). Sourced
+   * from the additive `artist_saved_count` view. Omitted (or `0`) when the
+   * artist has no saved-count row so the card degrades cleanly.
+   */
+  savedCount?: number
 }
 
 /**
  * Listing sort order for `/artists` (HAR-433). `featured` is the default
  * discovery order; the price/recency options are pure read-side ordering.
+ * `rating` (評分最高, HAR-474) is the parser-recognized value for rate-aware
+ * ranking; the read-side ordering for it lands in a follow-up (HAR-B) and for
+ * now falls through to the `featured` default in the query switch.
  */
-export type ArtistSort = 'featured' | 'price_low' | 'price_high' | 'newest'
+export type ArtistSort = 'featured' | 'price_low' | 'price_high' | 'newest' | 'rating'
 
 /**
  * Budget bucket for `/artists` (HAR-434). Filters on the artist's entry price
@@ -73,6 +82,20 @@ export interface ArtistFilters {
    * predicate (byte-identical to the unfiltered query).
    */
   q?: string | null
+  /**
+   * Minimum aggregate rating (HAR-475). When a non-null number, keeps only
+   * artists whose `artist_rating_summary.avg_rating` ≥ `minRating` (the SAME
+   * `.gte('avg_rating', …)` predicate lands on both the count and data queries
+   * so `total` cannot drift). Absent/`null` → no predicate (byte-identical to
+   * the unfiltered query).
+   */
+  minRating?: number | null
+  /**
+   * Healed-work facet (HAR-479). When `true`, keeps only artists with at least
+   * one portfolio piece carrying a healed-work compare photo. Absent/`false` →
+   * no predicate. Type-only here; the query predicate lands in W1-B.
+   */
+  healed?: boolean
 }
 
 const DEFAULT_PAGE_SIZE = 12
@@ -171,7 +194,7 @@ function searchPredicate(q: string | null | undefined): string | null {
   return `display_name.ilike.${quoted},bio.ilike.${quoted}`
 }
 
-const ARTIST_PUBLIC_SELECT = `
+export const ARTIST_PUBLIC_SELECT = `
   id, slug, display_name, bio, avatar_url, ig_handle,
   city, district, address, lat, lng,
   price_min, price_max, pricing_note, deposit_amount,
@@ -180,6 +203,34 @@ const ARTIST_PUBLIC_SELECT = `
   created_at, updated_at,
   artist_styles(styles(*)), portfolio_items(*)
 ` as const
+
+/**
+ * Embed the `artist_rating_summary` view (HAR-436) as a PostgREST relationship
+ * so the rating sort / `minRating` filter can `.order`/`.gte` against the
+ * view's `avg_rating` over the WHOLE artist set at query time — shape (a) of
+ * HAR-475 (the codebase already reads embedded relationships in
+ * `ARTIST_PUBLIC_SELECT`, so this is the consistent shape). `!inner` makes the
+ * embed restrict the parent rows, so a `.gte('avg_rating', …)` on the data
+ * query and the same `.gte` on the `count` query filter the same set (no
+ * `total` drift). Appended to the select ONLY when a rating facet is active;
+ * absent rating facet → the select is byte-identical to today's query.
+ */
+const ARTIST_RATING_EMBED = 'artist_rating_summary!inner(avg_rating, review_count)'
+
+/**
+ * Healed-work facet embed (HAR-480). An ALIASED `!inner` embed on the SAME
+ * `portfolio_items` relationship so a `.not('healed_proof.healed_image_url',
+ * 'is', null)` keeps only artists with ≥1 portfolio piece carrying a healed-work
+ * compare photo. The alias (`healed_proof:`) is deliberate: the card-rendering
+ * select already embeds the UNALIASED `portfolio_items(*)`, and a bare
+ * `portfolio_items!inner` filter would narrow THAT embed to healed-only rows —
+ * dropping the artist's other portfolio items from the card. The separate alias
+ * restricts WHICH ARTISTS appear while leaving the rendered `portfolio_items(*)`
+ * complete. Appended (and the predicate applied) ONLY when `filters.healed` is
+ * active so the no-facet query stays byte-identical, exactly like
+ * `ARTIST_RATING_EMBED` / `ratingEmbedNeeded`.
+ */
+const HEALED_PROOF_EMBED = 'healed_proof:portfolio_items!inner(id)'
 
 interface SupabaseArtistRow extends Omit<ArtistRow, 'admin_note' | 'line_user_id'> {
   artist_styles: Array<{ styles: StyleRow | null }>
@@ -238,6 +289,46 @@ async function getReviewSummariesByArtistIds(
   return summaries
 }
 
+/** A single `artist_saved_count` view row. */
+interface SavedCountRow {
+  artist_id: string
+  saved_count: number
+}
+
+/**
+ * Fetch per-artist saved counts for a page of artists in a SINGLE bounded query
+ * (no N+1 — one `.in('artist_id', …)` select over the page ids) against the
+ * additive `artist_saved_count(artist_id, saved_count)` view. Always resolves:
+ * degrades to an empty map on a missing client, a query error, or a null result
+ * (e.g. the view not yet deployed) so the listing still renders cards without a
+ * saved-count instead of throwing. Modeled on `getReviewSummariesByArtistIds`.
+ *
+ * The `artist_saved_count` view is absent from the generated `database.ts`
+ * (`Views: { [_ in never]: never }`), so the builder is cast to read it — the
+ * result is mapped through `SavedCountRow` and never reaches `tsc`'s table types.
+ */
+async function getSavedCountsByArtistIds(
+  supabase: SupabaseClient<Database>,
+  artistIds: string[],
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>()
+  if (artistIds.length === 0) return counts
+
+  const { data, error } = await (supabase
+    .from('artist_saved_count' as never)
+    .select('artist_id, saved_count') as unknown as {
+      in: (col: string, ids: string[]) => Promise<{ data: SavedCountRow[] | null; error: unknown }>
+    }).in('artist_id', artistIds)
+
+  if (error || !data) return counts
+
+  for (const row of data) {
+    counts.set(row.artist_id, row.saved_count)
+  }
+
+  return counts
+}
+
 export async function getArtists(
   filters?: ArtistFilters,
 ): Promise<{ data: ArtistWithDetails[]; total: number }> {
@@ -281,9 +372,40 @@ export async function getArtists(
   // when no/empty search term (no predicate, byte-identical to today's query).
   const searchOr = searchPredicate(filters?.q)
 
+  // HAR-475: a rating facet (sort by rating OR a minRating floor) needs the
+  // `artist_rating_summary` view embedded so the order/filter runs against the
+  // WHOLE set in the DB, not just the JS-aggregated page. `minRating` resolved
+  // ONCE so the identical `.gte('avg_rating', …)` lands on both queries (no
+  // `total` drift). `null` minRating → no predicate.
+  const minRating = filters?.minRating ?? null
+  const ratingSort = filters?.sort === 'rating'
+  // The embed must be present on a query whenever EITHER rating facet is active
+  // (the sort orders by the embed's column; the filter restricts via `!inner`).
+  const ratingEmbedNeeded = ratingSort || minRating != null
+
+  // HAR-480: healed-work facet. When active, embed an ALIASED `!inner` on
+  // `portfolio_items` and apply the same `.not(healed_proof.healed_image_url is
+  // null)` predicate to BOTH queries so `total` matches the eligible rows. The
+  // alias keeps the card-rendering `portfolio_items(*)` embed complete (see
+  // HEALED_PROOF_EMBED). Absent/false → no embed, no predicate (byte-identical).
+  const healedNeeded = filters?.healed === true
+
+  // Compose the extra embeds appended to each select so both facets can be
+  // active at once. Empty string → the select stays byte-identical to today's.
+  const countEmbeds = [ratingEmbedNeeded ? ARTIST_RATING_EMBED : null, healedNeeded ? HEALED_PROOF_EMBED : null]
+    .filter(Boolean)
+    .join(', ')
+  const dataEmbeds = countEmbeds
+
   let countQuery = supabase
     .from('artists')
-    .select('*', { count: 'exact', head: true })
+    // Embed the rating view / healed-proof relationship only when the matching
+    // facet is active so the count stays byte-identical to today's query
+    // otherwise. `!inner` makes the predicates below restrict the counted rows.
+    .select(countEmbeds ? `*, ${countEmbeds}` : '*', {
+      count: 'exact',
+      head: true,
+    })
     .eq('status', 'active')
 
   if (artistIds) countQuery = countQuery.in('id', artistIds)
@@ -296,6 +418,13 @@ export async function getArtists(
   }
   if (svcColumn) countQuery = countQuery.eq(svcColumn, true)
   if (searchOr) countQuery = countQuery.or(searchOr)
+  // Same minRating floor on the count query as the data query → `total` matches
+  // the rows returned (the predicate references the embedded view's column).
+  if (minRating != null) countQuery = countQuery.gte('avg_rating', minRating)
+  // HAR-480: same healed-proof not-null predicate on the count query as the
+  // data query so an artist is counted only if ≥1 portfolio piece has a healed
+  // photo (predicate references the aliased inner embed's column).
+  if (healedNeeded) countQuery = countQuery.not('healed_proof.healed_image_url', 'is', null)
 
   const { count } = await countQuery
   const total = count ?? 0
@@ -307,12 +436,27 @@ export async function getArtists(
 
   let dataQuery = supabase
     .from('artists')
-    .select(ARTIST_PUBLIC_SELECT)
+    // Embed the rating view / healed-proof relationship only when the matching
+    // facet is active so the unfiltered select stays byte-identical to today's
+    // query otherwise (HAR-475, HAR-480). The card-rendering `portfolio_items(*)`
+    // inside ARTIST_PUBLIC_SELECT is left untouched; the healed `!inner` is a
+    // SEPARATE aliased embed so the rendered portfolio stays complete.
+    .select(dataEmbeds ? `${ARTIST_PUBLIC_SELECT}, ${dataEmbeds}` : ARTIST_PUBLIC_SELECT)
     .eq('status', 'active')
 
-  // HAR-433: branch the listing order. Unknown/absent sort falls through to the
+  // HAR-433: branch the listing order. HAR-475 adds `rating` → order by the
+  // embedded `artist_rating_summary.avg_rating` DESC; zero-review artists
+  // (`avg_rating = 0` via the view's COALESCE, or a null aggregate) sort LAST
+  // via `nullsFirst: false`. Unknown/absent sort falls through to the
   // `featured → updated_at` default discovery order.
   switch (filters?.sort) {
+    case 'rating':
+      dataQuery = dataQuery.order('avg_rating', {
+        ascending: false,
+        foreignTable: 'artist_rating_summary',
+        nullsFirst: false,
+      })
+      break
     case 'price_low':
       dataQuery = dataQuery.order('price_min', { ascending: true, nullsFirst: false })
       break
@@ -342,6 +486,11 @@ export async function getArtists(
   }
   if (svcColumn) dataQuery = dataQuery.eq(svcColumn, true)
   if (searchOr) dataQuery = dataQuery.or(searchOr)
+  // Same minRating floor as the count query (HAR-475) → rows match `total`.
+  if (minRating != null) dataQuery = dataQuery.gte('avg_rating', minRating)
+  // Same healed-proof not-null predicate as the count query (HAR-480) → the
+  // returned rows are exactly the artists counted in `total`.
+  if (healedNeeded) dataQuery = dataQuery.not('healed_proof.healed_image_url', 'is', null)
 
   const { data, error } = await dataQuery
 
@@ -357,6 +506,17 @@ export async function getArtists(
   for (const artist of artists) {
     const summary = summaries.get(artist.id)
     if (summary && summary.count > 0) artist.reviewSummary = summary
+  }
+
+  // HAR-484: attach a per-artist saved-count fetched in ONE bounded query (no
+  // N+1). Absent rows / a fetch error degrade to no savedCount on the card.
+  const savedCounts = await getSavedCountsByArtistIds(
+    supabase,
+    artists.map((a) => a.id),
+  )
+  for (const artist of artists) {
+    const savedCount = savedCounts.get(artist.id)
+    if (savedCount !== undefined) artist.savedCount = savedCount
   }
 
   return { data: artists, total }

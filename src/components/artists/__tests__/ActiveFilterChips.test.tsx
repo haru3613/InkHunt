@@ -91,6 +91,63 @@ describe('ActiveFilterChips (HAR-454)', () => {
     expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
   })
 
+  // --- HAR-478: active sort=rating (評分最高) chip ---
+
+  it('resolves a rating sort chip via the sortRating label', () => {
+    mockSearchParams.set('sort', 'rating')
+    render(<ActiveFilterChips styles={STYLES} />)
+    expect(screen.getByText('sortRating', { exact: false })).toBeInTheDocument()
+    expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
+  })
+
+  it('does not render a sort chip when sort=featured (the default)', () => {
+    mockSearchParams.set('sort', 'featured')
+    const { container } = render(<ActiveFilterChips styles={STYLES} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('removing the rating sort chip drops sort but preserves other params', () => {
+    mockSearchParams.set('sort', 'rating')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('sortRating'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('sort=')
+    expect(url).toContain('style=traditional')
+    expect(url).toContain('city=')
+  })
+
+  it('removing the rating sort chip also resets pagination', () => {
+    mockSearchParams.set('sort', 'rating')
+    mockSearchParams.set('page', '3')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('sortRating'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('sort=')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('清除全部 pushes bare /artists when sort=rating is the only filter', () => {
+    mockSearchParams.set('sort', 'rating')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(screen.getByText('clearAll'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toBe('/artists')
+    expect(url).not.toContain('sort=')
+  })
+
   it('removing one chip navigates with only that param dropped (others intact)', () => {
     mockSearchParams.set('style', 'traditional')
     mockSearchParams.set('city', '台北市')
@@ -225,5 +282,130 @@ describe('ActiveFilterChips (HAR-454)', () => {
     for (const key of ['q=', 'style=', 'city=', 'sort=', 'budget=', 'service=']) {
       expect(url).not.toContain(key)
     }
+  })
+
+  // --- HAR-477: active minRating (評分) chip ---
+
+  it('renders a rating chip labelled 4★+ when minRating=4 is set', () => {
+    mockSearchParams.set('minRating', '4')
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    expect(screen.getByText('rating4Plus', { exact: false })).toBeInTheDocument()
+    expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
+  })
+
+  it('renders a rating chip labelled 4.5★+ when minRating=4.5 is set', () => {
+    mockSearchParams.set('minRating', '4.5')
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    expect(screen.getByText('rating45Plus', { exact: false })).toBeInTheDocument()
+    expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
+  })
+
+  it('does not render a rating chip for a minRating outside the 4 / 4.5 allowlist', () => {
+    mockSearchParams.set('minRating', '3')
+    const { container } = render(<ActiveFilterChips styles={STYLES} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('removing the rating chip drops minRating but preserves other params', () => {
+    mockSearchParams.set('minRating', '4')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('rating4Plus'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('minRating=')
+    expect(url).toContain('style=traditional')
+    expect(url).toContain('city=')
+  })
+
+  it('removing the rating chip also resets pagination', () => {
+    mockSearchParams.set('minRating', '4.5')
+    mockSearchParams.set('page', '3')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('rating45Plus'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('minRating=')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('清除全部 drops minRating alongside the other params', () => {
+    mockSearchParams.set('minRating', '4')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(screen.getByText('clearAll'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('minRating=')
+    expect(url).not.toContain('style=')
+  })
+
+  // --- HAR-482: active healed-work (恢復對比作品) chip ---
+
+  it('renders a healed chip labelled via filterHealed when healed=1 is set', () => {
+    mockSearchParams.set('healed', '1')
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    expect(screen.getByText('filterHealed', { exact: false })).toBeInTheDocument()
+    expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
+  })
+
+  it('does not render a healed chip for a non-1 healed value', () => {
+    mockSearchParams.set('healed', '0')
+    const { container } = render(<ActiveFilterChips styles={STYLES} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('removing the healed chip drops healed but preserves other params', () => {
+    mockSearchParams.set('healed', '1')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('filterHealed'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('healed=')
+    expect(url).toContain('style=traditional')
+    expect(url).toContain('city=')
+  })
+
+  it('removing the healed chip also resets pagination', () => {
+    mockSearchParams.set('healed', '1')
+    mockSearchParams.set('page', '3')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('filterHealed'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('healed=')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('清除全部 drops healed alongside the other params', () => {
+    mockSearchParams.set('healed', '1')
+    mockSearchParams.set('style', 'traditional')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(screen.getByText('clearAll'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('healed=')
+    expect(url).not.toContain('style=')
   })
 })

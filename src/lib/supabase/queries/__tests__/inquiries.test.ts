@@ -156,6 +156,37 @@ describe('validateInquiryCreate', () => {
     })
     expect(result.success).toBe(false)
   })
+
+  // HAR-530: budget_range is an optional categorical code. Unknown / absent
+  // values coerce to undefined (→ NULL) and must NEVER fail validation.
+  it('accepts a valid budget_range code', () => {
+    const result = validateInquiryCreate({
+      artist_id: '550e8400-e29b-41d4-a716-446655440000',
+      description: 'I want a detailed sleeve tattoo design',
+      budget_range: '8k_20k',
+    })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.budget_range).toBe('8k_20k')
+  })
+
+  it('coerces an unknown budget_range to undefined without failing', () => {
+    const result = validateInquiryCreate({
+      artist_id: '550e8400-e29b-41d4-a716-446655440000',
+      description: 'I want a detailed sleeve tattoo design',
+      budget_range: 'not_a_real_code',
+    })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.budget_range).toBeUndefined()
+  })
+
+  it('leaves budget_range undefined when absent', () => {
+    const result = validateInquiryCreate({
+      artist_id: '550e8400-e29b-41d4-a716-446655440000',
+      description: 'I want a detailed sleeve tattoo design',
+    })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.budget_range).toBeUndefined()
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -331,6 +362,45 @@ describe('createInquiry', () => {
     expect(systemMessage.content).toContain('I want a small geometric tattoo on my forearm')
   })
 
+  it('threads a valid budget_range code into the inquiry insert', async () => {
+    const { createInquiry } = await import('../inquiries')
+
+    const inquiryChain = makeThenable({ data: makeInquiry({ budget_range: '8k_20k' }), error: null })
+    const messagesChain = makeThenable({ data: [makeMessage()], error: null })
+    mockAdminFrom.mockReturnValueOnce(inquiryChain).mockReturnValueOnce(messagesChain)
+
+    await createInquiry('U123', 'Test User', {
+      artist_id: '550e8400-e29b-41d4-a716-446655440000',
+      description: 'I want a small geometric tattoo on my forearm',
+      reference_images: [],
+      budget_range: '8k_20k',
+    })
+
+    const inserted = (inquiryChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
+      budget_range: string | null
+    }
+    expect(inserted.budget_range).toBe('8k_20k')
+  })
+
+  it('inserts NULL budget_range when it is omitted', async () => {
+    const { createInquiry } = await import('../inquiries')
+
+    const inquiryChain = makeThenable({ data: makeInquiry(), error: null })
+    const messagesChain = makeThenable({ data: [makeMessage()], error: null })
+    mockAdminFrom.mockReturnValueOnce(inquiryChain).mockReturnValueOnce(messagesChain)
+
+    await createInquiry('U123', 'Test User', {
+      artist_id: '550e8400-e29b-41d4-a716-446655440000',
+      description: 'I want a small geometric tattoo on my forearm',
+      reference_images: [],
+    })
+
+    const inserted = (inquiryChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
+      budget_range: string | null
+    }
+    expect(inserted.budget_range).toBeNull()
+  })
+
   it('throws when the inquiry insert fails', async () => {
     const { createInquiry } = await import('../inquiries')
 
@@ -446,6 +516,39 @@ describe('getInquiriesForConsumer', () => {
     expect(result.data).toEqual(inquiries)
     expect(result.total).toBe(1)
     expect(mockServerFrom).toHaveBeenCalledWith('inquiries')
+  })
+
+  it('applies status filter when status is provided', async () => {
+    const { getInquiriesForConsumer } = await import('../inquiries')
+
+    const inquiries = [makeInquiry({ status: 'quoted' })]
+    const chain = makeThenable({ data: inquiries, count: 1, error: null })
+    mockServerFrom.mockReturnValueOnce(chain)
+
+    const result = await getInquiriesForConsumer('U123', 'quoted')
+
+    expect(result.data).toEqual(inquiries)
+    expect(result.total).toBe(1)
+    const eqCalls = (chain.eq as ReturnType<typeof vi.fn>).mock.calls as Array<[string, unknown]>
+    const consumerCall = eqCalls.find(([field]) => field === 'consumer_line_id')
+    expect(consumerCall).toBeDefined()
+    expect(consumerCall![1]).toBe('U123')
+    const statusCall = eqCalls.find(([field]) => field === 'status')
+    expect(statusCall).toBeDefined()
+    expect(statusCall![1]).toBe('quoted')
+  })
+
+  it('does not apply a status filter when status is omitted', async () => {
+    const { getInquiriesForConsumer } = await import('../inquiries')
+
+    const chain = makeThenable({ data: [makeInquiry()], count: 1, error: null })
+    mockServerFrom.mockReturnValueOnce(chain)
+
+    await getInquiriesForConsumer('U123')
+
+    const eqCalls = (chain.eq as ReturnType<typeof vi.fn>).mock.calls as Array<[string, unknown]>
+    const statusCall = eqCalls.find(([field]) => field === 'status')
+    expect(statusCall).toBeUndefined()
   })
 
   it('throws when the query returns an error', async () => {

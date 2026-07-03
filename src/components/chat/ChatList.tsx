@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { cn, formatRelativeTime, getInitials } from '@/lib/utils'
 import type { Inquiry } from '@/types/database'
 
@@ -20,41 +21,28 @@ interface ChatListProps {
   readonly viewAs: 'artist' | 'consumer'
 }
 
-// Status badge config following DESIGN.md color palette
-const STATUS_CONFIG: Record<
-  Inquiry['status'],
-  { label: string; className: string }
-> = {
-  pending: {
-    label: '待回覆',
-    className: 'bg-[#C8A97E] text-[#0A0A0A]',
-  },
-  quoted: {
-    label: '已報價',
-    className: 'border border-[#8A8A8A] text-[#8A8A8A]',
-  },
-  accepted: {
-    label: '已接受',
-    className: 'bg-[#4ADE80]/15 text-[#4ADE80]',
-  },
-  closed: {
-    label: '已關閉',
-    className: 'text-[#555555]',
-  },
+// Status badge color config following DESIGN.md palette. Single source of truth
+// for the per-status color; the label is resolved from i18n (inquiry.status.*).
+const STATUS_CLASSNAME: Record<Inquiry['status'], string> = {
+  pending: 'bg-[#C8A97E] text-[#0A0A0A]',
+  quoted: 'border border-[#8A8A8A] text-[#8A8A8A]',
+  accepted: 'bg-[#4ADE80]/15 text-[#4ADE80]',
+  closed: 'text-[#555555]',
 }
 
 function StatusBadge({ status }: { readonly status: Inquiry['status'] }) {
-  const config = STATUS_CONFIG[status]
-  if (!config) return null
+  const t = useTranslations('inquiry.status')
+  const className = STATUS_CLASSNAME[status]
+  if (!className) return null
 
   return (
     <span
       className={cn(
         'inline-block px-2 py-0.5 rounded-full text-[11px] font-medium leading-tight',
-        config.className,
+        className,
       )}
     >
-      {config.label}
+      {t(status)}
     </span>
   )
 }

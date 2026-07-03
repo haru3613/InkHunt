@@ -13,7 +13,16 @@ interface ActiveFilterChipsProps {
 }
 
 /** URL param keys this row reflects (the full set ArtistFilters writes + search). */
-const FILTER_KEYS = ['style', 'city', 'sort', 'budget', 'service', 'q'] as const
+const FILTER_KEYS = [
+  'style',
+  'city',
+  'sort',
+  'budget',
+  'service',
+  'minRating',
+  'healed',
+  'q',
+] as const
 
 /**
  * Map a non-default option value to the existing `artists`-namespace i18n key
@@ -24,6 +33,7 @@ const SORT_LABEL_KEYS: Record<string, string> = {
   price_low: 'sortPriceLow',
   price_high: 'sortPriceHigh',
   newest: 'sortNewest',
+  rating: 'sortRating',
 }
 
 const BUDGET_LABEL_KEYS: Record<string, string> = {
@@ -36,6 +46,17 @@ const BUDGET_LABEL_KEYS: Record<string, string> = {
 const SERVICE_LABEL_KEYS: Record<string, string> = {
   coverup: 'serviceCoverup',
   flash: 'serviceFlash',
+}
+
+/**
+ * Map an allowlisted `minRating` value to its chip label key (HAR-474/477).
+ * Keyed by the raw URL-param string the control writes (`'4'` / `'4.5'`); a
+ * value outside this allowlist (e.g. `'3'`, `'5'`) yields no chip — matching
+ * `parseMinRating`'s "no predicate for off-list input" contract.
+ */
+const MIN_RATING_LABEL_KEYS: Record<string, string> = {
+  '4': 'rating4Plus',
+  '4.5': 'rating45Plus',
 }
 
 interface ActiveChip {
@@ -66,6 +87,8 @@ export function ActiveFilterChips({ styles }: ActiveFilterChipsProps) {
   const sort = searchParams.get('sort')
   const budget = searchParams.get('budget')
   const service = searchParams.get('service')
+  const minRating = searchParams.get('minRating')
+  const healed = searchParams.get('healed')
   const q = searchParams.get('q')?.trim()
 
   const chips: ActiveChip[] = []
@@ -88,6 +111,13 @@ export function ActiveFilterChips({ styles }: ActiveFilterChipsProps) {
   }
   if (service && service !== 'all' && SERVICE_LABEL_KEYS[service]) {
     chips.push({ key: 'service', label: t(SERVICE_LABEL_KEYS[service]) })
+  }
+  if (minRating && MIN_RATING_LABEL_KEYS[minRating]) {
+    chips.push({ key: 'minRating', label: t(MIN_RATING_LABEL_KEYS[minRating]) })
+  }
+  // Boolean facet: only the literal '1' is active (mirrors parseHealed).
+  if (healed === '1') {
+    chips.push({ key: 'healed', label: t('filterHealed') })
   }
 
   if (chips.length === 0) return null

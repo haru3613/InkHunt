@@ -214,6 +214,7 @@ export interface Database {
           budget_min: number | null
           budget_max: number | null
           status: 'pending' | 'quoted' | 'accepted' | 'closed'
+          budget_range?: string | null
           quote_request_id: string | null
           created_at: string
         }
@@ -229,6 +230,7 @@ export interface Database {
           budget_min?: number | null
           budget_max?: number | null
           status?: 'pending' | 'quoted' | 'accepted' | 'closed'
+          budget_range?: string | null
           quote_request_id?: string | null
           created_at?: string
         }
@@ -244,6 +246,7 @@ export interface Database {
           budget_min?: number | null
           budget_max?: number | null
           status?: 'pending' | 'quoted' | 'accepted' | 'closed'
+          budget_range?: string | null
           quote_request_id?: string | null
           created_at?: string
         }

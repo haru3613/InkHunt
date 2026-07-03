@@ -808,9 +808,682 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   Refreshing `BL` to the PM-comment timestamp lets the next fire early-exit at Step 1b
   again. `PICK`/`MAIN`/outcome unchanged.
 
+### Round 25 (2026-06-19) — new main hotfix flagged; still milestone-exhausted, no dispatch
+
+- **Wake cause:** Step 1b did NOT early-exit because `MAIN` moved
+  (`f6331bb` → `97854fab`). `origin/main` is now **16** ahead of `staging` (was 13).
+  The new commit is `2c3d688` *"ci: apply migrations with --include-all so out-of-order
+  migrations deploy"* — a CI/deploy hotfix Harvey landed directly on `main`, not new
+  product work and not an un-blocked ticket. `BL` and `PICK` both unchanged.
+- **Scout result: nothing auto-eligible** (unchanged from Rounds 23–24). Project `Todo`
+  set = exactly **2**, both already `needs-human`-labelled → `PICK=0`:
+  - **HAR-436** — Wave-2 rating-aggregate view migration; additive but InkHunt gates
+    ALL migrations to Harvey (`allow_additive_migrations=false`). Already labelled —
+    left untouched (idempotency: re-touching bumps `updatedAt` and breaks Step 1b
+    convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational, human call). Already labelled — untouched.
+  No `mc-qa-blocked` retry pending. No ideatable v0.3 slice independent of the gated
+  HAR-436 migration; v0.4 is a Harvey/PM product-direction call. Milestone remains
+  genuinely exhausted (already flagged Round 23).
+- **Re-flagged the main→staging divergence (NEW SHA → debounce did not hold).** Prior
+  flag was `f6331bb`; current `origin/main` is `97854fab`, so this is a fresh hotfix
+  the bot's line never received. main→staging reconciliation is ALWAYS Harvey's manual
+  call — did NOT merge/rebase/modify staging. Emailed Harvey
+  (*"InkHunt main ahead of staging (hotfixes not in staging)"*) and updated the
+  `mc-sync-flagged-main` marker to the new SHA so the next fire debounces.
+- **Why this round commits (state transition, not a "still blocked" entry):** the
+  divergence marker is newly flagged with a new SHA and `MAIN` genuinely moved, so the
+  recorded markers are stale. Refreshing `mc-sync-flagged-main` + `mc-round-main` lets
+  the next fire early-exit at Step 1b again. `BL`/`PICK`/outcome unchanged.
+
+### Round 26 (2026-06-19) — PM-patrol edit bumped BL; still milestone-exhausted, no dispatch
+
+- **Wake cause:** Step 1b did NOT early-exit because `BL` moved
+  (`2026-06-18T03:37:33.764Z` → `2026-06-19T05:02:50.694Z`). The bump is **HAR-440**'s
+  `updatedAt` tracking a PM-patrol cron edit today — its description was refreshed with
+  new monitor evidence (`git.behind` 37 → 54) for the `[PM Patrol R4]` "refresh local
+  staging checkout" task. NOT new product work, NOT an un-blocked ticket. `PICK=0` and
+  `MAIN=97854fab` both unchanged.
+- **Scout result: nothing auto-eligible** (unchanged from Rounds 23–25). Project `Todo`
+  set = exactly **2**, both already `needs-human`-labelled → `PICK=0`:
+  - **HAR-436** — Wave-2 rating-aggregate view migration; additive but InkHunt gates
+    ALL migrations to Harvey (`allow_additive_migrations=false`). Already labelled —
+    left untouched (idempotency: re-touching bumps `updatedAt` and breaks Step 1b
+    convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational, human call — the dispatcher must NEVER mutate the primary checkout).
+    Already labelled — untouched.
+  No `mc-qa-blocked` retry pending. No ideatable v0.3 slice independent of the gated
+  HAR-436 migration; v0.4 is a Harvey/PM product-direction call. Milestone remains
+  genuinely exhausted (already flagged Round 23).
+- **No re-email (deliberate).** Exhaustion already flagged Round 23; the PM cron itself
+  is what touched HAR-440 today, so Harvey is already in that loop. main→staging sync:
+  still 16 ahead at the SAME SHA already flagged Round 25 (`97854fab`) → `mc-sync-flagged-main`
+  debounce holds, no re-email; did NOT merge/rebase/modify staging.
+- **Why this round commits (marker re-baseline, not a "still blocked" entry):** `BL`
+  genuinely moved, so the recorded marker is stale. Left unrecorded, EVERY future fire
+  would re-scout on the mismatch and never converge. Refreshing `mc-round-bl` to the
+  PM-edit timestamp lets the next fire early-exit at Step 1b again. `PICK`/`MAIN`/outcome
+  unchanged.
+
+### Round 27 (2026-06-20) — PM-escalation comment bumped BL; still milestone-exhausted, no dispatch
+
+- **Wake cause:** Step 1b did NOT early-exit because `BL` moved
+  (`2026-06-19T05:02:50.694Z` → `2026-06-20T03:37:11.645Z`). The bump is **HAR-436**'s
+  `updatedAt` tracking today's **PM-escalation comment** (day-6, `2026-06-20T03:37:11.684Z`):
+  the migration is now flagged as the SOLE thing keeping InkHunt's bot pipeline idle, with
+  two unblock options for Harvey (apply the additive view on staging, or authorize a
+  no-migration v0.4). NOT new product work, NOT an un-blocked ticket, NOT a scope change.
+  `PICK=0` and `MAIN=97854fab` both unchanged.
+- **Scout result: nothing auto-eligible** (unchanged from Rounds 23–26). Project `Todo`
+  set = exactly **2**, both already `needs-human`-labelled → `PICK=0`:
+  - **HAR-436** — Wave-2 rating-aggregate view migration; additive but InkHunt gates
+    ALL migrations to Harvey (`allow_additive_migrations=false`). Already labelled —
+    left untouched (idempotency: re-touching bumps `updatedAt` and breaks Step 1b
+    convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational, human call — the dispatcher must NEVER mutate the primary checkout).
+    Already labelled — untouched.
+  No `mc-qa-blocked` retry pending. Every bot-eligible v0.3 slice is shipped; the sole
+  open outcome (DoS #4 rating sort/filter) is gated entirely on the human migration;
+  v0.4 is a Harvey/PM product-direction call. Milestone remains genuinely exhausted
+  (already flagged Round 23).
+- **No re-email (deliberate).** Exhaustion was already flagged Round 23, and the PM cron
+  itself posted today's escalation on HAR-436 — Harvey is already in that loop; a
+  dispatcher email would be duplicate noise. main→staging sync: still **16** ahead at the
+  SAME SHA already flagged Round 25 (`97854fab`) → `mc-sync-flagged-main` debounce holds,
+  no re-email; did NOT merge/rebase/modify staging.
+- **Why this round commits (marker re-baseline, not a "still blocked" entry):** `BL`
+  genuinely moved, so the recorded marker is stale. Left unrecorded, EVERY future fire
+  would re-scout on the mismatch and never converge. Refreshing `mc-round-bl` to the
+  PM-escalation timestamp lets the next fire early-exit at Step 1b again.
+  `PICK`/`MAIN`/outcome unchanged.
+
+### Round 28 (2026-06-22) — HAR-440 in-place bump moved BL; still milestone-exhausted, no dispatch
+
+- **Wake cause:** Step 1b did NOT early-exit because `BL` moved
+  (`2026-06-20T03:37:11.645Z` → `2026-06-21T11:02:42.283Z`). The bump is **HAR-440**'s
+  `updatedAt` (a `[PM Patrol R4]` in-place edit on the local-checkout-reconcile ticket).
+  NOT new product work, NOT an un-blocked ticket, NOT a scope change. `PICK=0` and
+  `MAIN=97854fab` both unchanged.
+- **Scout result: nothing auto-eligible** (unchanged from Rounds 23–27). Project `Todo`
+  set = exactly **2**, both already `needs-human`-labelled → `PICK=0`:
+  - **HAR-436** — Wave-2 rating-aggregate view migration; additive but InkHunt gates
+    ALL migrations to Harvey (`allow_additive_migrations=false`). Already labelled —
+    left untouched (idempotency: re-touching bumps `updatedAt` and breaks Step 1b
+    convergence).
+  - **HAR-440** — `[PM Patrol R4]` reconcile the local InkHunt staging checkout
+    (operational, human call — the dispatcher must NEVER mutate the primary checkout).
+    Already labelled — untouched.
+  No `mc-qa-blocked` retry pending. Every bot-eligible v0.3 slice is shipped; the sole
+  open outcome (DoS #4 rating sort/filter) is gated entirely on the human migration;
+  v0.4 is a Harvey/PM product-direction call. Milestone remains genuinely exhausted
+  (already flagged Round 23).
+- **No re-email (deliberate).** Exhaustion already flagged Round 23; HAR-440 is itself a
+  PM-patrol ticket Harvey is already looped into — a dispatcher email would be duplicate
+  noise. main→staging sync: still **16** ahead at the SAME SHA already flagged Round 25
+  (`97854fab`) → `mc-sync-flagged-main` debounce holds, no re-email; did NOT
+  merge/rebase/modify staging.
+- **Why this round commits (marker re-baseline, not a "still blocked" entry):** `BL`
+  genuinely moved, so the recorded marker is stale. Left unrecorded, EVERY future fire
+  would re-scout on the mismatch and never converge. Refreshing `mc-round-bl` to the
+  HAR-440 timestamp lets the next fire early-exit at Step 1b again.
+  `PICK`/`MAIN`/outcome unchanged.
+
+### Round 29 (2026-06-23) — v0.4 SAVE & SHORTLIST opened by PM; dispatched HAR-465 foundation, merged
+
+- **Wake cause / milestone un-exhausted.** Step 1b did NOT early-exit: `PICK` moved
+  `0 → 4` and `BL` moved (`2026-06-21T11:02:42.283Z → 2026-06-23T03:38:43.040Z`). The
+  autonomous-PM opened a fresh **v0.4 — SAVE & SHORTLIST** wave (the Tattoodo
+  mood-board / favorite-artists retention pattern) as four `auto-claude` Todos:
+  - **HAR-465** [W1] favorites foundation — zod schema + query layer (no dep).
+  - **HAR-466** [W1] favorites API GET/POST/DELETE — depends on HAR-465.
+  - **HAR-467** [W2] FavoriteButton client component — depends on HAR-466.
+  - **HAR-468** [W2] /favorites page + MobileNav wire — depends on HAR-465 + HAR-466.
+  v0.3 was the prior milestone; v0.4 is now the live milestone, so the "exhausted"
+  state from Rounds 23–28 no longer holds.
+- **Dependency-aware dispatch (1 ticket, not 3).** Only **HAR-465** had no unmet
+  dependency on `origin/staging`; HAR-466/467/468 all transitively need HAR-465's
+  `src/lib/supabase/queries/favorites.ts` + `validations/favorite.ts`, which do not yet
+  exist on staging — dispatching them in parallel would fail their consuming tests on
+  missing imports. Dispatched HAR-465 alone; the wave drains sequentially over the next
+  fires (466 unblocks now that 465 is on staging, then W2).
+- **Already-shipped guard.** Confirmed `queries/favorites.ts` / `validations/favorite.ts`
+  absent on `origin/staging`; the `favorites` table + RLS already exist (migrations
+  001/002) so HAR-465 needs **no migration** — genuinely actionable.
+- **Outcome: 1/1 merged.** HAR-465 → **PR #107** (`feature/favorites-foundation` →
+  staging) squash-merged on green CI (`ci-passed` incl. build / lint-and-typecheck /
+  test / migration-check). Worktree ended, remote branch deleted, HAR-465 set Done.
+  0 deferred, 0 promotion-review, 0 tier2.
+- **Stale worktree noted, left untouched.** `InkHunt-feature-artist-rating-summary-view`
+  (HAR-436, a needs-human rating-aggregate **migration** ticket no longer in Todo) holds
+  an UNCOMMITTED draft `supabase/migrations/012_artist_rating_summary.sql` +
+  `src/__tests__/migrations/`. `wt end` would discard that draft, and all migrations are
+  Harvey-gated, so it was left in place (not blocking this round's dispatch). Candidate
+  for Harvey to land or discard manually.
+- **main→staging sync: still 16 ahead at the SAME SHA** already flagged Round 25
+  (`97854fab`) → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
+  merge/rebase/modify staging.
+
+### Round 30 (2026-06-23) — v0.4 W1 favorites API dispatched, merged
+
+- **Wake / no early-exit.** Step 1b did NOT early-exit: last outcome was `drained-1`
+  (not `noop`) and `BL` had moved (HAR-440 bumped to `2026-06-23T05:04:12.296Z`), so the
+  round proceeded to scout normally. `PICK` was 3, `MAIN` unchanged (`97854fab`).
+- **Dependency-aware dispatch (1 ticket).** v0.4 SAVE & SHORTLIST wave drains sequentially
+  on the shared `favorites` spine. Round 29 landed HAR-465 (`queries/favorites.ts` +
+  `validations/favorite.ts`) on `staging`, which UN-blocked **HAR-466** (favorites API).
+  Confirmed on `origin/staging`: `addFavorite` / `removeFavorite` / `getFavoriteArtists`
+  exported by `queries/favorites.ts`, `favoriteInputSchema` by `validations/favorite.ts`,
+  `requireAuth` / `handleApiError` by `auth/helpers.ts`, and the reference pattern
+  `api/inquiries/route.ts` present — while the target `api/favorites/route.ts` was absent
+  (already-shipped guard clear). HAR-467/HAR-468 (W2) still transitively need HAR-466's
+  API route, which was not yet on staging this round → deferred, not dispatched.
+- **Outcome: 1/1 merged.** HAR-466 → **PR #108** (`feature/favorites-api` → staging)
+  squash-merged on green CI (`ci-passed` incl. build / lint-and-typecheck / test /
+  migration-check). Merge commit `fe9f8f3`, mergedAt 2026-06-23T10:57:31Z. Worktree ended,
+  remote branch deleted, HAR-466 set Done (completion comment added). 0 deferred, 0
+  Product-QA bounce. HAR-466 is **promotion-review** (sales-facing authed surface;
+  informational, NOT a `needs-human` block) — auth-gated single-row writes on the
+  pre-existing `favorites` table, no migration, reversible.
+- **Auth/money/data boundary check.** HAR-466 ships `requireAuth`-gated GET/POST/DELETE
+  over single rows scoped to the authed `lineUserId` (explicitly NOT bulk). Per the
+  fleet-uniform boundary (money + irreversible-data only), authed app-code on an existing
+  table is auto-mergeable on `staging` — production promotion stays Harvey's manual call.
+- **Wave health / no ideation.** 2 auto-eligible Todos remain in flight (HAR-467
+  FavoriteButton, HAR-468 /favorites page) — both UN-blocked next fire now that HAR-466's
+  API is on staging. ≥2 in flight → no refill ideation needed; v0.4 milestone is healthy,
+  not exhausted.
+- **Stale worktree noted, left untouched.** `InkHunt-feature-artist-rating-summary-view`
+  (HAR-436, needs-human rating-aggregate **migration**, no longer in Todo) still holds an
+  uncommitted draft migration — `wt end` would discard it and all migrations are
+  Harvey-gated, so left in place (Round 29 note still applies).
+- **main→staging sync: still 16 ahead at the SAME SHA** already flagged Round 25
+  (`97854fab`) → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
+  merge/rebase/modify staging.
+
+### Round 31–32 (2026-06-24) — recovered Round 31's stranded dispatch + shipped HAR-436/472 (4 PRs → staging)
+
+- **Context: Round 31 timed out mid-merge.** The prior fire dispatched HAR-467 +
+  HAR-468 (v0.4 W2) but its drain died before the serial merge phase, leaving the doc
+  at Round 30's markers (`drained-1`, `pick:2`). This round found three stranded
+  artifacts and completed them rather than re-doing them.
+- **Recovered 3 stranded-green PRs.** All were OPEN / MERGEABLE / CLEAN with every CI
+  check (incl. server-side `ci-passed`) already SUCCESS:
+  - **HAR-467 → PR #109** (FavoriteButton) — squash-merged to staging (22:25Z).
+  - **HAR-468 → PR #110** (/favorites page) — `update-branch` (was BEHIND after #109) →
+    auto-merge fired on green (22:28Z).
+  - **HAR-436 → PR #111** (migration `artist_rating_summary` view). The Round 31 drain
+    had left a COMPLETE, uncommitted WIP in the worktree (additive `CREATE VIEW` + 9
+    vitest assertions, never committed). Verified it (9/9 green, `tsc --noEmit` exit 0),
+    committed + pushed + opened PR #111, auto-merged on green (22:37Z). Discarding it
+    would have wasted correct work AND risked a re-implementation following the **stale
+    ticket text** — which describes a 4-column rating mean from the dropped prototype
+    table that `011_reviews.sql` superseded with a single `rating` column. The WIP (and
+    the shipped view) correctly follow the shipped schema + app authority
+    `computeReviewSummary`. v0.3 Wave-2 rating sort/filter foundation is now on staging.
+- **Refill + fresh drain.** With the Todo backlog empty of bot-eligible work (only
+  HAR-440 `needs-human` remained) and the v0.4 milestone still open, ideated **HAR-472**
+  (mount FavoriteButton on ArtistCard — the "next refill slice" HAR-467 deferred, now
+  un-blocked by the merged button) and dispatched the drain. **HAR-472 → PR #112**
+  squash-merged on green CI (22:43Z). 1/1 merged, 0 deferred, 0 Product-QA bounce.
+- **Migration safety.** HAR-436 is additive + reversible (`DROP VIEW` down), read-only,
+  no data mutation — in-scope per the migration policy. It reaches remote Supabase ONLY
+  via `deploy.yml` on push to **main** (Harvey's manual staging→main gate), never from a
+  staging merge.
+- **Promotion-review (informational, NOT needs-human):** HAR-467/468/472 (sales-facing
+  UI) + HAR-436 (additive migration) all queue for the human staging→main promotion gate.
+- **Worktree hygiene.** Cleaned merged worktrees (favorites-foundation/api, favorite-button,
+  favorites-page, rating-summary, har-472) + the stale local `feature/artist-rating-summary-view`
+  branch. `feature-favorite-button`/`favorites-page` needed explicit `--pr N` (the timed-out
+  drain never recorded their `pr_number` in `worktrees.json`).
+- **main→staging sync: still 16 ahead at the SAME SHA** (`97854fab`) already flagged
+  Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT merge/rebase/modify
+  staging. Reconciliation remains Harvey's manual call.
+
+### Round 33 (2026-06-25) — recovered stranded-green PR #116 (HAR-477); HAR-478 retry-deferred (transient API crash)
+
+- **Recovered HAR-477 → PR #116** (v0.5 W2 `/artists` 最低評分 filter control + active
+  chip). A 5th stranded-green PR left OPEN by the Round 31–32 fire (its worktree was
+  created 22:39Z, after the 4 it merged). OPEN / MERGEABLE / CLEAN, all 5 required checks
+  (lint-and-typecheck, test, migration-check, build, `ci-passed`) SUCCESS → squash-merged
+  to staging (`7fa51da`, 04:30Z). HAR-477 → **Done**, worktree cleaned (`--pr 116`).
+- **Functional-slice check (not scaffolding).** HAR-477's own spec marked the
+  `getArtists` `.gte('avg_rating', …)` predicate out-of-scope ("HAR-B"), but that
+  predicate already shipped on staging via **HAR-475** (`minRating` filter param +
+  `artist_rating_summary!inner` embed in `src/lib/supabase/queries/artists.ts`). So the
+  merged control filters real data end-to-end (URL → page → `getArtists` predicate →
+  removable chip), verified before merging.
+- **Dispatched HAR-478** (v0.5 W2 評分最高 sort chip; single-file `ActiveFilterChips.tsx`
+  + consuming test, verified NOT already shipped — `SORT_LABEL_KEYS` lacks `rating` on
+  staging). Drain implementer **crashed mid-response on a transient API error**
+  (`Connection closed`) — 0/1 merged. This is a flaky-infra failure, NOT a needs-human
+  boundary and NOT a gate verdict → HAR-478 **reset In Progress → Todo** (stays pickable
+  for next-round retry, no `needs-human` label). Removed the empty stranded worktree +
+  branch (`feature/har-478-rating-sort-chip`, 0 commits beyond staging) and cleared the
+  dangling `worktrees.json` record so the retry `wt start` won't collide. No failure
+  email: the round still merged HAR-477 (progress made), and the crash self-heals on retry.
+- **Did NOT ideate a refill ticket.** `PICK=1` (HAR-478 only) is < 2, but the PM created
+  HAR-478 today (queue is being fed externally) and every remaining v0.5 discovery slice
+  clusters on the same `ArtistFilters`/`ActiveFilterChips` files (would collide with the
+  in-flight HAR-478) — selecting the next product slice is a PM/Harvey call, not a
+  mechanical refill. Left to next round / PM.
+- **main→staging sync: still 16 ahead at the SAME SHA** (`97854fab`) already flagged
+  Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
+  merge/rebase/modify staging. Reconciliation remains Harvey's manual call.
+
+### Round 34 (2026-06-25) — HAR-478 retry succeeded (評分最高 sort chip shipped); v0.5 W2 chip pair complete
+
+- **HAR-478 → PR #117** (v0.5 W2 `/artists` 評分最高 sort chip). The Round 33
+  dispatch crashed mid-response on a transient API error and reset the ticket to Todo;
+  this round retried and merged. Re-ran the already-shipped guard before dispatch —
+  `SORT_LABEL_KEYS` on staging still lacked `rating` (only `price_low`/`price_high`/
+  `newest`), so the premise held. Single-file `ActiveFilterChips.tsx` chip wiring +
+  consuming `ActiveFilterChips.test.tsx` case; all 5 required checks green
+  (lint-and-typecheck, test, migration-check, build, `ci-passed`). Squash-merged to
+  staging (`9dabcd7`), HAR-478 already in Done state (closing comment added), worktree
+  cleaned (`--pr 117`). 1/1 merged, 0 deferred, 0 Product-QA bounce.
+- **v0.5 W2 chip pair now complete.** HAR-477 (最低評分 *filter* chip, PR #116, Round 33)
+  + HAR-478 (評分最高 *sort* chip, PR #117) both ship the removable active-filter chip for
+  the rating discovery controls (URL → page → `getArtists` predicate/ordering → removable
+  chip), end-to-end.
+- **Promotion-review (informational, NOT needs-human):** HAR-478 (sales-facing UI)
+  queues for the human staging→main promotion gate.
+- **Did NOT ideate a refill ticket.** Post-merge `PICK=0` (only HAR-440 `needs-human`
+  remains as Todo). Both known v0.5 W2 chip slices are now shipped and every remaining
+  v0.5 discovery slice clusters on the same `ArtistFilters`/`ActiveFilterChips` spine —
+  selecting the next product slice is a PM/Harvey call, not a mechanical refill, and the
+  PM is feeding the queue externally. Left to PM / next round.
+- **main→staging sync: still 16 ahead at the SAME SHA** (`97854fab`) already flagged
+  Round 25 → `mc-sync-flagged-main` debounce holds; no re-email, did NOT
+  merge/rebase/modify staging. Reconciliation remains Harvey's manual call.
+
+### Round 35 (2026-06-26) — designated exhaustion-detection round; Harvey emailed for next v0.5 slice / milestone direction
+
+- **Wake cause:** Round 34's outcome was `drained-1` (not `noop`), so Step 1b
+  correctly did NOT early-exit — this is the exhaustion-detection round Round 34
+  scheduled. `BL`/`PICK`/`MAIN` are unchanged from Round 34
+  (`2026-06-25T05:05:00.246Z` / `0` / `97854fab`), but the productive prior outcome
+  forces a re-scout.
+- **Scout result: nothing auto-eligible.** InkHunt project = 37 Done, 1 Canceled,
+  exactly **1 Todo** — HAR-440 (`[PM Patrol R4]` reconcile the local InkHunt staging
+  checkout; operational human call), already `needs-human` + `from-haru-pm` labelled →
+  `PICK=0`, nothing to drain. No `mc-qa-blocked` retry pending. Idempotent: HAR-440
+  already labelled, so no re-label / no re-comment (preserves Step 1b `BL` convergence).
+  (The team-scoped Linear query returns 50 mixed-repo rows ignoring project/state
+  filters — the project-scoped `getProjectIssues` is authoritative; the v0.4/v0.5 rows
+  it surfaced are all `Done`.)
+- **v0.5 W2 discovery chip pair COMPLETE** (HAR-477 最低評分 filter chip #116, HAR-478
+  評分最高 sort chip #117, both on staging). The remaining v0.5 discovery slices all
+  cluster on `ArtistFilters.tsx` / `ActiveFilterChips.tsx` (would collide) and picking
+  the next slice is a product/taste call — **no auto-ideation** (collision + scatter +
+  stay-the-author). Round 33/34 deferred the awaiting-human email "to next round"; this
+  IS that round.
+- **Emailed Harvey for direction** — feed the next v0.5 slice (or a new milestone) via
+  the PM pass, or park the milestone. First no-op after Round 34's productive close → a
+  fresh state transition, recorded once here; later identical fires early-exit at Step 1b
+  (markers match AND `mc-round-outcome: noop`) without re-triage or re-email.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome marker `noop`; `BL=2026-06-25T05:05:00.246Z`, `PICK=0`, `MAIN=97854fab` — all
+  unchanged, so Step 1b WILL early-exit the next fire until new tickets, a removed
+  `needs-human` label, or a main hotfix appears.
+
+### Round 36 (2026-06-26) — v0.6 W1 healed-work filter wave opened; drained the parser root (HAR-479 #118)
+
+- **Wake cause:** the PM refilled the backlog — `BL` moved `2026-06-25→2026-06-26`
+  and `PICK` `0→3` (4 new `auto-claude` Todos). Step 1b correctly did NOT early-exit.
+- **New milestone slice — v0.6 W1「恢復對比作品 (healed-work) filter」on `/artists`**:
+  a 4-ticket vertical wave — HAR-479 parser (`listing.ts`), HAR-480 query
+  (`getArtists`), HAR-481 control + page wiring (`ArtistFilters.tsx`), HAR-482 chip
+  (`ActiveFilterChips.tsx`). Serves InkHunt core_value #3「作品集驅動 — 恢復對比照」.
+- **Drained HAR-479 only this round.** The four are a tight dependency chain rooted at
+  HAR-479; crucially HAR-480 edits the SAME `ArtistFilters` type in `artists.ts` that
+  HAR-479 adds (parallel merge = guaranteed conflict), and HAR-481/482 semantically
+  consume HAR-479's `parseHealed`. So drain the independent pure root first; it unblocks
+  the rest. **HAR-479 → PR #118 squash-merged to staging on real green CI** (`parseHealed`
+  facet: `'1'`→true only, `hasActiveListingFilters` wired, `ArtistFilters.healed?` type
+  added). No conflicts, no deferrals.
+- **Next round:** with HAR-479 on staging, HAR-480 (`artists.ts` query) and HAR-481
+  (`ArtistFilters.tsx` + page + messages) are now genuinely independent modules → drain
+  both in parallel. HAR-482 (chip) consumes HAR-481's i18n key, so it follows.
+- HAR-440 (`[PM Patrol R4]` local-checkout reconcile) stays `needs-human` — already
+  labelled, no re-label (preserves Step 1b `BL` convergence).
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed.
+- Outcome `drained-1`; markers refreshed below (`PICK=3` = HAR-480/481/482 remaining).
+
+### Round 38 (2026-06-27) — v0.6 W1 healed-work filter wave COMPLETE; drained the chip (HAR-482 #121)
+
+- **Wake cause:** Round 36's outcome was `drained-1` (not `noop`), so Step 1b did NOT
+  early-exit. Scout found HAR-482 still `Todo`/`auto-claude` and the rest of the wave
+  already merged.
+- **Drained HAR-482 → PR #121 squash-merged to staging on green CI** — `?healed=1`
+  now surfaces a removable active-filter chip in `ActiveFilterChips.tsx` (`healed` added
+  to `FILTER_KEYS`, chip label reuses the `artists.filterHealed` i18n key, removable via
+  the existing key-delete path; consuming component test added). Already-shipped guard
+  ran first: `FILTER_KEYS` had no `healed` pre-merge, HAR-481's key existed → genuinely
+  unbuilt. `mc.qa wired` → `promotion_review` (advisory, not needs-human).
+- **v0.6 W1「恢復對比作品 (healed-work) filter」slice is now COMPLETE end-to-end** —
+  HAR-479 parser #118, HAR-480 query #119, HAR-481 control+page wiring #120, HAR-482 chip
+  #121 all on staging. Every facet a user can apply (`healed`) now has its parser, query,
+  control, and removable chip. (Interim round that drained #119/#120 did not write a doc
+  entry; recorded here for the trail.)
+- **No auto-ideation.** The only remaining `Todo` is HAR-440 (`[PM Patrol R4]` local
+  staging-checkout reconcile — an operational human call, already `needs-human` +
+  `from-haru-pm`, idempotent: no re-label/re-comment → preserves Step 1b `BL`). `PICK=0`.
+  Scoping v0.6's next wave (W2+) is a PM/Harvey product call, not dispatcher scope-creep,
+  and the PM pass feeds the queue externally — wave-completion ≠ milestone exhaustion, so
+  **no exhaustion email this productive round.** First `noop` fire after this is the
+  designated detection round.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- Outcome `drained-1`; markers refreshed below (`PICK=0`, only HAR-440 remains).
+### Round 39 (2026-06-27) — designated no-op detection round; v0.6 W1 drained, awaiting next-wave PM scope
+
+- **Wake cause:** Round 38's outcome was `drained-1` (not `noop`), so Step 1b did NOT
+  early-exit — this is the no-op detection round Round 38 designated. Scout confirmed the
+  signal has NOT moved since Round 38: `BL=2026-06-26T11:02:39.886Z`, `PICK=0`,
+  `MAIN=97854fab` all unchanged.
+- **Nothing pickable.** Project-scoped `getProjectIssues` (authoritative) returns one open
+  `Todo` — HAR-440 (`[PM Patrol R4]` local staging-checkout reconcile), already
+  `needs-human` + `from-haru-pm`, idempotent (no re-label/re-comment → preserves `BL`).
+  `PICK=0`.
+- **No auto-ideation, no exhaustion email.** v0.6 W1「恢復對比作品 (healed-work) filter」is
+  complete end-to-end (HAR-479/480/481/482, PRs #118–#121 on staging). The next wave (W2+)
+  is a product/taste call (the remaining discovery slices cluster on
+  `ArtistFilters.tsx` / `ActiveFilterChips.tsx` — collision + scatter + stay-the-author),
+  owned by the PM pass which refills the queue externally. Per Round 38: wave-completion ≠
+  milestone exhaustion, so Step 2's email is NOT triggered (it's reserved for genuine
+  exhaustion). Fleet visibility for the idle state is covered by the daily digest.
+- **Worktree hygiene:** ended/pruned 5 stranded bot worktree records left from the W1 wave
+  (the merged feature-rating-sort-chip / -parser / -480 / -482 phantoms whose dirs were
+  already gone, plus the orphan `feature-artists-healed-filter` HAR-481 worktree whose work
+  shipped via PR #120). No active bot worktrees remain; no human worktrees touched.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** — markers below now carry `mc-round-outcome: noop` with `BL`/`PICK`/`MAIN`
+  unchanged, so the NEXT identical fire WILL early-exit at Step 1b (no re-scout, no re-email)
+  until a new ticket, a removed `needs-human` label, or a main hotfix moves the signal.
+
+### Round 40 (2026-06-28) — reconciled an orphaned v0.7 W1 social-proof ship + stale-worktree hygiene
+
+- **Wake cause:** Step 1b did NOT early-exit — `BL` moved `2026-06-26T11:02:39.886Z →
+  2026-06-27T11:07:38.802Z`. The mover was HAR-440's `updatedAt` bumping (the
+  `[PM Patrol R4]` ticket re-touched); it stays `needs-human`, so `PICK` is still `0`
+  and `MAIN` still `97854fab`. No genuinely-new pickable work.
+- **Recorded a previously-undocumented ship — v0.7 W1「探索頁社會證明 (saved-count)」.**
+  HAR-484 (`getArtists` attaches per-artist `savedCount` via one bounded `.in('artist_id',…)`
+  read of the `artist_saved_count` view, degrades to 0/absent — PR #124, merged
+  `2026-06-27T04:45Z`) + HAR-485 (threshold-gated「X 人收藏」badge on `ArtistCard`,
+  `MIN_SAVED_COUNT=3`, hidden below threshold — PR #123, merged `2026-06-27T10:36Z`).
+  Both squash-merged to `staging` on green CI; both tracker-Done. The round that drained
+  them (S3331) **died before its wrap-up**, so neither the doc nor the worktree records
+  were reconciled — done here for the trail.
+- **Worktree hygiene:** `wt end --merged` + `wt prune` cleared the 3 stranded bot worktree
+  records left by that dead round (`feature-getartists-saved-count` #124,
+  `feature-artist-card-saved-count-badge` #123, `feature-artist-saved-count-view` merged);
+  sibling dirs already gone from disk. No active bot worktrees remain. The many
+  `.claude/worktrees/*` trees are Harvey's interactive sessions — NOT mc-tracked, untouched.
+- **No drain, no auto-ideation, no exhaustion email.** Nothing pickable (`PICK=0`, only
+  `needs-human` HAR-440). v0.7 W1 just completed; per the standing rule (Rounds 38/39)
+  wave-completion ≠ milestone exhaustion — scoping the next wave is a PM/Harvey product
+  call fed externally (stay-the-author), and the idle state is covered by the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** (0 drained this round; the v0.7 ship was a prior round's). Markers
+  refreshed to current values below so the NEXT identical fire early-exits at Step 1b.
+
+### Round 41 (2026-06-29) — reconciled orphaned v0.8 W1 artist-inquiry-loop ship (HAR-496 + HAR-497)
+
+- **Wake cause:** Step 1b did NOT early-exit — `BL` moved `2026-06-27T11:07:38.802Z →
+  2026-06-28T05:04:10.096Z` (new `needs-human` PM-patrol ticket HAR-495 created). `MAIN`
+  unchanged (`97854fab`); `PICK` still `0` (HAR-495 + HAR-440 both `needs-human`).
+- **Reconciled v0.8 W1「Artist 詢價工作流」— the first slice of the v0.9 Artist-CRM/inquiry
+  line Harvey set (`A: Artist CRM / inquiry loop`, 2026-06-29 decision sync on both tickets).**
+  An earlier fire today had implemented both, opened PRs, and moved them to In Review, but
+  **died before the serial-merge wrap-up** (worktree records left `active`/no-PR; sweeper
+  missed them because `pr_number` was never written to `worktrees.json`):
+  - **HAR-496** — artist inquiries status filters (全部/待回覆/已報價/已接受/已關閉) +
+    per-filter count chip + status-specific empty-state; read-only `?status=` GET wiring.
+    PR #125 squash-merged → `staging` `8acef9e`. Auto-mergeable (no money/migration/batch).
+  - **HAR-497** — artist-only close-lead action + next-step copy on the thread header;
+    calls the pre-existing `PATCH /api/inquiries/:id {status:'closed'}` (single-record,
+    user-initiated, not a batch/cron write → not the irreversible-data gate). PR #126
+    squash-merged → `staging` `7fb0a29`.
+- **Merge-conflict resolution.** Both PRs edited `inquiries/page.tsx`; after #125 landed,
+  #126 went `CONFLICTING/DIRTY`. Rebased #126 onto `origin/staging` **inside the bot
+  worktree** (never the primary checkout), resolved both conflict hunks (kept #125's
+  status-filter state + empty-state render, kept #126's `isClosing`/`closeError` state,
+  `handleSelect`, and close-lead wiring), `tsc --noEmit` clean + 76/76 inquiries+chat
+  tests, force-pushed → green `ci-passed` → auto-merge.
+- **Worktree hygiene:** `wt end --merged` (#125, #126) + `wt prune` cleared the 2 stranded
+  bot worktree records. No active bot worktrees remain. `.claude/worktrees/*` are Harvey's
+  interactive sessions — NOT mc-tracked, untouched.
+- **No drain of new tickets, no auto-ideation, no exhaustion email.** `PICK=0` — the only
+  Todos are `needs-human` PM-patrol local-checkout drift tickets (HAR-495 supersedes
+  HAR-440; both correctly Harvey-gated, already labelled, idempotent — left untouched).
+  v0.8 W1 just shipped; per the standing rule (Rounds 38–40) wave-completion ≠ milestone
+  exhaustion — Harvey's 2026-06-29 decision sync explicitly hands W2+ scoping of the Artist
+  CRM/inquiry line to the PM pass, which refills the backlog externally (stay-the-author).
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `drained-2`** (HAR-496 + HAR-497 reconciled to merged this round). Markers below
+  refreshed; `BL`/`PICK`/`MAIN` now reflect the post-round Todo set so the NEXT identical
+  fire early-exits at Step 1b until a new ticket / un-labelled `needs-human` / main hotfix.
+
+### Round 42 (2026-06-30) — settling noop (Round 41's `drained-2` → `noop`); no new work
+
+- **Wake cause:** Step 1b did NOT early-exit, but only because last outcome was `drained-2`
+  (the markers themselves were already at rest). `BL` (`2026-06-28T05:04:10.096Z`), `PICK`
+  (`0`), and `MAIN` (`97854fab`) all matched the recorded values — nothing actionable moved
+  since Round 41. The mandatory scout confirmed it: the only Todos are the two `needs-human`
+  PM-patrol local-checkout-drift tickets (HAR-495 supersedes HAR-440), both correctly
+  Harvey-gated and already labelled — left untouched (idempotent, no re-label, no comment).
+- **No drain, no auto-ideation, no exhaustion email.** `PICK=0`. v0.8 W1 (Artist
+  CRM/inquiry loop) shipped in Round 41; per the standing rule (Rounds 38–41) wave-completion
+  ≠ milestone exhaustion — next-wave scoping of the Artist-CRM line is Harvey's/the PM pass's
+  product call, fed externally (stay-the-author). Idle state is covered by the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** (0 drained). This commit's ONLY purpose is to flip the outcome marker
+  `drained-2 → noop` so the NEXT identical fire early-exits at Step 1b instead of re-scouting.
+  `BL`/`PICK`/`MAIN` unchanged below.
+
+### Round 43 (2026-07-01) — reconciled a died drain round; v0.9 W1 (asker inquiry status-filter loop) fully shipped
+
+- **Wake cause / why NOT an early-exit:** Step 1b's signal (`BL`=`2026-06-28T05:04:10.096Z`,
+  `PICK`=`0`, `MAIN`=`97854fab`) all matched Round 42 with `mc-round-outcome: noop` — on the
+  surface an early-exit. But Step 1 reposition found **3 active bot worktrees**
+  (HAR-507/508/509) + 1 stale (HAR-506) and **2 open PRs** left by a prior drain session that
+  died AFTER opening PRs #127–#130 (v0.9 W1 Slices A–D) but BEFORE the serial-merge wrap-up.
+  That in-flight work is invisible to the Todo/main signal, so the round proceeded to finish it.
+  (The died round itself left no log entry — this section also documents its merges.)
+- **The died round had drained v0.9 W1 = consumer inquiry status-filter loop (Slices A–D):**
+  - **HAR-506** (Slice A) — `getInquiriesForConsumer` gains optional `status?` param (symmetry
+    with the artist query). PR **#128** squash-merged → `staging` `c032429`.
+  - **HAR-508** (Slice C) — `inquiry.filters.*` i18n keys (zh-TW + en, asker POV). PR **#127**
+    squash-merged → `staging`.
+  - **HAR-507** (Slice B) — `GET /api/inquiries` threads validated `status` into the consumer
+    branch (1-token route edit). PR **#129** — was left **OPEN**.
+  - **HAR-509** (Slice D) — consumer `(public)/inquiries/page.tsx` gains the artist board's
+    status-filter chip row + result count + per-status localized empty copy (the user-facing
+    payoff; consuming component test asserts the `&status=` request param). PR **#130** — was
+    left **OPEN**.
+  #127/#128 had already merged but their worktrees were stranded (no `pr_number` in
+  `worktrees.json` → the round-start sweeper saw "nothing to reconcile").
+- **This round's reconciliation (the wrap-up the died session skipped):**
+  - Verified #129 + #130 MERGEABLE/CLEAN, all 5 checks green incl. `ci-passed`; the two PRs
+    touch **disjoint** files (#129 = `api/inquiries/route.ts`; #130 = `(public)/inquiries/page.tsx`).
+  - Serial-merged on the green gate: **#129** (HAR-507) → then **#130** (HAR-509) went `BEHIND`,
+    `gh pr update-branch` (disjoint → no conflict) → CI re-greened → auto-merge → `staging`
+    `7d2c9e7`. Never touched the primary checkout.
+  - Cleaned all 4 stranded bot worktrees (`wt end --merged --pr N` for 507/508/509; 506 already
+    stale) + `wt prune` (4 records). No active bot worktrees remain. `.claude/worktrees/*` are
+    Harvey's interactive sessions — NOT mc-tracked, untouched.
+  - Tracker reconciled: all 4 → **Done** (507/509 auto-flipped via GitHub↔Linear on merge;
+    506/508 already Done). Added a shipped-comment to HAR-509.
+  - **v0.9 W1 is now fully shipped:** the asker can filter their own 詢價 by status (全部 / 待回覆 /
+    已報價 / 已接受 / 已關閉) — parity with the artist board (v0.8 HAR-496).
+- **No new drain, no auto-ideation, no exhaustion email.** `PICK=0` — the only Todos are the two
+  `needs-human` PM-patrol local-checkout-drift tickets (HAR-495 supersedes HAR-440), both correctly
+  Harvey-gated + already labelled, left untouched (idempotent, no re-label/comment). Per the standing
+  rule (Rounds 38–42) wave-completion ≠ milestone exhaustion; Harvey's 2026-06-29 decision hands
+  v0.9 W2+ scoping of the Artist-CRM/inquiry line to the PM pass, fed externally (stay-the-author).
+  Idle state is covered by the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `drained-2`** (HAR-507 #129 + HAR-509 #130 merged this round). Markers below refreshed;
+  `BL`/`PICK`/`MAIN` are unchanged (no Todo edited this round) so the NEXT identical fire early-exits
+  at Step 1b until a new ticket / un-labelled `needs-human` / main hotfix.
+### Round 44 (2026-07-01) — settling noop (Round 43's `drained-2` → `noop`); no new work
+
+- **Wake cause / why NOT an early-exit:** Step 1b's signal (`BL`=`2026-06-28T05:04:10.096Z`,
+  `PICK`=`0`, `MAIN`=`97854fab`) all matched Round 43, but Round 43's outcome was `drained-2`
+  (the reconciled died-drain ship), so Step 1b did NOT early-exit — this is the designated
+  no-op settling round (the exact analog of Round 42 settling Round 41).
+- **Reposition found NOTHING in flight:** harness `status` reports no active bot worktrees;
+  `gh pr list --state open` returns `[]` (Round 43 already reconciled & merged #129/#130 and
+  cleaned all four stranded HAR-506/507/508/509 worktrees). The only mc-tracked admin
+  worktrees are the primary checkout + `InkHunt-mcdispatch`. The `.claude/worktrees/*` trees
+  are Harvey's interactive sessions — NOT mc-tracked, untouched.
+- **No drain, no auto-ideation, no exhaustion email.** Mandatory scout confirms `PICK=0` —
+  the only Todos are the two `needs-human` PM-patrol local-checkout-drift tickets (HAR-495
+  supersedes HAR-440), both correctly Harvey-gated + already labelled, left untouched
+  (idempotent, no re-label/comment → preserves `BL`). v0.9 W1 (asker inquiry status-filter
+  loop) shipped in Round 43; per the standing rule (Rounds 38–43) wave-completion ≠ milestone
+  exhaustion — v0.9 W2+ scoping of the Artist-CRM/inquiry line is Harvey's/the PM pass's
+  product call, fed externally (stay-the-author). Idle state is covered by the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** (0 drained). This commit's ONLY purpose is to flip the outcome marker
+  `drained-2 → noop` so the NEXT identical fire early-exits at Step 1b instead of re-scouting.
+  `BL`/`PICK`/`MAIN` unchanged below.
+
+### Round 45 (2026-07-01) — v0.10 W1 ASKER LOOP CLARITY opened by PM; drained Slice A i18n root (HAR-511 #131)
+
+- **Wake cause / why NOT an early-exit:** the autonomous-PM pass refilled the backlog with
+  the v0.10 W1 "asker loop clarity" wave (3 slices). Step 1b's signal moved off Round 44:
+  `BL` `2026-06-28T05:04:10.096Z → 2026-07-01T03:37:50.738Z` and `PICK` `0 → 3`
+  (`MAIN` `97854fab` unchanged) → not an early-exit, scouted and dispatched.
+- **Backlog:** 3 new `auto-claude` Todos + the 2 standing `needs-human` PM-patrol
+  local-checkout-drift tickets (HAR-495 supersedes HAR-440, both already labelled, left
+  untouched — idempotent). The wave is a staged vertical slice:
+  - **Slice A (HAR-511)** — `inquiry.status.*` pill labels + `inquiry.nextStep.*` expectation
+    copy in both locales (the author-designated "drains first" pure-i18n root);
+  - **Slice B (HAR-512)** — consumer inquiry list per-row status pill (reuse `ChatList`
+    `STATUS_CONFIG`), **depends on A**;
+  - **Slice C (HAR-513)** — consumer inquiry thread per-status next-step copy, **depends on A**.
+- **Dispatched Slice A ALONE this round.** B and C both hard-consume A's i18n keys, and the
+  drain gives each ticket an isolated worktree branched off `staging` with no sibling work —
+  so B/C dispatched before A lands would hit red CI (keys absent) or a `messages/*.json`
+  merge conflict (each re-adds the keys). A is file-disjoint and self-contained; once in
+  `staging`, B and C become a genuinely independent file-disjoint pair for next round.
+- Already-shipped guard: the `inquiry` block held only v0.9's `filters.*`; no
+  `inquiry.status.*` / `inquiry.nextStep.*` present → Slice A was a real delta, not rework.
+- **Drain result: 1/1 merged, 0 deferred.** HAR-511 → PR **#131** squash-merged to `staging`
+  `1365020` at 04:25Z; all required checks green (`ci-passed` + build / lint-and-typecheck /
+  migration-check / test), no rebase needed. Worktree ended + remote branch deleted; Linear
+  auto-transitioned to Done on merge (shipped comment added). Never touched the primary checkout.
+- **No auto-ideation / no exhaustion email** — B (HAR-512) + C (HAR-513) already sit in the
+  backlog as the natural next dispatch (healthy ~2 auto-eligible in flight).
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `drained-1`.** Markers refreshed to what the next round recomputes (HAR-511 now
+  Done → out of the Todo set): `BL`=HAR-513's `updatedAt`, `PICK`=2 (HAR-512 + HAR-513).
+
+### Round 46 (2026-07-01/02) — reconcile orphaned Slice B/C drain; v0.10 W1 wave COMPLETE end-to-end
+
+- **Wake cause / why NOT an early-exit:** Round 45's recorded outcome was `drained-1`
+  (productive), so Step 1b did not early-exit — scouted. Reposition then found the tracker/git
+  state had moved past what Round 45's markers describe: a Round-45.5 drain dispatched Slice B
+  (HAR-512) + Slice C (HAR-513), **both squash-merged to `staging`** (PR **#132** `20ccd5d`,
+  PR **#133** `e7bb3e0`, merged 2026-07-01 ~16:38Z), but that drain **died before wrap-up** —
+  no round doc commit, worktrees left stranded. This round reconciles it (the exact analog of
+  Round 41 / Round 43 orphaned-drain reconciliations). No re-implement, no re-open.
+- **Reconciled ships (already on `staging`, tracker already `Done`):**
+  - **HAR-512 #132** — `ChatList` status pill label now resolves from Slice A's
+    `inquiry.status.*` via `useTranslations` (color stays single-source in `STATUS_CONFIG`);
+    shared component, so both the artist inbox and consumer inquiry list localize. Re-scoped in
+    the Round-45.5 dispatch by an already-shipped audit (the per-row pill already rendered; the
+    real delta was localizing the hardcoded zh-TW labels for `/en`). Consuming vitest green.
+  - **HAR-513 #133** — consumer inquiry thread `[id]/page.tsx` renders a per-status next-step
+    line from Slice A's `inquiry.nextStep.*`; implemented standalone (the HAR-497 artist-side
+    "mirror" it referenced was never shipped — `nextStep` was consumed nowhere). Consuming test
+    (`it.each` over 4 statuses + switch) green.
+  - With A (HAR-511 #131) + B + C all merged, the **v0.10 W1 ASKER LOOP CLARITY wave is
+    complete end-to-end**: localized status pills on both inquiry lists + per-status next-step
+    expectation copy on both the asker and (via the shared surface) artist threads.
+- **Reposition cleanup:** ended + pruned the three stranded bot worktrees
+  (`feature-har-511-…`, `feature-localize-chatlist-status-pill` [HAR-512, had no recorded
+  `pr_number` → `wt end --pr 132`], `feature-har-513-…`); harness `status` now reports no
+  active worktrees. `gh pr list --state open` = `[]`. Never touched the primary checkout; the
+  `.claude/worktrees/*` trees are Harvey's interactive sessions, untouched.
+- **No drain, no auto-ideation, no exhaustion email this round.** Mandatory scout: `PICK=0` —
+  the only Todos are the two standing `needs-human` PM-patrol local-checkout-drift tickets
+  (HAR-495 supersedes HAR-440), both already labelled, left untouched (idempotent → preserves
+  `BL`). Per the standing rule (Rounds 38–45) **wave-completion ≠ milestone exhaustion**: the
+  next v0.10 wave's scoping (which asker/inquiry-loop lever next) is Harvey's / the PM pass's
+  product call, fed externally (stay-the-author) — the dispatcher does not self-ideate the
+  next product wave here. Idle state is surfaced by the daily digest, not an email.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `noop`** (0 tickets drained THIS round; the B/C ship credit belongs to the
+  reconciled Round-45.5 drain). Markers refreshed to what the next round recomputes now that
+  A/B/C are all `Done` and out of the Todo set: `BL`=HAR-495's `updatedAt` (the later of the
+  two needs-human Todos), `PICK`=0. The next identical fire early-exits at Step 1b.
+
+### Round 47 (2026-07-03) — reconcile orphaned v0.11 W1 Slice C/D drain; budget-range wave COMPLETE end-to-end
+
+- **Wake cause / why NOT an early-exit:** the recorded markers matched (`BL`/`PICK=0`/`MAIN`),
+  but Reposition found tracker/git state past what the Round-46 markers describe — two bot PRs
+  sitting **open + green** that a prior drain never merged. The v0.11 rounds that dispatched the
+  budget-range slices (Slices A HAR-528, B HAR-529, C HAR-530, D HAR-531) all **died before
+  wrap-up** — no round doc commit (the doc jumps straight from Round 46 to here), worktrees left
+  active, PRs #136/#137 left open. This round reconciles + finishes the merge (analog of Rounds
+  41/43/46; here the PRs were not even merged yet, so this round completed the merge too). No
+  re-implement, no re-open.
+- **Completed the skipped merge (both green, CLEAN/MERGEABLE against `staging`, reviewed = In
+  Review, all 5 required checks incl `ci-passed` SUCCESS since 2026-07-02 23:0xZ; `autoMerge=null`
+  → the dead drain never enabled auto-merge):**
+  - **HAR-530 #137 (Slice C)** — optional budget-range `<select>` on the consumer inquiry form +
+    thread `budget_range` (nullable text, validated to 6 known codes else `null`, never 400s)
+    through `POST /api/inquiries` into the insert. Files: `InquiryForm.tsx` (+ test),
+    `inquiries.ts` query (+ test), `validations/inquiry.ts`. Squash-merged `43bd7e6d`.
+  - **HAR-531 #136 (Slice D)** — artist thread header shows the asker's budget range via
+    `useTranslations('inquiry.budgetRange')` (`ChatWindow` gets a nullable `budgetRange` prop;
+    null/legacy/unknown → `未提供`). Files: `ChatWindow.tsx` (+ test),
+    `(artist)/artist/inquiries/page.tsx`. Squash-merged `d1b7a2de`.
+  - With A (HAR-528) + B (HAR-529, already on staging) + C + D all merged, the **v0.11 W1
+    budget-range vertical slice is complete end-to-end**: the asker optionally states a budget
+    range on the 詢價 form → it persists → the artist sees it on the inquiry thread. Both PRs are
+    additive UI/app code (no migration/money/cron/destructive surface) with consuming component
+    tests — auto-mergeable on the `staging` base.
+- **Reconcile:** HAR-530 + HAR-531 → **Done** (reconcile comment added to each pointing at the
+  squash SHA). Worktrees ended (`feature-har-530-…` `--pr 137`, `feature-har-531-…` `--pr 136` —
+  the dead drain recorded no `pr_number`) + two already-merged stale trees (HAR-529,
+  `feature-inquiry-budget-range`) cleaned; `git worktree prune` + sibling dirs gone; harness
+  `status` = no active worktrees; `gh pr list --state open` = `[]`. Never touched the primary
+  checkout; the `.claude/worktrees/*` trees are Harvey's interactive sessions, untouched.
+- **PM steer captured (for the PM pass, not acted on here):** Harvey 2026-07-02 on HAR-531 —
+  `InkHunt trust loop 優先` (prioritize trust-building / close-the-loop slices over generic
+  workflow polish). Per the standing InkHunt discipline (Rounds 38–46) **wave-completion ≠
+  milestone exhaustion**, and the next product wave's scoping is Harvey's / the autonomous-pm
+  pass's product call (stay-the-author) — the dispatcher does NOT self-ideate the next wave. So
+  **no auto-ideation, no exhaustion email** this round; the `PICK=0` idle state is surfaced by
+  the daily digest.
+- `origin/main` still **16** ahead of `staging` at SHA `97854fab` (unchanged) →
+  `mc-sync-flagged-main` debounce holds, not re-emailed; did NOT merge/rebase/modify staging.
+- **Outcome `drained-2`.** Markers: HAR-530/531 were In Review (never in the Todo set), so the
+  Todo set is unchanged — the two standing `needs-human` PM-patrol local-checkout-drift Todos
+  (HAR-495 supersedes HAR-440), both already labelled, untouched. `BL`=HAR-495's `updatedAt`,
+  `PICK`=0, `MAIN`=`97854fab` all unchanged; only the outcome flips to `drained-2` (so the next
+  fire re-scouts once rather than early-exiting, then settles to `noop`).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
-mc-sync-flagged-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-bl: 2026-06-18T03:37:33.764Z
+mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
+mc-round-bl: 2026-06-28T05:04:10.096Z
 mc-round-pick: 0
-mc-round-main: f6331bb58375286135a7e0755b8c406210f23e1c
-mc-round-outcome: noop
+mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
+mc-round-outcome: drained-2

@@ -72,13 +72,37 @@ describe('ArtistFilters — sort control (HAR-433)', () => {
     for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
   })
 
-  it('renders the four sort options', () => {
+  it('renders all five sort options', () => {
     render(<ArtistFilters styles={[]} />)
 
     expect(screen.getByText('sortFeatured')).toBeInTheDocument()
     expect(screen.getByText('sortPriceLow')).toBeInTheDocument()
     expect(screen.getByText('sortPriceHigh')).toBeInTheDocument()
     expect(screen.getByText('sortNewest')).toBeInTheDocument()
+    expect(screen.getByText('sortRating')).toBeInTheDocument()
+  })
+
+  it('writes ?sort=rating to the URL when 評分最高 is selected (HAR-476)', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    const sortSelect = selectOwning('sortFeatured')
+    fireEvent.change(sortSelect, { target: { value: 'rating' } })
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('sort=rating')
+  })
+
+  it('writes ?sort=rating and resets page when 評分最高 is selected (HAR-476)', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    const sortSelect = selectOwning('sortFeatured')
+    fireEvent.change(sortSelect, { target: { value: 'rating' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('sort=rating')
+    expect(url).not.toContain('page=3')
   })
 
   it('writes ?sort=price_low to the URL when 價格低→高 is selected', () => {
@@ -321,5 +345,127 @@ describe('ArtistFilters — keyword search box (HAR-456)', () => {
 
     const url = mockPush.mock.calls[0][0] as string
     expect(url).not.toContain('q=')
+  })
+})
+
+describe('ArtistFilters — minimum-rating control (HAR-477)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
+  })
+
+  it('renders the clear option and the two rating-threshold options', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    expect(screen.getByText('ratingAll')).toBeInTheDocument()
+    expect(screen.getByText('rating4Plus')).toBeInTheDocument()
+    expect(screen.getByText('rating45Plus')).toBeInTheDocument()
+  })
+
+  it('writes ?minRating=4 to the URL when 4★+ is selected', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    const ratingSelect = selectOwning('ratingAll')
+    fireEvent.change(ratingSelect, { target: { value: '4' } })
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('minRating=4')
+  })
+
+  it('writes ?minRating=4.5 to the URL when 4.5★+ is selected', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    const ratingSelect = selectOwning('ratingAll')
+    fireEvent.change(ratingSelect, { target: { value: '4.5' } })
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    // URLSearchParams encodes the dot literally, so assert on the raw 4.5 value.
+    expect(url).toContain('minRating=4.5')
+  })
+
+  it('writes ?minRating=4 and resets page when 4★+ is selected', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    const ratingSelect = selectOwning('ratingAll')
+    fireEvent.change(ratingSelect, { target: { value: '4' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('minRating=4')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('drops the minRating param when the clear (全部) option is selected', () => {
+    mockSearchParams.set('minRating', '4')
+    render(<ArtistFilters styles={[]} />)
+
+    const ratingSelect = selectOwning('ratingAll')
+    fireEvent.change(ratingSelect, { target: { value: 'all' } })
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('minRating=')
+  })
+})
+
+describe('ArtistFilters — healed-work filter (HAR-481)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
+  })
+
+  /** The healed-work toggle, located by its (mocked-to-key) label. */
+  function healedToggle(): HTMLButtonElement {
+    return screen.getByRole('button', { name: 'filterHealed' }) as HTMLButtonElement
+  }
+
+  it('renders the healed-work filter control', () => {
+    render(<ArtistFilters styles={[]} />)
+    expect(healedToggle()).toBeInTheDocument()
+  })
+
+  it('writes ?healed=1 to the URL when toggled ON', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(healedToggle())
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('healed=1')
+  })
+
+  it('writes ?healed=1 and resets page when toggled ON', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(healedToggle())
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('healed=1')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('reflects an already-healed=1 URL in its active (pressed) state', () => {
+    mockSearchParams.set('healed', '1')
+    render(<ArtistFilters styles={[]} />)
+
+    expect(healedToggle()).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('is not pressed when no healed param is present', () => {
+    render(<ArtistFilters styles={[]} />)
+    expect(healedToggle()).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('drops the healed param when toggled OFF (from healed=1)', () => {
+    mockSearchParams.set('healed', '1')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(healedToggle())
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('healed=')
   })
 })

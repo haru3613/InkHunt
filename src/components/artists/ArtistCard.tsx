@@ -8,6 +8,7 @@ import { ArtistAvatar } from './ArtistAvatar'
 import { StyleBadge } from './StyleBadge'
 import { PriceRange } from './PriceRange'
 import { ArtistCompareAction } from './ArtistCompareAction'
+import { FavoriteButton } from './FavoriteButton'
 import { StarRating } from '@/components/shared/StarRating'
 import { formatPrice } from '@/lib/utils'
 
@@ -41,6 +42,35 @@ function CardReviewSummary({
       </span>
       <span className="tabular-nums">({summary.count})</span>
     </div>
+  )
+}
+
+/**
+ * Minimum saved-count before the social-proof badge shows (HAR-485). Low counts
+ * read as *negative* social proof (Fera / Convince&Convert 2026), so below this
+ * we render nothing — same calm-card principle as `CardReviewSummary` hiding at
+ * `count === 0`.
+ */
+const MIN_SAVED_COUNT = 3
+
+/**
+ * Threshold-gated「X 人收藏」/「X saved」social-proof badge (HAR-485). Renders
+ * nothing when `savedCount` is absent or below `MIN_SAVED_COUNT`. `t` is the
+ * resolved `artists` namespace translator.
+ */
+function SavedCountBadge({
+  savedCount,
+  t,
+}: {
+  readonly savedCount: ArtistWithDetails['savedCount']
+  readonly t: (key: string, vars: Record<string, number>) => string
+}) {
+  if (savedCount == null || savedCount < MIN_SAVED_COUNT) return null
+
+  return (
+    <span className="text-sm text-muted-foreground tabular-nums">
+      {t('savedCount', { count: savedCount })}
+    </span>
   )
 }
 
@@ -126,6 +156,8 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
 
             <CardReviewSummary summary={artist.reviewSummary} />
 
+            <SavedCountBadge savedCount={artist.savedCount} t={t} />
+
             <div className="flex flex-wrap gap-1.5">
               {visibleStyles.map((style) => (
                 <StyleBadge
@@ -162,6 +194,17 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
           </CardContent>
         </Card>
       </Link>
+
+      {/*
+       * Save-from-discovery (HAR-472): the favorite toggle sits OUTSIDE the
+       * Link (top-right overlay) so a tap saves the artist instead of
+       * navigating to the profile. Every card starts unfilled —
+       * `initialFavorited` defaults to false; reflecting the user's actual
+       * saved state on the grid is a deferred follow-up slice.
+       */}
+      <div className="absolute right-3 top-3">
+        <FavoriteButton artistId={artist.id} initialFavorited={false} />
+      </div>
 
       {/* Compare button sits outside the Link so clicks do not trigger navigation */}
       <div className="absolute bottom-3 right-3">
@@ -217,6 +260,11 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
       {artist.reviewSummary && artist.reviewSummary.count > 0 && (
         <div className="mt-2">
           <CardReviewSummary summary={artist.reviewSummary} />
+        </div>
+      )}
+      {artist.savedCount != null && artist.savedCount >= MIN_SAVED_COUNT && (
+        <div className="mt-2">
+          <SavedCountBadge savedCount={artist.savedCount} t={t} />
         </div>
       )}
       {artist.price_min !== null && artist.price_min !== undefined && (

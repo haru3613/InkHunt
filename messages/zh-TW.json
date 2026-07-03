@@ -41,6 +41,7 @@
     "selectRegion": "選擇地區",
     "sortLabel": "排序",
     "sortFeatured": "精選",
+    "sortRating": "評分最高",
     "sortPriceLow": "價格低→高",
     "sortPriceHigh": "價格高→低",
     "sortNewest": "最新",
@@ -54,10 +55,16 @@
     "serviceAll": "全部服務",
     "serviceCoverup": "遮蓋",
     "serviceFlash": "Flash 圖",
+    "ratingLabel": "最低評分",
+    "ratingAll": "全部",
+    "rating4Plus": "4★+",
+    "rating45Plus": "4.5★+",
+    "filterHealed": "恢復對比作品",
     "badgeCoverup": "遮蓋",
     "badgeFlash": "Flash 圖",
     "allStyles": "全部",
     "recommended": "推薦",
+    "savedCount": "{count} 人收藏",
     "priceFrom": "{price} 起",
     "cityTaipei": "台北市",
     "cityNewTaipei": "新北市",
@@ -97,6 +104,19 @@
     "budget": "預算範圍（NTD）",
     "budgetMin": "最低",
     "budgetMax": "最高",
+    "budgetRange": {
+      "label": "預算範圍（選填）",
+      "helper": "提供大概預算能讓刺青師更快給你合適的報價",
+      "notSpecified": "未提供",
+      "options": {
+        "under_3k": "3,000 以下",
+        "3k_8k": "3,000–8,000",
+        "8k_20k": "8,000–20,000",
+        "20k_50k": "20,000–50,000",
+        "over_50k": "50,000 以上",
+        "unsure": "不確定 / 想先問"
+      }
+    },
     "submit": "送出詢價",
     "required": "*",
     "comingSoon": "即將開放",
@@ -105,7 +125,31 @@
     "removeImage": "移除",
     "invalidImageType": "只支援 JPG、PNG、WebP 格式",
     "imageTooLarge": "圖片大小不能超過 5MB",
-    "uploadFailed": "上傳失敗，請重試"
+    "uploadFailed": "上傳失敗，請重試",
+    "filters": {
+      "all": "全部",
+      "pending": "待回覆",
+      "quoted": "已報價",
+      "accepted": "已接受",
+      "closed": "已關閉",
+      "emptyAll": "你還沒有送出任何詢價",
+      "emptyPending": "目前沒有待回覆的詢價",
+      "emptyQuoted": "目前沒有已報價的詢價",
+      "emptyAccepted": "目前沒有已接受的詢價",
+      "emptyClosed": "目前沒有已關閉的詢價"
+    },
+    "status": {
+      "pending": "待回覆",
+      "quoted": "已報價",
+      "accepted": "已接受",
+      "closed": "已關閉"
+    },
+    "nextStep": {
+      "pending": "刺青師通常會在數日內回覆報價，可留意通知。",
+      "quoted": "刺青師已回覆報價，查看內容並決定是否接受。",
+      "accepted": "你已接受報價，可與刺青師約定後續細節。",
+      "closed": "這則詢價已關閉，如仍有需求可重新送出詢價。"
+    }
   },
   "style": {
     "recommendTitle": "{styleName}刺青師推薦",

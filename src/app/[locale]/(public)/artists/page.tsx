@@ -47,7 +47,9 @@ interface ArtistsPageProps {
     sort?: string
     budget?: string
     service?: string
+    minRating?: string
     q?: string
+    healed?: string
   }>
 }
 
@@ -58,7 +60,7 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
   const t = await getTranslations('artists')
   const sp = await searchParams
 
-  const { sort, budget, service, q } = parseListingSearchParams(sp)
+  const { sort, budget, service, q, minRating, healed } = parseListingSearchParams(sp)
 
   const filters = {
     style: sp.style ?? null,
@@ -68,6 +70,8 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     budget,
     service,
     q,
+    minRating,
+    healed,
   }
 
   const [{ data: artists, total }, styles] = await Promise.all([
@@ -82,6 +86,8 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     budget,
     service,
     q,
+    minRating,
+    healed,
   })
 
   return (
