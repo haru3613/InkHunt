@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ReferenceImageUpload } from './ReferenceImageUpload'
-import { inquirySchema, BODY_PARTS } from '@/lib/validations/inquiry'
+import { inquirySchema, BODY_PARTS, BUDGET_RANGES } from '@/lib/validations/inquiry'
 import { useAuth } from '@/hooks/useAuth'
 import { trackSubmitInquiry } from '@/lib/analytics'
 import type { ZodError } from 'zod'
@@ -40,6 +40,7 @@ interface FormState {
   readonly size_estimate: string
   readonly budget_min: string
   readonly budget_max: string
+  readonly budget_range: string
 }
 
 const INITIAL_FORM: FormState = {
@@ -48,6 +49,7 @@ const INITIAL_FORM: FormState = {
   size_estimate: '',
   budget_min: '',
   budget_max: '',
+  budget_range: '',
 }
 
 function flattenZodErrors(error: ZodError): Record<string, string> {
@@ -71,6 +73,7 @@ export function InquiryForm({
   const { isLoggedIn, loginWithRedirect } = useAuth()
   const router = useRouter()
   const t = useTranslations('inquiry')
+  const tBudget = useTranslations('inquiry.budgetRange')
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [referenceImages, setReferenceImages] = useState<string[]>([])
@@ -116,6 +119,7 @@ export function InquiryForm({
         body: JSON.stringify({
           artist_id: artistId,
           ...parsed.data,
+          budget_range: form.budget_range || undefined,
         }),
       })
 
@@ -294,6 +298,30 @@ export function InquiryForm({
                 {errors.budget_min || errors.budget_max}
               </p>
             )}
+          </div>
+
+          {/* Budget range (optional categorical) — HAR-530 */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">
+              {tBudget('label')}
+            </label>
+            <Select
+              name="budget_range"
+              value={form.budget_range}
+              onValueChange={(val) => handleFieldChange('budget_range', val ?? '')}
+            >
+              <SelectTrigger className="w-full rounded-lg focus-visible:ring-primary">
+                <SelectValue placeholder={tBudget('notSpecified')} />
+              </SelectTrigger>
+              <SelectContent>
+                {BUDGET_RANGES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {tBudget(`options.${code}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-ink-text-muted">{tBudget('helper')}</p>
           </div>
           {/* Submit */}
           {errors._form && (

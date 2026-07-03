@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { BUDGET_RANGES } from '@/lib/validations/inquiry'
 import type { Json, Inquiry, Message } from '@/types/database'
 
 const inquiryCreateSchema = z.object({
@@ -10,6 +11,10 @@ const inquiryCreateSchema = z.object({
   size_estimate: z.string().min(1).optional(),
   budget_min: z.number().int().min(0).optional(),
   budget_max: z.number().int().min(0).optional(),
+  // HAR-530: optional categorical budget. Accept only the 6 known codes; any
+  // other value (or none) coerces to undefined → stored NULL. Never 400 — an
+  // unknown budget code must not fail the whole inquiry submission.
+  budget_range: z.enum(BUDGET_RANGES).optional().catch(() => undefined),
 }).refine(
   (data) => !data.budget_min || !data.budget_max || data.budget_min <= data.budget_max,
   { message: 'budget_min must be <= budget_max', path: ['budget_min'] },
@@ -40,6 +45,7 @@ export async function createInquiry(
       size_estimate: data.size_estimate ?? null,
       budget_min: data.budget_min ?? null,
       budget_max: data.budget_max ?? null,
+      budget_range: data.budget_range ?? null,
     })
     .select()
     .single()
