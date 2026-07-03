@@ -4,7 +4,11 @@ import { Link } from "@/i18n/navigation"
 import { StyleGrid } from "@/components/artists/StyleGrid"
 import { ArtistCard } from "@/components/artists/ArtistCard"
 import { JsonLd } from "@/components/shared/JsonLd"
-import { getAllStyles, getAllArtistCounts } from "@/lib/supabase/queries/styles"
+import {
+  getAllStyles,
+  getAllArtistCounts,
+  getStyleSampleImages,
+} from "@/lib/supabase/queries/styles"
 import { getFeaturedArtists } from "@/lib/supabase/queries/artists"
 import { generateWebsiteJsonLd } from "@/lib/seo"
 
@@ -21,11 +25,13 @@ export default async function HomePage({
 
   const t = await getTranslations("home")
 
-  const [styles, featuredArtists, artistCounts] = await Promise.all([
-    getAllStyles(),
-    getFeaturedArtists(6),
-    getAllArtistCounts(),
-  ])
+  const [styles, featuredArtists, artistCounts, styleSampleImages] =
+    await Promise.all([
+      getAllStyles(),
+      getFeaturedArtists(6),
+      getAllArtistCounts(),
+      getStyleSampleImages(),
+    ])
 
   const websiteJsonLd = generateWebsiteJsonLd()
 
@@ -108,7 +114,11 @@ export default async function HomePage({
             {t("browseByStyle")}
           </h2>
           <div className="mt-8">
-            <StyleGrid styles={styles} artistCounts={artistCounts} />
+            <StyleGrid
+              styles={styles}
+              artistCounts={artistCounts}
+              sampleImages={styleSampleImages}
+            />
           </div>
         </div>
       </section>
