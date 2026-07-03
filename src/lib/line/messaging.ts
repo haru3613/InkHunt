@@ -173,6 +173,66 @@ export function buildQuoteNotificationMessage(
   }
 }
 
+export function buildReviewOutcomeMessage(
+  artist: Artist,
+  outcome: 'approved' | 'rejected',
+  baseUrl: string,
+): messagingApi.FlexMessage {
+  const approved = outcome === 'approved'
+  const title = approved ? '審核通過 🎉' : '審核結果通知'
+  const bodyText = approved
+    ? '恭喜！你的 InkHunt 刺青師申請已通過審核，個人檔案即將上線。點擊下方前往管理後台，完善作品集與服務資訊。'
+    : '很遺憾，你的 InkHunt 刺青師申請這次未通過審核。如有疑問，歡迎直接回覆此訊息與我們聯繫。'
+
+  const body: messagingApi.FlexBox = {
+    type: 'box',
+    layout: 'vertical',
+    spacing: 'md',
+    contents: [
+      { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#F5F0EB' },
+      { type: 'text', text: artist.display_name, size: 'sm', color: '#C8A97E' },
+      { type: 'separator', color: '#333333' },
+      { type: 'text', text: bodyText, size: 'sm', color: '#CCCCCC', wrap: true },
+    ],
+  }
+
+  const bubble: messagingApi.FlexBubble = {
+    type: 'bubble',
+    styles: {
+      body: { backgroundColor: '#1A1A1A' },
+      ...(approved ? { footer: { backgroundColor: '#1A1A1A' } } : {}),
+    },
+    body,
+    // rejected has no CTA — omit footer entirely (an empty box is invalid flex)
+    ...(approved
+      ? {
+          footer: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'button',
+                action: {
+                  type: 'uri',
+                  label: '前往管理後台',
+                  uri: `${baseUrl}/artist/dashboard`,
+                },
+                style: 'primary',
+                color: '#C8A97E',
+              },
+            ],
+          },
+        }
+      : {}),
+  }
+
+  return {
+    type: 'flex',
+    altText: approved ? 'InkHunt 審核通過' : 'InkHunt 審核結果通知',
+    contents: bubble,
+  }
+}
+
 async function getArtistLineId(artistId: string): Promise<string | null> {
   const admin = createAdminClient()
   const { data } = await admin
@@ -194,6 +254,23 @@ export async function pushNewInquiryNotification(
     const client = getMessagingClient()
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
     const message = buildInquiryNotificationMessage(inquiry, baseUrl)
+    await client.pushMessage({ to: lineUserId, messages: [message] })
+  } catch {
+    // LINE notification failure is non-fatal — do not propagate to API handler
+  }
+}
+
+export async function pushReviewOutcomeNotification(
+  artist: Artist,
+  outcome: 'approved' | 'rejected',
+): Promise<void> {
+  try {
+    const lineUserId = artist.line_user_id
+    if (!lineUserId) return
+
+    const client = getMessagingClient()
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
+    const message = buildReviewOutcomeMessage(artist, outcome, baseUrl)
     await client.pushMessage({ to: lineUserId, messages: [message] })
   } catch {
     // LINE notification failure is non-fatal — do not propagate to API handler
