@@ -36,4 +36,13 @@ describe('Header', () => {
     render(HeaderResolved)
     expect(screen.getByTestId('auth-section')).toBeInTheDocument()
   })
+
+  it('renders the 成為刺青師 apply CTA linking to the artist entry', async () => {
+    // getTranslations mock echoes the key, so the CTA label is the i18n key.
+    const { Header } = await import('../Header')
+    const HeaderResolved = await Header()
+    render(HeaderResolved)
+    const cta = screen.getByText('becomeArtist')
+    expect(cta.closest('a')).toHaveAttribute('href', '/artist')
+  })
 })
