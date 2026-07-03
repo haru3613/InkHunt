@@ -20,11 +20,13 @@ vi.mock('@/lib/supabase/server', () => ({
 import {
   buildInquiryNotificationMessage,
   buildQuoteNotificationMessage,
+  buildReviewOutcomeMessage,
   pushNewInquiryNotification,
   pushQuoteNotification,
   pushNewMessageNotification,
+  pushReviewOutcomeNotification,
 } from '../messaging'
-import type { Inquiry, Quote, Message } from '@/types/database'
+import type { Artist, Inquiry, Quote, Message } from '@/types/database'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -85,6 +87,16 @@ function makeMessage(overrides: Partial<Message> = {}): Message {
     created_at: '2026-03-29T00:00:00Z',
     ...overrides,
   }
+}
+
+function makeArtist(overrides: Partial<Artist> = {}): Artist {
+  return {
+    id: 'artist-1',
+    display_name: '刺青師小美',
+    line_user_id: 'Uartist',
+    status: 'pending',
+    ...overrides,
+  } as Artist
 }
 
 // ---------------------------------------------------------------------------
@@ -451,6 +463,71 @@ describe('pushNewMessageNotification', () => {
 
     await expect(
       pushNewMessageNotification(makeInquiry(), makeMessage(), 'consumer', '消費者小明'),
+    ).resolves.toBeUndefined()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// New tests — buildReviewOutcomeMessage
+// ---------------------------------------------------------------------------
+
+describe('buildReviewOutcomeMessage', () => {
+  it('returns a flex message with type flex', () => {
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://inkhunt.tw')
+    expect(msg.type).toBe('flex')
+  })
+
+  it('approved copy contains 恭喜 and a /artist/dashboard deep link', () => {
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://inkhunt.tw')
+    const body = JSON.stringify(msg)
+    expect(body).toContain('恭喜')
+    expect(body).toContain('/artist/dashboard')
+  })
+
+  it('rejected copy contains 未通過 and no dashboard link', () => {
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'rejected', 'https://inkhunt.tw')
+    const body = JSON.stringify(msg)
+    expect(body).toContain('未通過')
+    expect(body).not.toContain('/artist/dashboard')
+  })
+
+  it('uses dark theme background and brass accent for both outcomes', () => {
+    for (const outcome of ['approved', 'rejected'] as const) {
+      const body = JSON.stringify(buildReviewOutcomeMessage(makeArtist(), outcome, 'https://inkhunt.tw'))
+      expect(body).toContain('#1A1A1A')
+      expect(body).toContain('#C8A97E')
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// New tests — pushReviewOutcomeNotification
+// ---------------------------------------------------------------------------
+
+describe('pushReviewOutcomeNotification', () => {
+  it('pushes a flex message to the artist line_user_id', async () => {
+    mockPushMessage.mockResolvedValue(undefined)
+
+    await pushReviewOutcomeNotification(makeArtist({ line_user_id: 'Uapplicant' }), 'approved')
+
+    expect(mockPushMessage).toHaveBeenCalledOnce()
+    const call = mockPushMessage.mock.calls[0][0]
+    expect(call.to).toBe('Uapplicant')
+    expect(call.messages).toHaveLength(1)
+    expect(call.messages[0].type).toBe('flex')
+  })
+
+  it('does nothing when the artist has no line_user_id', async () => {
+    await pushReviewOutcomeNotification(makeArtist({ line_user_id: null }), 'rejected')
+
+    expect(mockPushMessage).not.toHaveBeenCalled()
+  })
+
+  it('does not throw when pushMessage rejects', async () => {
+    mockPushMessage.mockRejectedValue(new Error('LINE API error'))
+
+    await expect(
+      pushReviewOutcomeNotification(makeArtist({ line_user_id: 'Uapplicant' }), 'approved'),
     ).resolves.toBeUndefined()
   })
 })
