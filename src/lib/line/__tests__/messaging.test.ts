@@ -208,6 +208,64 @@ describe('buildInquiryNotificationMessage', () => {
     expect(textBody).toContain('NT$10,000 以內')
   })
 
+  it('renders the categorical budget_range label when no integer min/max', () => {
+    const msg = buildInquiryNotificationMessage(
+      makeInquiry({ budget_range: 'under_3k' }),
+      'http://localhost:3000',
+    )
+    const textBody = JSON.stringify(msg)
+    expect(textBody).toContain('預算')
+    expect(textBody).toContain('NT$3,000 以下')
+  })
+
+  it('maps every budget_range bucket to its zh-TW NT$ label', () => {
+    const cases: Record<string, string> = {
+      under_3k: 'NT$3,000 以下',
+      '3k_8k': 'NT$3,000 ~ NT$8,000',
+      '8k_20k': 'NT$8,000 ~ NT$20,000',
+      '20k_50k': 'NT$20,000 ~ NT$50,000',
+      over_50k: 'NT$50,000 以上',
+      unsure: '不確定 / 想先問',
+    }
+    for (const [code, label] of Object.entries(cases)) {
+      const textBody = JSON.stringify(
+        buildInquiryNotificationMessage(
+          makeInquiry({ budget_range: code }),
+          'http://localhost:3000',
+        ),
+      )
+      expect(textBody).toContain(label)
+    }
+  })
+
+  it('prefers the integer range over budget_range when both are present', () => {
+    const msg = buildInquiryNotificationMessage(
+      makeInquiry({ budget_min: 3000, budget_max: 8000, budget_range: 'over_50k' }),
+      'http://localhost:3000',
+    )
+    const textBody = JSON.stringify(msg)
+    expect(textBody).toContain('NT$3,000 ~ NT$8,000')
+    expect(textBody).not.toContain('以上')
+  })
+
+  it('renders no budget row when neither integer nor categorical budget is set', () => {
+    const msg = buildInquiryNotificationMessage(
+      makeInquiry(),
+      'http://localhost:3000',
+    )
+    const textBody = JSON.stringify(msg)
+    expect(textBody).not.toContain('預算')
+  })
+
+  it('renders no budget row for an unknown budget_range code', () => {
+    const msg = buildInquiryNotificationMessage(
+      makeInquiry({ budget_range: 'bogus_code' }),
+      'http://localhost:3000',
+    )
+    const textBody = JSON.stringify(msg)
+    expect(textBody).not.toContain('預算')
+  })
+
   it('uses brass gold accent color', () => {
     const msg = buildInquiryNotificationMessage(
       makeInquiry(),
