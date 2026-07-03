@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { getAllStyles } from '@/lib/supabase/queries/styles'
 import { getAllArtistSlugs } from '@/lib/supabase/queries/artists'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://inkhunt.tw'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://ink-hunt.com'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [

@@ -78,7 +78,7 @@ function makeAdminClient({
 
 // ---- setup ------------------------------------------------------------------
 
-const BASE_URL = 'https://inkhunt.tw'
+const BASE_URL = 'https://ink-hunt.com'
 
 const PROFILE = {
   userId: 'Utest123',

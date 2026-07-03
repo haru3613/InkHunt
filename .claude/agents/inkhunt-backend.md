@@ -189,7 +189,7 @@ async function notifyArtistNewInquiry(
         layout: 'vertical',
         contents: [{
           type: 'button',
-          action: { type: 'uri', label: '查看詳情', uri: `https://inkhunt.tw/artist/dashboard` },
+          action: { type: 'uri', label: '查看詳情', uri: `https://ink-hunt.com/artist/dashboard` },
           style: 'primary',
         }],
       },
