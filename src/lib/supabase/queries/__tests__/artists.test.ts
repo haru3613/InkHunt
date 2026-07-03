@@ -1205,3 +1205,52 @@ describe('getAllArtistSlugs', () => {
     expect(result).toEqual([])
   })
 })
+
+// HAR-540 — approval gate: an unapproved (non-active) artist must NEVER surface
+// on a consumer query. These pin the `.eq('status', 'active')` predicate on each
+// consumer fn so a future refactor that drops the filter FAILS a test (the mock
+// is a spy, so the lock IS the asserted predicate, matching this file's HAR-458/
+// 475/480 convention). Verified red by deleting each filter in turn.
+describe('approval gate — pending artists never appear (HAR-540)', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('getArtists filters BOTH the count and data queries by status=active', async () => {
+    const artistRows = [{ ...BASE_ARTIST, slug: 'artist-1', artist_styles: [], portfolio_items: [] }]
+    const countChain = makeThenable({ count: 1, error: null })
+    const dataChain = makeThenable({ data: artistRows, error: null })
+    let callNum = 0
+    mockFrom.mockImplementation(() => {
+      callNum++
+      if (callNum === 1) return countChain
+      if (callNum === 2) return dataChain
+      return makeThenable({ data: [], error: null }) // reviews / saved-count
+    })
+
+    await getArtists({ page: 1, pageSize: 12 })
+
+    // count query drives `total`; data query drives the rows — both must gate.
+    expect(countChain.eq).toHaveBeenCalledWith('status', 'active')
+    expect(dataChain.eq).toHaveBeenCalledWith('status', 'active')
+  })
+
+  it('getArtistBySlug scopes the lookup to status=active (returns null for a filtered-out row)', async () => {
+    // A pending row is filtered out at the DB → single() resolves null → null.
+    const chain = makeThenable({ data: null, error: { code: 'PGRST116' } })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getArtistBySlug('pending-artist')
+
+    expect(result).toBeNull()
+    expect(chain.eq).toHaveBeenCalledWith('slug', 'pending-artist')
+    expect(chain.eq).toHaveBeenCalledWith('status', 'active')
+  })
+
+  it('getFeaturedArtists filters by status=active', async () => {
+    const chain = makeThenable({ data: [], error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await getFeaturedArtists()
+
+    expect(chain.eq).toHaveBeenCalledWith('status', 'active')
+  })
+})
