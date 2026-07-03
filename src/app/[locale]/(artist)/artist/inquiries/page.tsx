@@ -221,6 +221,7 @@ export default function InquiriesPage() {
               onSendQuote={() => setQuoteModalOpen(true)}
               onQuoteAction={handleQuoteAction}
               status={selectedItem?.inquiry.status}
+              budgetRange={selectedItem?.inquiry.budget_range ?? null}
               onCloseLead={handleCloseLead}
               isClosing={isClosing}
               closeError={closeError}
