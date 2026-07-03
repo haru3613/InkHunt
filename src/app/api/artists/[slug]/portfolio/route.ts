@@ -21,7 +21,14 @@ export async function GET(
   const { slug } = await params
   const supabase = await createServerClient()
 
-  const { data: artist } = await supabase.from('artists').select('id').eq('slug', slug).single()
+  // HAR-540: gate status=active so a pending/rejected artist's portfolio is not
+  // exposed on this public GET. Owner uploads use POST (owner-scoped), not this.
+  const { data: artist } = await supabase
+    .from('artists')
+    .select('id')
+    .eq('slug', slug)
+    .eq('status', 'active')
+    .single()
   if (!artist) return NextResponse.json({ error: 'Artist not found' }, { status: 404 })
 
   const { data, error } = await supabase

@@ -154,6 +154,25 @@ describe('GET /api/artists/[slug]/portfolio', () => {
     const body = await res.json()
     expect(body.error).toBe('DB error')
   })
+
+  // HAR-540: the artist lookup MUST gate status=active so a pending/rejected
+  // artist's portfolio is never exposed. Regression lock — fails if the
+  // `.eq('status', 'active')` filter is dropped from the GET lookup.
+  it('filters the artist lookup by status=active (404s a non-active artist)', async () => {
+    // A pending row is filtered out at the DB → single() resolves null → 404.
+    const artistChain = makeQueryBuilder({ data: null, error: null })
+    mockCreateServerClient.mockResolvedValue({
+      from: vi.fn().mockReturnValue(artistChain),
+    } as never)
+
+    const req = makeRequest('GET', '/api/artists/pending-artist/portfolio')
+    const res = await GET(req, makeParams('pending-artist'))
+
+    expect(res.status).toBe(404)
+    // the regression lock: the lookup is scoped to active artists
+    expect(artistChain.eq).toHaveBeenCalledWith('slug', 'pending-artist')
+    expect(artistChain.eq).toHaveBeenCalledWith('status', 'active')
+  })
 })
 
 describe('POST /api/artists/[slug]/portfolio', () => {
