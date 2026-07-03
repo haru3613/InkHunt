@@ -1481,9 +1481,57 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `PICK`=0, `MAIN`=`97854fab` all unchanged; only the outcome flips to `drained-2` (so the next
   fire re-scouts once rather than early-exiting, then settles to `noop`).
 
+### Round 48 (2026-07-03) — v0.12 W1 SUPPLY: approval-gate + review-outcome LINE + StyleGrid real portfolio (3 merged)
+
+- **Active wave: v0.12 W1 SUPPLY** (the `## Current milestone` header above still reads v0.3 —
+  stale; the live backlog + PM steer moved to v0.12 supply-side funnel; header rewrite is the
+  autonomous-pm's product call, not the dispatcher's).
+- **Wake cause / why NOT an early-exit:** all three signals moved since Round 47 — Harvey (or the
+  PM pass) refilled the tracker with a fresh v0.12 W1 SUPPLY wave (HAR-539…HAR-550, created
+  2026-07-03 ~06:2x–06:47Z), so `PICK` jumped 0→>0 and `BL` advanced; and Harvey promoted
+  `staging`→`main` twice (#138, #141), moving `MAIN` `97854fab`→`79a007e`. Prior outcome was also
+  `drained-2` (not `noop`). Multiple wake conditions → full scout.
+- **Drained 3 (all merged to `staging`, all 5 required checks incl server-side `ci-passed` green;
+  serial rebase→auto-merge; disjoint files, no conflicts):**
+  - **HAR-540 #142 (P2)** — approval-gate hardening: `GET /api/artists/[slug]/portfolio` now
+    gates `.eq('status','active')` (a pending artist 404s, closing the portfolio API leak) +
+    3 regression-lock tests pinning `.eq('status','active')` on `getArtists` (count+data),
+    `getArtistBySlug`, `getFeaturedArtists`. Squash `c9cdda3`.
+  - **HAR-539 #143 (P2)** — review-outcome LINE notification: `buildReviewOutcomeMessage` +
+    `pushReviewOutcomeNotification` (dark `#1A1A1A`/brass `#C8A97E` flex; 恭喜 + `/artist/dashboard`
+    on approve, 未通過 on reject), wired into `PATCH /api/admin/artists/[id]` firing only on a
+    `pending`→active/suspended transition, non-fatal on push failure. Closes the onboarding
+    「審核結果會透過 LINE 通知你」promise. Squash `8d1a21a`.
+  - **HAR-541 #144 (M)** — StyleGrid surfaces real approved-artist portfolio work:
+    `getStyleSampleImages()` (active-gated `portfolio_items`→`artists!inner` join, one image/style
+    by `sort_order` then `created_at desc`) wired through `(public)/page.tsx` into `StyleGrid`;
+    placeholder now only the empty-state fallback. Squash `3d1e103`.
+- **Product-QA:** all 3 `promotion_review` (Tier-1 wired PASS — each UI change ships a consuming
+  test; sales-facing surface → queued for the human promotion gate, staging merge proceeds).
+  0 `qa_blocked` / `qa_inconclusive`, 0 Tier-2 advisories. `deferred` = **[]** (no needs-human).
+- **Advisory (promotion review, NOT a blocker):** HAR-541's merged code runs a live PostgREST
+  `!inner` join + double `.order()` exercised only against mocked unit tests — worth a staging
+  smoke before the next promotion (per InkHunt learnings: mocks don't prove the real PostgREST
+  query shape).
+- **Sync check (detect-only, did NOT reconcile):** `origin/main` now **18** ahead of `staging` at
+  `79a007e`. The delta vs the prior flag (`97854fab`) is Harvey's OWN promote PRs #138/#141
+  (`staging`→`main` — promote merges are by construction on main-not-staging) plus the 6
+  pre-existing main-only CI/Vercel-config commits already flagged in earlier rounds. No NEW
+  out-of-band code hotfix that staging lacks → benign promote-induced divergence. `mc-sync-flagged-main`
+  refreshed to `79a007e` (acknowledged), **not re-emailed** (re-alerting on Harvey's own promotion
+  would be a false "hotfixes not in staging"). Did not merge/rebase/modify `staging`.
+- **Backlog NOT exhausted:** 4 pickable auto-claude Todos remain (HAR-547 vercel.json, HAR-546
+  domain sweep, HAR-543 LINE budget-range enrich — shares `messaging.ts` with the now-merged
+  HAR-539, so it rebases clean next round, HAR-542 apply-CTA) + HAR-550 (needs-human e2e
+  local-stack). Above the ~2-in-flight floor → **no auto-ideation, no exhaustion email**. Next
+  round continues the v0.12 W1 wave.
+- **Outcome `drained-3`.** Markers recomputed post-merge (the 3 drained tickets are now `Done`,
+  out of the Todo set): `BL`=HAR-550's `updatedAt` (newest raw Todo, incl. needs-human),
+  `PICK`=4 (HAR-547/546/543/542; HAR-550 is needs-human), `MAIN`=`79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
-mc-sync-flagged-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-bl: 2026-06-28T05:04:10.096Z
-mc-round-pick: 0
-mc-round-main: 97854fab8aa4a4c76416f35bef650c7033d5d81c
-mc-round-outcome: drained-2
+mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
+mc-round-bl: 2026-07-03T06:47:56.892Z
+mc-round-pick: 4
+mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
+mc-round-outcome: drained-3
