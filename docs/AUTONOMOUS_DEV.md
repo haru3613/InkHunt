@@ -1529,9 +1529,61 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   out of the Todo set): `BL`=HAR-550's `updatedAt` (newest raw Todo, incl. needs-human),
   `PICK`=4 (HAR-547/546/543/542; HAR-550 is needs-human), `MAIN`=`79a007e`.
 
+### Round 49 (2026-07-04) — v0.12 W1 SUPPLY: apply-CTA + LINE budget_range enrich (2 merged)
+
+- **Wave: v0.12 W1 SUPPLY** (unchanged; `## Current milestone` header still stale at v0.3 — the
+  autonomous-pm's rewrite to make, not the dispatcher's).
+- **Wake cause / why NOT an early-exit:** all three signals were UNCHANGED from Round 48
+  (`BL`=`…06:47:56.892Z`, `PICK`=4, `MAIN`=`79a007e`), but the prior outcome was `drained-3`
+  (productive, not `noop`) — Step 1b mandates one re-scout after a productive round rather than an
+  early-exit. Re-scouted; this round is that single re-scout and now settles the markers toward
+  `noop` for the next fire.
+- **Scout / independence:** 4 auto-claude Todos (HAR-547/546/543/542) + HAR-550 (needs-human).
+  HAR-546 (domain sweep) and HAR-543 both edit `src/lib/line/__tests__/messaging.test.ts` → NOT
+  mutually independent; took the 3 file-disjoint tickets (HAR-547 vercel.json / HAR-542 layout+i18n
+  / HAR-543 messaging.ts) and **deferred HAR-546 to next round** (it is then the sole
+  messaging.test.ts editor → clean rebase). Already-shipped guard run on all 3: gaps confirmed real
+  (vercel still `deploymentEnabled:false`; no apply CTA in layout; messaging.ts renders only integer
+  budget, not categorical `budget_range`).
+- **Drained 2 (merged to `staging`, all 5 required checks incl server-side `ci-passed` green; serial
+  rebase→auto-merge; disjoint files):**
+  - **HAR-542 #147 (S)** — "成為刺青師" apply CTA in `Header` (all-viewport) + `Footer` → `/artist`
+    (correct unauth cold-traffic entry; onboarding redirects logged-out users to `/artist`). New
+    `nav.becomeArtist` i18n key zh-TW + en; 11 layout tests. Closes the funnel's public "landing"
+    entry for cold social traffic.
+  - **HAR-543 #146 (S)** — categorical `budget_range` → zh-TW NT$ label in
+    `buildInquiryNotificationMessage`, rendered only when integer `budget_min`/`budget_max` are both
+    absent (`else if`, no double-render); unknown bucket code fail-safe (no row). +25 `messaging.ts`
+    / +58 test. Rebased clean over the freshly-landed #147. Squash `59b6ef1`.
+- **Deferred 1 (needs-human): HAR-547 #145** — vercel.json re-enable git auto-deploy (main-only) +
+  `framework:"nextjs"` preset. Reviewer independently verified the diff is clean and all gates green
+  (guard test 4/4, `tsc`/eslint exit 0) but deferred as **production-deploy wiring**: a guard test
+  pins the JSON shape only; the real acceptance (a `main` push actually auto-deploys to the revived
+  Vercel project `inkhunt`; `framework:"nextjs"` fixes the site-wide 404) is observable only on a
+  live Vercel deploy at a **manual staging→main promotion** — Harvey's call. PR #145 left **open,
+  not merged** (harmless on staging — deploys gate to `main`). Was In Review + `auto-claude` only;
+  this round applied the durable `needs-human` label + reason comment on the tracker so future rounds
+  skip re-triage. `deferred` = **[HAR-547]**.
+- **Product-QA:** 2 evaluated — HAR-542 `promotion_review` (Tier-1 wired PASS: UI change ships a
+  consuming test; sales-facing → queued for the human promotion gate, staging merge proceeds),
+  HAR-543 `pass` (backend/infra-only — no UI in diff). 0 `qa_blocked`/`qa_inconclusive`, 0 tier2.
+- **Sync check (detect-only, did NOT reconcile):** `origin/main` UNCHANGED at `79a007e`, still 18
+  ahead of `staging` (Harvey's own promote PRs #138/#141 + 6 pre-existing main-only CI/Vercel-config
+  commits — benign, already flagged). `mc-sync-flagged-main` stays `79a007e`; **not re-emailed**
+  (debounced on the marker).
+- **Backlog after round:** HAR-546 (auto-claude — sole remaining pickable, deferred this round only
+  to dodge the `messaging.test.ts` conflict; sole editor next round → clean) + HAR-550 & HAR-547
+  (needs-human). 1 pickable is below the ~2 floor, but the milestone is NOT exhausted — the ideation
+  trigger evaluates at scout (this round scouted 4 ≥ 2) and the pm-cron refills; no forced
+  product-ticket ideation (stay-the-author: a marketing hero is the PM's product call). No exhaustion
+  email.
+- **Outcome `drained-2`.** Markers recomputed post-merge + post-labelling (HAR-542/543 now `Done`;
+  HAR-547 → In Review + needs-human): raw Todo set = {HAR-550, HAR-546}; `BL`=HAR-550's `updatedAt`
+  (newest raw Todo, incl. needs-human), `PICK`=1 (HAR-546 only), `MAIN`=`79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-bl: 2026-07-03T06:47:56.892Z
-mc-round-pick: 4
+mc-round-pick: 1
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-3
+mc-round-outcome: drained-2
