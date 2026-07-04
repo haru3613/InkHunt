@@ -1604,9 +1604,35 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - **Outcome `drained-1`.** Markers use the post-merge known Todo set: HAR-546 is shipped; HAR-550
   remains the newest raw Todo (`BL` unchanged), `PICK=0`, `MAIN=79a007e`.
 
+### Round 51 (2026-07-04) — v0.12 W1 SUPPLY Wave 2 opened; rejected-state + dashboard-status slices shipped
+
+- **Wake cause / why NOT an early-exit:** prior outcome was `drained-1` (productive), and the PM
+  refilled Todo with the review-status loop wave (HAR-560/561/562). `origin/main` stayed at
+  `79a007e`; the main→staging divergence remains already flagged and was not reconciled.
+- **Scout / sequencing:** picked the two independent S slices, **HAR-560** and **HAR-561**.
+  **HAR-562** depends on HAR-560's `RejectedScreen` and explicitly says not to drain in the same
+  round, so it stays queued for the next fire.
+- **Drained 2 (merged to `staging`, all required checks including `ci-passed` green):**
+  - **HAR-560 #149** — `/artist` now renders `RejectedScreen` for `artist.status === 'suspended'`
+    instead of the loading fallback. Added `RejectedScreen` component tests and a consuming
+    `/artist` page test. Squash merge `05e8012`.
+  - **HAR-561 #150** — artist dashboard now surfaces pending/suspended status via
+    `ArtistStatusBanner`, including the empty-inquiry checklist path. Added component tests and a
+    dashboard consuming test. Squash merge `7ad510a`.
+- **Product-QA:** both UI changes returned `promotion_review` from `mc.qa wired` (sales-facing UI
+  with consuming tests; staging merge proceeds, human promotion gate later).
+- **Environment notes:** primary-checkout `fetch`/harness worktree start are still blocked by
+  sandbox writes to `/Users/harvey/Documents/InkHunt/.git`; this fallback used isolated clones under
+  `InkHunt-worktrees`. `codex exec review --uncommitted` was blocked by
+  `failed to initialize in-process app-server client: Operation not permitted`.
+- **Backlog after round:** HAR-562 remains the sole pickable Todo; HAR-550 and HAR-547 remain
+  `needs-human`. No self-ideation: the current wave already has the sequenced next slice.
+- **Outcome `drained-2`.** Markers recomputed post-merge + tracker close: raw Todo set =
+  {HAR-562, HAR-550}; `BL`=HAR-562's `updatedAt`, `PICK`=1 (HAR-562 only), `MAIN`=`79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-03T06:47:56.892Z
-mc-round-pick: 0
+mc-round-bl: 2026-07-04T15:28:04.137Z
+mc-round-pick: 1
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-1
+mc-round-outcome: drained-2
