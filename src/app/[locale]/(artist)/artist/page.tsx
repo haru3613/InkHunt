@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
+import { RejectedScreen } from '@/components/onboarding/RejectedScreen'
 
 function ValueCard({
   icon,
@@ -122,6 +123,10 @@ export default function ArtistEntryPage() {
 
   if (artist?.status === 'pending') {
     return <PendingScreen />
+  }
+
+  if (artist?.status === 'suspended') {
+    return <RejectedScreen />
   }
 
   // Redirecting (active or no artist record) — show minimal loading
