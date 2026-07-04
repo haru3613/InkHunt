@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation'
 import { formatRelativeTime, truncate } from '@/lib/utils'
 import { StatCard } from '@/components/artists/StatCard'
 import { OnboardingChecklist } from '@/components/artists/OnboardingChecklist'
+import { ArtistStatusBanner } from '@/components/artist/ArtistStatusBanner'
 
 interface InquirySummary {
   id: string
@@ -62,6 +63,7 @@ export default function DashboardPage() {
         portfolioCount={portfolioCount}
         hasPricing={hasPricing}
         artistSlug={artist?.slug ?? null}
+        statusBanner={artist?.status && <ArtistStatusBanner status={artist.status} />}
       />
     )
   }
@@ -75,6 +77,8 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-[900px] px-6 py-6 lg:px-10 lg:py-8">
+      {artist?.status && <ArtistStatusBanner status={artist.status} />}
+
       {/* Greeting */}
       <h1 className="font-display text-[24px] font-semibold text-[#F5F0EB]">
         歡迎回來，{displayName}
