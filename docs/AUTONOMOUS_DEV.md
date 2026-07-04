@@ -1581,9 +1581,32 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   HAR-547 → In Review + needs-human): raw Todo set = {HAR-550, HAR-546}; `BL`=HAR-550's `updatedAt`
   (newest raw Todo, incl. needs-human), `PICK`=1 (HAR-546 only), `MAIN`=`79a007e`.
 
+### Round 50 (2026-07-04) — v0.12 W1 SUPPLY: domain-reference sweep completed (1 merged)
+
+- **Wake cause / why NOT an early-exit:** prior outcome was `drained-2` (productive), so the
+  dispatcher re-scouted once. `origin/main` stayed at `79a007e`; the main→staging divergence
+  remains the already-flagged Harvey promotion/config history, not reconciled by the bot.
+- **Drained 1. HAR-546 #148** — swept stale `inkhunt.tw` repository references to the production
+  `ink-hunt.com` domain across SEO fallbacks, robots/sitemap, LINE/auth test expectations, and
+  agent docs. The first wired gate flagged `robots.ts`/`sitemap.ts` as sales-facing with no
+  consuming tests, so this round added `src/app/__tests__/robots.test.ts` and
+  `src/app/__tests__/sitemap.test.ts`; rerun gate returned `promotion_review` (merge proceeds).
+  Local checks passed (`vitest` targeted tests 2/2, scoped eslint, `tsc --noEmit`) and GitHub CI
+  passed all 5 checks including `ci-passed`; PR #148 squash-merged to `staging` as `465963b`.
+- **Environment notes:** primary-checkout `fetch` and harness cleanup were blocked by sandbox
+  writes to `/Users/harvey/Documents/InkHunt/.git`; `codex exec review --base origin/staging` was
+  also blocked before review by `failed to initialize in-process app-server client: Operation not
+  permitted`. `LINEAR_API_TOKEN` was absent in this process, so tracker transition/comment could not
+  be performed here; GitHub merge evidence is recorded above.
+- **Backlog after round:** no pickable auto-claude Todos known from the last recorded raw Todo set;
+  HAR-550 and HAR-547 remain `needs-human`. No auto-ideation or exhaustion email from this fallback
+  session.
+- **Outcome `drained-1`.** Markers use the post-merge known Todo set: HAR-546 is shipped; HAR-550
+  remains the newest raw Todo (`BL` unchanged), `PICK=0`, `MAIN=79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-bl: 2026-07-03T06:47:56.892Z
-mc-round-pick: 1
+mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-2
+mc-round-outcome: drained-1
