@@ -103,7 +103,7 @@ function makeArtist(overrides: Partial<Artist> = {}): Artist {
 // Environment stubs
 // ---------------------------------------------------------------------------
 
-vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://inkhunt.tw')
+vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://ink-hunt.com')
 vi.stubEnv('LINE_MESSAGING_CHANNEL_ACCESS_TOKEN', 'test-token')
 
 beforeEach(() => {
@@ -531,19 +531,19 @@ describe('pushNewMessageNotification', () => {
 
 describe('buildReviewOutcomeMessage', () => {
   it('returns a flex message with type flex', () => {
-    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://inkhunt.tw')
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://ink-hunt.com')
     expect(msg.type).toBe('flex')
   })
 
   it('approved copy contains 恭喜 and a /artist/dashboard deep link', () => {
-    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://inkhunt.tw')
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://ink-hunt.com')
     const body = JSON.stringify(msg)
     expect(body).toContain('恭喜')
     expect(body).toContain('/artist/dashboard')
   })
 
   it('rejected copy contains 未通過 and no dashboard link', () => {
-    const msg = buildReviewOutcomeMessage(makeArtist(), 'rejected', 'https://inkhunt.tw')
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'rejected', 'https://ink-hunt.com')
     const body = JSON.stringify(msg)
     expect(body).toContain('未通過')
     expect(body).not.toContain('/artist/dashboard')
@@ -551,7 +551,7 @@ describe('buildReviewOutcomeMessage', () => {
 
   it('uses dark theme background and brass accent for both outcomes', () => {
     for (const outcome of ['approved', 'rejected'] as const) {
-      const body = JSON.stringify(buildReviewOutcomeMessage(makeArtist(), outcome, 'https://inkhunt.tw'))
+      const body = JSON.stringify(buildReviewOutcomeMessage(makeArtist(), outcome, 'https://ink-hunt.com'))
       expect(body).toContain('#1A1A1A')
       expect(body).toContain('#C8A97E')
     }

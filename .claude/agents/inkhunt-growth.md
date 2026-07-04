@@ -59,7 +59,7 @@ const jsonLd = {
     addressCountry: 'TW',
   },
   priceRange: `NT$${artist.price_min}~${artist.price_max}`,
-  url: `https://inkhunt.tw/artists/${artist.slug}`,
+  url: `https://ink-hunt.com/artists/${artist.slug}`,
   sameAs: artist.ig_handle
     ? `https://instagram.com/${artist.ig_handle}`
     : undefined,
@@ -92,16 +92,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .select('slug')
 
   return [
-    { url: 'https://inkhunt.tw', changeFrequency: 'daily', priority: 1 },
-    { url: 'https://inkhunt.tw/artists', changeFrequency: 'daily', priority: 0.9 },
+    { url: 'https://ink-hunt.com', changeFrequency: 'daily', priority: 1 },
+    { url: 'https://ink-hunt.com/artists', changeFrequency: 'daily', priority: 0.9 },
     ...artists.map((a) => ({
-      url: `https://inkhunt.tw/artists/${a.slug}`,
+      url: `https://ink-hunt.com/artists/${a.slug}`,
       lastModified: a.updated_at,
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     })),
     ...styles.map((s) => ({
-      url: `https://inkhunt.tw/styles/${s.slug}`,
+      url: `https://ink-hunt.com/styles/${s.slug}`,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     })),
