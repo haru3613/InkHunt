@@ -22,5 +22,6 @@ describe('ArtistEntryPage suspended artist state', () => {
   it('renders the rejected screen for suspended artists', () => {
     render(<ArtistEntryPage />)
     expect(screen.getByRole('heading', { name: '審核未通過' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '重新送審' })).toBeInTheDocument()
   })
 })
