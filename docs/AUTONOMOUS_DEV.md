@@ -1655,9 +1655,25 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   was unavailable in this fallback session: `BL`=HAR-562's recorded `updatedAt`, `PICK`=1 until
   HAR-562 is closed on the tracker, `MAIN`=`79a007e`.
 
+### Round 53 (2026-07-05) — settling noop after HAR-562 tracker reconciliation
+
+- **Wake cause / why NOT an early-exit:** prior outcome was `drained-1`, and the previous markers
+  still carried HAR-562 as pickable because the fallback Round 52 could not query/update Linear.
+  This round sourced the Mission Control env, queried Linear directly, and confirmed HAR-562 is no
+  longer in the InkHunt Todo set after PR #151 merged.
+- **Scout:** InkHunt Todo now contains only HAR-566 (local checkout drift) and HAR-550 (local-stack
+  e2e harness), both already labelled `needs-human`. No auto-eligible tickets were dispatched, no
+  labels changed, and no ideation ran; the remaining work is either human local-checkout ownership
+  or the supervised e2e harness track.
+- **Environment note:** primary-checkout `git fetch` and the normal `InkHunt-mcdispatch` worktree
+  reset were blocked by sandbox writes to `/Users/harvey/Documents/InkHunt/.git`; this marker-only
+  update used the isolated clone under `InkHunt-worktrees`.
+- **Outcome `noop`.** Markers now match the current raw Todo signal: `BL`=HAR-566's `updatedAt`,
+  `PICK`=0, `MAIN`=`79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-04T15:28:04.137Z
-mc-round-pick: 1
+mc-round-bl: 2026-07-05T05:02:58.529Z
+mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-1
+mc-round-outcome: noop
