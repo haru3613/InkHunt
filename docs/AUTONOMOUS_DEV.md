@@ -1671,6 +1671,18 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - **Outcome `noop`.** Markers now match the current raw Todo signal: `BL`=HAR-566's `updatedAt`,
   `PICK`=0, `MAIN`=`79a007e`.
 
+### Round 54 (2026-07-05) — failed before scout: Linear auth rejected
+
+- **Failure:** Linear GraphQL returned `AUTHENTICATION_ERROR` for the configured
+  `LINEAR_API_TOKEN` on both the dispatcher Todo query and a minimal `viewer` query, so this
+  fallback session could not recompute `BL`/`PICK`, comment/label tickets, or safely select work.
+- **No drain:** GitHub showed only PR #145 (HAR-547), already deferred as `needs-human`
+  production-deploy wiring and currently behind `staging`; no auto-mergeable PR was available.
+- **Environment notes:** primary-checkout `git fetch` is still blocked by sandbox writes to
+  `/Users/harvey/Documents/InkHunt/.git`; live branch heads were checked with `ls-remote`
+  (`main=79a007e`, `staging=cecd667`). Existing `noop` markers below were left unchanged because
+  the tracker signal could not be recomputed.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-bl: 2026-07-05T05:02:58.529Z
