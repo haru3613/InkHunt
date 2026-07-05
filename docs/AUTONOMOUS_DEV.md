@@ -1630,9 +1630,34 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - **Outcome `drained-2`.** Markers recomputed post-merge + tracker close: raw Todo set =
   {HAR-562, HAR-550}; `BL`=HAR-562's `updatedAt`, `PICK`=1 (HAR-562 only), `MAIN`=`79a007e`.
 
+### Round 52 (2026-07-05) — v0.12 W2 review-status loop: rejected artist self-resubmit shipped
+
+- **Wake cause / why NOT an early-exit:** prior outcome was `drained-2` (productive), so the
+  dispatcher re-scouted the remaining sequenced slice. Primary-checkout `fetch` was blocked by
+  sandbox writes to `/Users/harvey/Documents/InkHunt/.git`, so live branch heads were read via
+  non-mutating `ls-remote`; `origin/main` stayed `79a007e`.
+- **Drained 1. HAR-562 #151** — rejected (`suspended`) artists can now click `重新送審` on
+  `RejectedScreen`, calling `POST /api/artists/me/resubmit` to move their own artist row
+  `suspended -> pending` with `admin_note: null`. The route is auth-bound to the caller's
+  `line_user_id`, rejects non-existent profiles with 404, rejects non-suspended profiles with 409,
+  and uses a status guard on the update. No migration, money, cron, or destructive data surface.
+- **Verification:** TDD red run failed on missing route/button; targeted vitest passed 9/9; full
+  `npm run test:unit` passed 118 files / 1335 tests; `npx tsc --noEmit` passed; `npx eslint src/`
+  exited 0 with existing warnings only; `npm run build` passed; PR-shaped `mc.qa wired` returned
+  `promotion_review`; GitHub CI passed all 5 checks including `ci-passed`; PR #151 squash-merged
+  to `staging` as `d47dca7`.
+- **Environment notes:** `codex exec review --uncommitted` was blocked by
+  `failed to initialize in-process app-server client: Operation not permitted`. `LINEAR_API_TOKEN`
+  was absent, so GraphQL tracker transition/comment could not run; the installed Linear connector
+  fallback was cancelled. If HAR-562 still appears as Todo, it is already shipped via #151 and
+  should be closed/commented rather than reimplemented.
+- **Outcome `drained-1`.** Markers retain the last known raw Todo signal because tracker query/update
+  was unavailable in this fallback session: `BL`=HAR-562's recorded `updatedAt`, `PICK`=1 until
+  HAR-562 is closed on the tracker, `MAIN`=`79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-bl: 2026-07-04T15:28:04.137Z
 mc-round-pick: 1
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-2
+mc-round-outcome: drained-1
