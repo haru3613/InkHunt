@@ -1713,10 +1713,35 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   stays at its human-gated boundary, so no speculative ideation.
 - **Outcome `drained-1`.** Markers recomputed after the merge (HAR-578 now Done, out of the raw
   Todo set): `BL`=HAR-566's `updatedAt`, `PICK`=0, `MAIN`=`79a007e`.
+### Round 56 (2026-07-07) — settling noop after Round 55 drain (marker refresh only)
+
+- **Wake cause / why NOT an early-exit:** Round 55's recorded outcome was `drained-1` (not
+  `noop`), so Step 1b could not early-exit — a full scout was mandatory. Additionally `BL` had
+  moved: HAR-566's `updatedAt` bumped `2026-07-06T05:02:37.775Z → 2026-07-06T11:03:25.062Z`
+  (an out-of-band touch on a `needs-human` local-checkout ticket — no auto-eligible work
+  created). `origin/main` unchanged (`79a007e`).
+- **Scout:** InkHunt Todo set = HAR-566 (local-checkout re-sync, `from-haru-pm`+`needs-human`)
+  and HAR-550 (local-stack e2e harness, `needs-human`). Both already `needs-human`-labelled →
+  no re-label (idempotency; re-labelling would bump `updatedAt` and break Step 1b convergence).
+  `PICK=0`. No QA-blocked retries, nothing already-shipped to close.
+- **No drain, no ideation, no exhaustion email.** Consistent with the standing rule (Rounds
+  38–52): the active milestone is **v0.12** supply/review-status funnel (the `## Current
+  milestone` header is still stale at v0.3 — a deferred header rewrite), whose current waves
+  shipped; the next product wave's scoping is Harvey's / the autonomous-pm's product call
+  (stay-the-author), not dispatcher self-ideation. The idle `PICK=0` state is already surfaced
+  by the digest/dashboard — re-emailing every fire would spam, so no email (not a NEW state).
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`; `mc-sync-flagged-main`
+  already carries the current `origin/main` sha (`79a007e`) — debounce holds, **not re-emailed**;
+  did NOT merge/rebase/modify staging.
+- **Hygiene:** pruned one stale harness worktree entry (`feature-untrack-claude-review-state`,
+  the bot's own Round-55 HAR-578 tree — dir already removed, json entry lingered). Left the two
+  human/no-PR `feature-*` trees (HAR-546, HAR-547) untouched.
+- **Outcome `noop`.** This commit refreshes the markers so the next round settles at Step 1b's
+  early-exit (prior `drained-1` markers would otherwise force a wasteful re-scout every fire).
 
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-06T05:02:37.775Z
+mc-round-bl: 2026-07-06T11:03:25.062Z
 mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-1
+mc-round-outcome: noop
