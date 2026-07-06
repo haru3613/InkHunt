@@ -1683,9 +1683,40 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   (`main=79a007e`, `staging=cecd667`). Existing `noop` markers below were left unchanged because
   the tracker signal could not be recomputed.
 
+### Round 55 (2026-07-06) — drained HAR-578: un-track `.claude_review_state.json`
+
+- **Wake cause / why NOT an early-exit:** a new Todo appeared — **HAR-578** (`chore(S):
+  un-track .claude_review_state.json`), created `2026-07-06T07:04:17.134Z`, un-labelled, so
+  `BL` moved (`2026-07-05T05:02:58.529Z → 2026-07-06T07:04:17.134Z`) and `PICK` moved (`0 → 1`).
+  `origin/main` stayed `79a007e`. Linear MCP (OAuth) queried the tracker cleanly this round —
+  the `LINEAR_API_TOKEN` GraphQL auth failures of Rounds 52–54 did not block this session.
+- **Already-shipped guard:** `.gitignore` already listed `.claude_review_state.json` (line 40),
+  but the file was **still tracked** on `origin/staging` — real work remained (`git rm --cached`),
+  so not a false "already done". No migration / money / cron / destructive-data surface; the
+  change touches repo-root `.claude_review_state.json` + `.gitignore` only, outside the QA
+  `ui_globs`, so no product-QA gate applied.
+- **Drained 1. HAR-578 #152** — `git rm --cached .claude_review_state.json` (index-only; file
+  preserved on disk). No code imports it; full vitest suite green (118 files / 1335 tests).
+  Reviewer approved (trivial S-tier chore); Tier-1 wired → `pass` (no UI files). Rebase onto
+  `origin/staging` was a no-op; all 5 required checks green including `ci-passed`;
+  `gh pr merge 152 --squash --auto` merged immediately (staging HEAD now `6ad5f55`); worktree
+  ended + remote branch deleted. HAR-578 auto-transitioned to Done; completion comment added.
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`, but `mc-sync-flagged-main`
+  already carries the current `origin/main` sha (`79a007e`) — debounce holds, **not re-emailed**;
+  did NOT merge/rebase/modify staging.
+- **Two stale `feature-*` worktrees** (HAR-546 `feature-sweep-inkhunt-tw-refs`, HAR-547
+  `feature-vercel-git-autodeploy-main`, both no-PR) remain in the harness; neither is the bot's
+  `InkHunt-*`/`mc-dispatch` tree and HAR-547 is a deferred `needs-human` deploy ticket, so they
+  were left untouched per the never-`wt end`-someone-else's-tree rule.
+- **Remaining Todo set:** only `needs-human` items — HAR-566 (local-checkout drift, human-owned)
+  and HAR-550 (local-stack e2e harness, supervised). No auto-eligible feature work; the milestone
+  stays at its human-gated boundary, so no speculative ideation.
+- **Outcome `drained-1`.** Markers recomputed after the merge (HAR-578 now Done, out of the raw
+  Todo set): `BL`=HAR-566's `updatedAt`, `PICK`=0, `MAIN`=`79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-05T05:02:58.529Z
+mc-round-bl: 2026-07-06T05:02:37.775Z
 mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: noop
+mc-round-outcome: drained-1
