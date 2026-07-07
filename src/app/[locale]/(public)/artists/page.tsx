@@ -60,7 +60,9 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
   const t = await getTranslations('artists')
   const sp = await searchParams
 
-  const { sort, budget, service, q, minRating, healed } = parseListingSearchParams(sp)
+  // `new` is a reserved word — rename the destructured facet flag to `isNew`
+  // (HAR-585). It maps to the query layer's `isNew` filter.
+  const { sort, budget, service, q, minRating, healed, new: isNew } = parseListingSearchParams(sp)
 
   const filters = {
     style: sp.style ?? null,
@@ -72,6 +74,7 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     q,
     minRating,
     healed,
+    isNew,
   }
 
   const [{ data: artists, total }, styles] = await Promise.all([
@@ -88,6 +91,7 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     q,
     minRating,
     healed,
+    new: isNew,
   })
 
   return (

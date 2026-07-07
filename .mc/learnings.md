@@ -132,4 +132,16 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   `e2e/` (e.g. `e2e/fixtures/auth.fixture.ts` rules-of-hooks) that do NOT block
   CI. Don't panic at `npm run lint` red and don't drive-by-fix unrelated `e2e/`
   files — verify against the real gate: `npx eslint src/` must be 0 errors.
+- **A new `/artists` facet is DEAD unless you also wire `artists/page.tsx` — the
+  ticket's Files list may omit it.** The full chain is: `parseX` in `listing.ts`
+  → field on `ListingSearchParams` + `parseListingSearchParams` → destructure in
+  `page.tsx` and pass into BOTH `getArtists(filters)` and
+  `hasActiveListingFilters(...)`. Parsing the param + rendering the chip WITHOUT
+  the page threading ships a URL param that never reaches the query (parsed but
+  ignored — scaffolding, not product). A `new`-style reserved-word param needs a
+  rename at the destructure: `const { new: isNew } = parseListingSearchParams(sp)`
+  then `hasActiveListingFilters({ new: isNew })` (member/property use is fine, the
+  bare binding isn't). Touching `page.tsx` also (re)triggers the wired-QA gate →
+  extend `artists/__tests__/page.listing-header.test.tsx` to assert
+  `getArtists.mock.calls[0][0].<field>`. Evidence: HAR-585 (`?new=1`; PR pending).
   Evidence: HAR-529 (5 pre-existing e2e/ errors, `npx eslint src/` exit 0).
