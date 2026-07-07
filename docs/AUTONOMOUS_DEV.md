@@ -1776,9 +1776,43 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   raw Todo set): `BL`=HAR-585's `updatedAt`, `PICK`=1 (HAR-585; HAR-566/HAR-550 are needs-human),
   `MAIN`=`79a007e`.
 
+### Round 58 (2026-07-07) — v0.13 SUPPLY-RETENTION Wave 1 COMPLETE: 只看新進刺青師 freshness filter (1 merged)
+
+- **Wake cause / why NOT an early-exit:** prior outcome was `drained-2` (productive), not `noop`,
+  so Step 1b did not fire. `BL`/`PICK`/`MAIN` all matched Round 57, but HAR-585 — Round 57's
+  deliberately-deferred slice — was now **unblocked**: 583 had landed `src/lib/artists/new-artist.ts`
+  with `NEW_ARTIST_WINDOW_DAYS` on `origin/staging`.
+- **Already-shipped guard:** `parseNew` ABSENT on `origin/staging` (only `parseHealed`) — real
+  unshipped work. Soft-dep verified present (`NEW_ARTIST_WINDOW_DAYS = 30`); consumer anchors
+  (`parseListingSearchParams`/`hasActiveListingFilters`, `ArtistFilters.tsx`, `ActiveFilterChips.tsx`,
+  each already carrying the `healed` facet) all present.
+- **Dispatched 1 — HAR-585.** The single auto-eligible Todo (`auto-claude`, not needs-human).
+  Read-only `?new=1` facet over the existing `created_at` column — no migration, money, or cron.
+  Complete vertical slice (backend `getArtists` flag + `ArtistFilters` toggle + `ActiveFilterChips`
+  chip + consuming component tests), a byte-for-byte mirror of the live `?healed=1` facet.
+- **Drained 1.** **HAR-585 #155** (`f4f0807`) — `parseNew` + `ListingSearchParams`/
+  `hasActiveListingFilters` wiring, `getArtists` `isNew` flag applying `.gte('created_at',
+  now−NEW_ARTIST_WINDOW_DAYS)` to BOTH count + data queries, 只看新進 toggle + removable 新進刺青師
+  chip, zh-TW/en i18n. Reviewer `approve`, Tier-1 wired → `promotion_review` (sales-facing UI,
+  informational — staging merge proceeds; NOT a needs-human block), all 5 required checks green
+  incl. `ci-passed`; worktree ended + remote branch deleted, auto-transitioned to Done + ship comment.
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`; `mc-sync-flagged-main` already
+  carries the current `origin/main` sha (`79a007e`) — debounce holds, **not re-emailed**; did NOT
+  merge/rebase/modify staging.
+- **Worktree hygiene:** pruned the two stale merged Round-57 entries (`feature-new-artist-badge`,
+  `feature-new-artists-rail` — dirs already gone, only `worktrees.json` entries lingered). Left the
+  HAR-546/HAR-547 no-PR trees + `feat/dashboard-redesign`/`agent-*` (possible live human session) untouched.
+- **No ideation.** v0.13 Wave 1's three consumer surfaces (badge / rail / filter) are now all shipped.
+  A v0.13 Wave-2 is a genuine product-direction call the autonomous-PM owns; Round 57 already
+  established there is no clean auto-eligible Wave-2 filler (the obvious ideas are migration-gated or
+  already-shipped), so no speculative ticket. Backlog is now 0 auto-eligible (HAR-566/HAR-550 both
+  needs-human) → next round's scout makes the exhaustion call with fresh eyes.
+- **Outcome `drained-1`.** Markers recomputed after the merge (HAR-585 now Done, out of the raw Todo
+  set): `BL`=HAR-566's `updatedAt` (`2026-07-06T11:03:25.062Z`), `PICK`=0, `MAIN`=`79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-07T03:54:22.712Z
-mc-round-pick: 1
+mc-round-bl: 2026-07-06T11:03:25.062Z
+mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-2
+mc-round-outcome: drained-1
