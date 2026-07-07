@@ -8,7 +8,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 import { createAdminClient } from '@/lib/supabase/server'
-import { transformArtistRow, getArtistBySlug, getFeaturedArtists, getArtists, getAllArtistSlugs } from '../artists'
+import { transformArtistRow, getArtistBySlug, getFeaturedArtists, getNewArtists, getArtists, getAllArtistSlugs } from '../artists'
 
 const BASE_ARTIST = {
   id: 'a1',
@@ -187,6 +187,50 @@ describe('getFeaturedArtists', () => {
     vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
 
     const result = await getFeaturedArtists()
+
+    expect(result).toEqual([])
+  })
+})
+
+describe('getNewArtists (HAR-584)', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('reads active artists ordered by created_at desc, bounded by limit', async () => {
+    const raw = [{ ...BASE_ARTIST, slug: 'new-1', artist_styles: [], portfolio_items: [] }]
+    const chain = makeThenable({ data: raw, error: null })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getNewArtists(8)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].slug).toBe('new-1')
+    // active-only: a `status:'pending'` artist is excluded at the DB layer.
+    expect(chain.eq).toHaveBeenCalledWith('status', 'active')
+    expect(chain.order).toHaveBeenCalledWith('created_at', { ascending: false })
+    expect(chain.limit).toHaveBeenCalledWith(8)
+  })
+
+  it('defaults the limit to 8 when unspecified', async () => {
+    const chain = makeThenable({ data: [], error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await getNewArtists()
+
+    expect(chain.limit).toHaveBeenCalledWith(8)
+  })
+
+  it('returns empty array on error', async () => {
+    mockFrom.mockReturnValue(makeThenable({ data: null, error: { message: 'fail' } }))
+
+    const result = await getNewArtists()
+
+    expect(result).toEqual([])
+  })
+
+  it('returns [] when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getNewArtists()
 
     expect(result).toEqual([])
   })

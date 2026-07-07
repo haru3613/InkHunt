@@ -9,7 +9,7 @@ import {
   getAllArtistCounts,
   getStyleSampleImages,
 } from "@/lib/supabase/queries/styles"
-import { getFeaturedArtists } from "@/lib/supabase/queries/artists"
+import { getFeaturedArtists, getNewArtists } from "@/lib/supabase/queries/artists"
 import { generateWebsiteJsonLd } from "@/lib/seo"
 
 const HERO_BG_URL =
@@ -25,10 +25,11 @@ export default async function HomePage({
 
   const t = await getTranslations("home")
 
-  const [styles, featuredArtists, artistCounts, styleSampleImages] =
+  const [styles, featuredArtists, newArtists, artistCounts, styleSampleImages] =
     await Promise.all([
       getAllStyles(),
       getFeaturedArtists(6),
+      getNewArtists(8),
       getAllArtistCounts(),
       getStyleSampleImages(),
     ])
@@ -91,6 +92,28 @@ export default async function HomePage({
             </h2>
             <div className="mt-8 flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-x-visible lg:grid-cols-3">
               {featuredArtists.map((artist) => (
+                <ArtistCard key={artist.id} artist={artist} variant="compact" />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* New artists — freshly-approved supply gets a landing rail (HAR-584) */}
+      {newArtists.length > 0 && (
+        <section
+          data-testid="new-artists-section"
+          className="border-b border-border py-16 lg:py-24"
+        >
+          <div className="container mx-auto px-4">
+            <p className="font-display text-xs font-medium uppercase tracking-[0.15em] text-primary">
+              {t("sectionLabelNew")}
+            </p>
+            <h2 className="font-display mt-2 text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-foreground">
+              {t("newArtists")}
+            </h2>
+            <div className="mt-8 flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-x-visible lg:grid-cols-3">
+              {newArtists.map((artist) => (
                 <ArtistCard key={artist.id} artist={artist} variant="compact" />
               ))}
             </div>
