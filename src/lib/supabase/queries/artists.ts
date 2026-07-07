@@ -2,6 +2,7 @@ import type { Database } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { computeReviewSummary } from '@/lib/reviews'
+import { NEW_ARTIST_WINDOW_DAYS } from '@/lib/artists/new-artist'
 
 function safeAdminClient(): SupabaseClient<Database> | null {
   try {
@@ -96,6 +97,14 @@ export interface ArtistFilters {
    * no predicate. Type-only here; the query predicate lands in W1-B.
    */
   healed?: boolean
+  /**
+   * New-artist freshness facet (HAR-585). When `true`, keeps only artists whose
+   * `created_at` falls within `NEW_ARTIST_WINDOW_DAYS` of now — the SAME
+   * `.gte('created_at', cutoff)` predicate lands on both the count and data
+   * queries so `total` cannot drift. Absent/`false` → no predicate
+   * (byte-identical to the unfiltered query).
+   */
+  isNew?: boolean
 }
 
 const DEFAULT_PAGE_SIZE = 12
@@ -390,6 +399,15 @@ export async function getArtists(
   // HEALED_PROOF_EMBED). Absent/false → no embed, no predicate (byte-identical).
   const healedNeeded = filters?.healed === true
 
+  // HAR-585: new-artist freshness facet. When active, resolve the `created_at`
+  // cutoff (now − NEW_ARTIST_WINDOW_DAYS) ONCE so the SAME `.gte('created_at',
+  // cutoff)` lands on both queries — otherwise `total` drifts from the rows
+  // returned. `null` (absent/false) → no predicate (byte-identical to today's
+  // query). Reuses the badge slice's window so both surfaces agree on "new".
+  const newSince = filters?.isNew === true
+    ? new Date(Date.now() - NEW_ARTIST_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+    : null
+
   // Compose the extra embeds appended to each select so both facets can be
   // active at once. Empty string → the select stays byte-identical to today's.
   const countEmbeds = [ratingEmbedNeeded ? ARTIST_RATING_EMBED : null, healedNeeded ? HEALED_PROOF_EMBED : null]
@@ -425,6 +443,9 @@ export async function getArtists(
   // data query so an artist is counted only if ≥1 portfolio piece has a healed
   // photo (predicate references the aliased inner embed's column).
   if (healedNeeded) countQuery = countQuery.not('healed_proof.healed_image_url', 'is', null)
+  // HAR-585: same `created_at` cutoff on the count query as the data query so
+  // `total` counts only artists inside the freshness window.
+  if (newSince) countQuery = countQuery.gte('created_at', newSince)
 
   const { count } = await countQuery
   const total = count ?? 0
@@ -491,6 +512,9 @@ export async function getArtists(
   // Same healed-proof not-null predicate as the count query (HAR-480) → the
   // returned rows are exactly the artists counted in `total`.
   if (healedNeeded) dataQuery = dataQuery.not('healed_proof.healed_image_url', 'is', null)
+  // Same `created_at` cutoff as the count query (HAR-585) → the returned rows
+  // are exactly the artists counted in `total`.
+  if (newSince) dataQuery = dataQuery.gte('created_at', newSince)
 
   const { data, error } = await dataQuery
 

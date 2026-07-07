@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { NEW_ARTIST_WINDOW_DAYS } from '@/lib/artists/new-artist'
 
 const mockFrom = vi.fn()
 const mockClient = { from: mockFrom }
@@ -1005,6 +1006,124 @@ describe('getArtists', () => {
       // minRating still on both queries
       expect(dataChain.gte).toHaveBeenCalledWith('avg_rating', 4)
       expect(countChain.gte).toHaveBeenCalledWith('avg_rating', 4)
+      // other facets still applied to the data query
+      expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
+      expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)
+      expect(dataChain.lte).toHaveBeenCalledWith('price_min', 6000)
+      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike."%bob%",bio.ilike."%bob%"')
+    })
+  })
+
+  describe('new-artist freshness facet (HAR-585)', () => {
+    // Pin the clock so the computed `now − NEW_ARTIST_WINDOW_DAYS` cutoff is
+    // deterministic and the exact `.gte('created_at', cutoff)` arg is assertable.
+    const FIXED_NOW = '2025-06-01T00:00:00.000Z'
+    const CUTOFF = new Date(
+      Date.parse(FIXED_NOW) - NEW_ARTIST_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString()
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date(FIXED_NOW))
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    /**
+     * Wire the count chain (1st `from()`) + data chain (2nd) so the test can
+     * assert the SAME `created_at` cutoff predicate lands on both — the filter
+     * must carry on the count query or `total` drifts from the rows returned.
+     */
+    function wireCountAndData() {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      const countChain = makeThenable({ count: 1, error: null })
+      const dataChain = makeThenable({ data: artistRows, error: null })
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return countChain
+        if (callNum === 2) return dataChain
+        return makeThenable({ data: [], error: null })
+      })
+      return { countChain, dataChain }
+    }
+
+    // A `.gte('created_at', cutoff)` predicate keeps a recently-created artist
+    // (created_at ≥ cutoff) and EXCLUDES an old one; it must land on BOTH the
+    // count and data queries so `total` matches the eligible rows.
+    it("applies .gte('created_at', cutoff) to BOTH queries when isNew=true", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, isNew: true })
+
+      expect(dataChain.gte).toHaveBeenCalledWith('created_at', CUTOFF)
+      expect(countChain.gte).toHaveBeenCalledWith('created_at', CUTOFF)
+    })
+
+    // Active-only is preserved alongside the freshness predicate.
+    it("keeps the status='active' predicate on BOTH queries when isNew=true", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, isNew: true })
+
+      expect(dataChain.eq).toHaveBeenCalledWith('status', 'active')
+      expect(countChain.eq).toHaveBeenCalledWith('status', 'active')
+    })
+
+    it('applies NO created_at cutoff when isNew is absent ({})', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      expect(dataChain.gte).not.toHaveBeenCalledWith('created_at', expect.anything())
+      expect(countChain.gte).not.toHaveBeenCalledWith('created_at', expect.anything())
+    })
+
+    it('applies NO created_at cutoff when isNew is false', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, isNew: false })
+
+      expect(dataChain.gte).not.toHaveBeenCalledWith('created_at', expect.anything())
+      expect(countChain.gte).not.toHaveBeenCalledWith('created_at', expect.anything())
+    })
+
+    // Sparse-safe — when count is 0 (no artist inside the window), return empty
+    // without a data query.
+    it('returns { data: [], total: 0 } sparse-safe when no artist matches isNew (count=0)', async () => {
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return makeThenable({ count: 0, error: null })
+        return makeThenable({ data: [], error: null })
+      })
+
+      const result = await getArtists({ page: 1, pageSize: 12, isNew: true })
+
+      expect(result).toEqual({ data: [], total: 0 })
+    })
+
+    // Composes with the other facets — the freshness cutoff lands on both
+    // queries while the other predicates still apply.
+    it('composes isNew with city + budget + service + q on BOTH queries', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({
+        city: '台北市',
+        page: 1,
+        pageSize: 12,
+        isNew: true,
+        budget: 'le6000',
+        service: 'coverup',
+        q: 'bob',
+      })
+
+      // freshness cutoff on both queries
+      expect(dataChain.gte).toHaveBeenCalledWith('created_at', CUTOFF)
+      expect(countChain.gte).toHaveBeenCalledWith('created_at', CUTOFF)
       // other facets still applied to the data query
       expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
       expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)

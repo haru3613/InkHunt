@@ -190,3 +190,33 @@ describe('ArtistsPage — minRating wiring (HAR-477)', () => {
     expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'false')
   })
 })
+
+describe('ArtistsPage — new-artist freshness wiring (HAR-585)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('passes isNew:true into the getArtists filters when ?new=1', async () => {
+    await renderPage({ new: '1' }, ARTISTS, 3)
+    expect(getArtists).toHaveBeenCalledTimes(1)
+    const filters = getArtists.mock.calls[0][0] as { isNew?: boolean }
+    expect(filters.isNew).toBe(true)
+  })
+
+  it('leaves isNew false when no ?new= is present (no freshness predicate)', async () => {
+    await renderPage({}, ARTISTS, 3)
+    const filters = getArtists.mock.calls[0][0] as { isNew?: boolean }
+    expect(filters.isNew).toBe(false)
+  })
+
+  it('leaves isNew false for a non-canonical ?new= value', async () => {
+    await renderPage({ new: 'true' }, ARTISTS, 3)
+    const filters = getArtists.mock.calls[0][0] as { isNew?: boolean }
+    expect(filters.isNew).toBe(false)
+  })
+
+  it('signals active filters to the header when new=1 is present', async () => {
+    await renderPage({ new: '1' }, ARTISTS, 3)
+    expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'true')
+  })
+})

@@ -7,6 +7,7 @@ import {
   parseListingQuery,
   parseMinRating,
   parseHealed,
+  parseNew,
   hasActiveListingFilters,
 } from '../listing'
 
@@ -91,6 +92,7 @@ describe('parseListingSearchParams', () => {
       q: null,
       minRating: null,
       healed: false,
+      new: false,
     })
   })
 
@@ -102,6 +104,7 @@ describe('parseListingSearchParams', () => {
       q: null,
       minRating: null,
       healed: false,
+      new: false,
     })
   })
 })
@@ -230,6 +233,7 @@ describe('parseListingSearchParams — service (HAR-446)', () => {
       q: null,
       minRating: null,
       healed: false,
+      new: false,
     })
   })
 })
@@ -293,6 +297,7 @@ describe('parseListingSearchParams — q (HAR-455)', () => {
       q: 'bob',
       minRating: null,
       healed: false,
+      new: false,
     })
   })
 })
@@ -430,6 +435,7 @@ describe('parseListingSearchParams — minRating (HAR-474)', () => {
       q: 'bob',
       minRating: 4.5,
       healed: false,
+      new: false,
     })
   })
 })
@@ -548,6 +554,7 @@ describe('parseListingSearchParams — healed (HAR-479)', () => {
       q: 'bob',
       minRating: 4.5,
       healed: true,
+      new: false,
     })
   })
 })
@@ -582,6 +589,105 @@ describe('hasActiveListingFilters — healed (HAR-479)', () => {
       }),
     ).toBe(false)
     // healed omitted entirely is also no filter
+    expect(
+      hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
+    ).toBe(false)
+  })
+})
+
+describe('parseNew (HAR-585)', () => {
+  it('returns true ONLY for the canonical "1" value', () => {
+    expect(parseNew('1')).toBe(true)
+  })
+
+  it('returns false for every other string', () => {
+    expect(parseNew('0')).toBe(false)
+    expect(parseNew('true')).toBe(false)
+    expect(parseNew('on')).toBe(false)
+    expect(parseNew('yes')).toBe(false)
+    expect(parseNew('')).toBe(false)
+    expect(parseNew('garbage')).toBe(false)
+    expect(parseNew(' 1 ')).toBe(false)
+    expect(parseNew('1 ')).toBe(false)
+  })
+
+  it('returns false for absent / non-string / array input', () => {
+    expect(parseNew(undefined)).toBe(false)
+    expect(parseNew(null)).toBe(false)
+    expect(parseNew(1)).toBe(false)
+    expect(parseNew(true)).toBe(false)
+    expect(parseNew([])).toBe(false)
+    expect(parseNew(['1'])).toBe(false)
+    expect(parseNew({})).toBe(false)
+  })
+})
+
+describe('parseListingSearchParams — new (HAR-585)', () => {
+  it('surfaces new:true only for "1"', () => {
+    expect(parseListingSearchParams({ new: '1' })).toMatchObject({ new: true })
+  })
+
+  it('defaults new to false when absent or non-canonical', () => {
+    expect(parseListingSearchParams({})).toMatchObject({ new: false })
+    expect(parseListingSearchParams({ new: '0' })).toMatchObject({ new: false })
+    expect(parseListingSearchParams({ new: 'true' })).toMatchObject({ new: false })
+  })
+
+  it('parses new alongside the other facets', () => {
+    expect(
+      parseListingSearchParams({
+        sort: 'rating',
+        budget: 'le3000',
+        service: 'flash',
+        q: 'bob',
+        minRating: '4.5',
+        healed: '1',
+        new: '1',
+      }),
+    ).toEqual({
+      sort: 'rating',
+      budget: 'le3000',
+      service: 'flash',
+      q: 'bob',
+      minRating: 4.5,
+      healed: true,
+      new: true,
+    })
+  })
+})
+
+describe('hasActiveListingFilters — new (HAR-585)', () => {
+  it('is true when only new is set', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: null,
+        healed: false,
+        new: true,
+      }),
+    ).toBe(true)
+  })
+
+  it('is false when new is false and everything else is default', () => {
+    expect(
+      hasActiveListingFilters({
+        style: null,
+        city: null,
+        sort: 'featured',
+        budget: 'any',
+        service: null,
+        q: null,
+        minRating: null,
+        healed: false,
+        new: false,
+      }),
+    ).toBe(false)
+    // new omitted entirely is also no filter
     expect(
       hasActiveListingFilters({ style: null, city: null, sort: 'featured', budget: 'any' }),
     ).toBe(false)

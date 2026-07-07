@@ -408,4 +408,62 @@ describe('ActiveFilterChips (HAR-454)', () => {
     expect(url).not.toContain('healed=')
     expect(url).not.toContain('style=')
   })
+
+  // --- HAR-585: active new-artist (新進刺青師) chip ---
+
+  it('renders a new chip labelled via filterNew when new=1 is set', () => {
+    mockSearchParams.set('new', '1')
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    expect(screen.getByText('filterNew', { exact: false })).toBeInTheDocument()
+    expect(screen.getAllByTestId('filter-chip')).toHaveLength(1)
+  })
+
+  it('does not render a new chip for a non-1 new value', () => {
+    mockSearchParams.set('new', '0')
+    const { container } = render(<ActiveFilterChips styles={STYLES} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('removing the new chip drops new but preserves other params', () => {
+    mockSearchParams.set('new', '1')
+    mockSearchParams.set('style', 'traditional')
+    mockSearchParams.set('city', '台北市')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('filterNew'))
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('new=')
+    expect(url).toContain('style=traditional')
+    expect(url).toContain('city=')
+  })
+
+  it('removing the new chip also resets pagination', () => {
+    mockSearchParams.set('new', '1')
+    mockSearchParams.set('page', '3')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(removeButtonFor('filterNew'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('new=')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('清除全部 drops new alongside the other params', () => {
+    mockSearchParams.set('new', '1')
+    mockSearchParams.set('style', 'traditional')
+
+    render(<ActiveFilterChips styles={STYLES} />)
+
+    fireEvent.click(screen.getByText('clearAll'))
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('new=')
+    expect(url).not.toContain('style=')
+  })
 })
