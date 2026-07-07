@@ -1810,9 +1810,37 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - **Outcome `drained-1`.** Markers recomputed after the merge (HAR-585 now Done, out of the raw Todo
   set): `BL`=HAR-566's `updatedAt` (`2026-07-06T11:03:25.062Z`), `PICK`=0, `MAIN`=`79a007e`.
 
+### Round 59 (2026-07-08) — v0.13 SUPPLY-RETENTION milestone EXHAUSTED (0 auto-eligible; emailed for direction)
+
+- **Wake cause / why NOT an early-exit:** prior outcome was `drained-1` (productive),
+  not `noop`, so Step 1b did not fire — this round runs the scout with fresh eyes, which
+  is exactly what Rounds 57–58 deferred ("next round's scout makes the exhaustion call").
+- **Scout:** InkHunt project Todo set = exactly 2 tickets, **both already `needs-human`** —
+  HAR-566 (`[PM patrol R4]` re-sync local staging checkout: touches the primary checkout
+  reconciliation the dispatcher must never do) and HAR-550 (`[v0.12 e2e]` local-stack e2e
+  harness: needs docker + full local stack, `frontend-only-browser-verify` out_of_scope).
+  Both correctly labeled by prior rounds → **no re-label** (idempotent; re-labelling would
+  bump `updatedAt` and break Step 1b convergence). `PICK=0` auto-eligible.
+- **Exhaustion call (state transition).** v0.13 Wave 1's three consumer surfaces (badge /
+  rail / filter → HAR-583/584/585) all shipped Rounds 56–58; the drain backlog is empty.
+  A v0.13 Wave-2 is a genuine product-direction call the autonomous-PM / Harvey owns — the
+  obvious Wave-2 ideas are migration-gated (`allow_additive_migrations=false`) or already
+  shipped, so there is no clean auto-eligible filler to self-ideate without making Harvey's
+  product call. First genuine exhaustion (both prior rounds were `drained-N`) → recorded
+  here once + emailed `Mission Control: InkHunt milestone exhausted, needs direction`.
+  Later identical rounds early-exit via Step 1b (BL/PICK/MAIN unchanged + outcome `noop`).
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`; `mc-sync-flagged-main`
+  already carries the current `origin/main` sha (`79a007e`) — debounce holds, **not
+  re-emailed**; did NOT merge/rebase/modify staging.
+- **Worktree hygiene:** pruned the stale merged `feature-artists-new-filter` entry (HAR-585
+  dir already gone, only the `worktrees.json` entry lingered). Left the HAR-546/HAR-547
+  no-PR trees + `feat/dashboard-redesign`/`agent-*` (possible live human session) untouched.
+- **Outcome `noop`.** No merge → markers unchanged from Round 58 (nothing moved this round):
+  `BL`=HAR-566's `updatedAt` (`2026-07-06T11:03:25.062Z`), `PICK`=0, `MAIN`=`79a007e`.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-bl: 2026-07-06T11:03:25.062Z
 mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-1
+mc-round-outcome: noop
