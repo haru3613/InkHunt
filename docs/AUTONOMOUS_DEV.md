@@ -1738,10 +1738,47 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   human/no-PR `feature-*` trees (HAR-546, HAR-547) untouched.
 - **Outcome `noop`.** This commit refreshes the markers so the next round settles at Step 1b's
   early-exit (prior `drained-1` markers would otherwise force a wasteful re-scout every fire).
+### Round 57 (2026-07-07) — v0.13 SUPPLY-RETENTION Wave 1: 新加入 badge + 新進刺青師 landing rail (2 merged)
+
+- **Wake cause / why NOT an early-exit:** the autonomous-PM refilled the backlog with **three
+  fresh v0.13 SUPPLY-RETENTION (新刺青師冷啟動曝光) Wave-1 tickets** — HAR-583/584/585, all
+  created `2026-07-07T03:54`, `auto-claude`. `BL` moved (`2026-07-06T11:03:25.062Z →
+  2026-07-07T03:54:22.712Z`) and `PICK` moved (`0 → 3`). `origin/main` unchanged (`79a007e`).
+- **Already-shipped guard:** `NEW_ARTIST_WINDOW_DAYS`/`isNewArtist`/`NewArtistBadge`, the
+  `artists.newBadge` i18n key, and `getNewArtists` were all ABSENT on `origin/staging`, and
+  `src/lib/artists/new-artist.ts` did not exist — real unshipped work; anchors (`getFeaturedArtists`,
+  `ArtistCard.tsx`) present.
+- **Dispatch decision — HAR-583 + HAR-584 (mutually independent), HAR-585 deferred.** 583 (NEW
+  `new-artist.ts` + `ArtistCard` badge) and 584 (NEW `getNewArtists` + landing rail on `page.tsx`)
+  overlap only on disjoint-key `messages/*` → clean serial rebase. HAR-585 **hard-imports**
+  `NEW_ARTIST_WINDOW_DAYS` from 583's not-yet-existing file AND edits the `getArtists` region of
+  `queries/artists.ts` shared with 584 → NOT independent this round; left `Todo`, now unblocked
+  (583 landed the file) and the clear next pick.
+- **Drained 2.** **HAR-583 #153** (`8ed4e76`) — 新加入/New badge on discovery `ArtistCard`
+  (default + Compact), pure display over existing `created_at`, no migration. **HAR-584 #154**
+  (`9ba9bd9`) — `getNewArtists(limit=8)` (mirrors `getFeaturedArtists`, active-only, `created_at`
+  desc) + empty-safe 新進刺青師 landing rail after Featured / before Styles. Both: reviewer approve,
+  Tier-1 wired → `promotion_review` (sales-facing UI, informational — staging merge proceeds; NOT
+  a needs-human block), all 5 required checks green incl. `ci-passed`, worktrees ended + remote
+  branches deleted, auto-transitioned to Done with ship comments.
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`; `mc-sync-flagged-main` already
+  carries the current `origin/main` sha (`79a007e`) — debounce holds, **not re-emailed**; did NOT
+  merge/rebase/modify staging.
+- **Stale worktrees left untouched:** HAR-546 (`feature-sweep-inkhunt-tw-refs`, ticket Done —
+  stranded no-PR tree; sweeper found nothing to reconcile, so no headless `wt end`) and HAR-547
+  (`feature-vercel-git-autodeploy-main`, `needs-human` deploy PR #145 intentionally parked). Also
+  left the `feat/dashboard-redesign` + `agent-*` trees (possible live human session).
+- **No ideation:** post-drain `PICK=1` (HAR-585 remains the clear queued next slice) and the
+  autonomous-PM (active, just refilled today) owns Wave-2 scoping. The obvious Wave-2 ideas are
+  either migration-gated (`approved_at` column → `allow_additive_migrations=false` = needs-human)
+  or already shipped (`newest` sort) — no clean auto-eligible filler, so no speculative ticket.
+- **Outcome `drained-2`.** Markers recomputed after the merges (HAR-583/584 now Done, out of the
+  raw Todo set): `BL`=HAR-585's `updatedAt`, `PICK`=1 (HAR-585; HAR-566/HAR-550 are needs-human),
+  `MAIN`=`79a007e`.
 
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-06T11:03:25.062Z
-mc-round-pick: 0
+mc-round-bl: 2026-07-07T03:54:22.712Z
+mc-round-pick: 1
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: noop
+mc-round-outcome: drained-2
