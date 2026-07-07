@@ -21,8 +21,10 @@
     "startSearch": "Find Artists",
     "iAmArtist": "I'm an Artist",
     "recommended": "Featured Artists",
+    "newArtists": "New artists",
     "browseByStyle": "Browse by Style",
     "sectionLabelFeatured": "FEATURED",
+    "sectionLabelNew": "NEW ARRIVALS",
     "sectionLabelStyles": "BROWSE BY STYLE"
   },
   "artists": {

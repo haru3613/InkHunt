@@ -559,6 +559,32 @@ export async function getFeaturedArtists(
   return (data as unknown as SupabaseArtistRow[]).map(transformArtistRow)
 }
 
+/**
+ * Recently-active artists for the landing "新進刺青師" rail (HAR-584). Mirrors
+ * {@link getFeaturedArtists} but orders by `created_at` DESC instead of the
+ * `featured` flag so freshly-approved supply gets prime placement before it
+ * accrues reviews. Active-only (`status = 'active'`), so a `pending` artist is
+ * excluded. Degrades to `[]` on a missing client / query error so the rail
+ * simply renders nothing (empty-safe).
+ */
+export async function getNewArtists(
+  limit = 8,
+): Promise<ArtistWithDetails[]> {
+  const supabase = safeAdminClient()
+  if (!supabase) return []
+
+  const { data, error } = await supabase
+    .from('artists')
+    .select(ARTIST_PUBLIC_SELECT)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error || !data) return []
+
+  return (data as unknown as SupabaseArtistRow[]).map(transformArtistRow)
+}
+
 export async function getAllArtistSlugs(): Promise<Array<{ slug: string; updated_at: string }>> {
   const supabase = safeAdminClient()
   if (!supabase) return []
