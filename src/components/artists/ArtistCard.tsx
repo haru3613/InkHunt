@@ -11,6 +11,7 @@ import { ArtistCompareAction } from './ArtistCompareAction'
 import { FavoriteButton } from './FavoriteButton'
 import { StarRating } from '@/components/shared/StarRating'
 import { formatPrice } from '@/lib/utils'
+import { isNewArtist } from '@/lib/artists/new-artist'
 
 interface ArtistCardProps {
   readonly artist: ArtistWithDetails
@@ -71,6 +72,34 @@ function SavedCountBadge({
     <span className="text-sm text-muted-foreground tabular-nums">
       {t('savedCount', { count: savedCount })}
     </span>
+  )
+}
+
+/**
+ * Freshness badge for newly-approved artists (HAR-583): a positive「新加入」/
+ * 「New」signal so a fresh artist with 0 reviews + 0 saves still surfaces
+ * something good on the discovery card — the two-sided-marketplace supply
+ * cold-start the rate-aware ranking otherwise buries. Gated on
+ * `isNewArtist(created_at)` (30-day window); renders nothing once the artist ages
+ * out. Mirrors the `featured` badge placement; `t` is the resolved `artists`
+ * namespace translator.
+ */
+function NewArtistBadge({
+  createdAt,
+  t,
+}: {
+  readonly createdAt: ArtistWithDetails['created_at']
+  readonly t: (key: string) => string
+}) {
+  if (!isNewArtist(createdAt)) return null
+
+  return (
+    <Badge
+      variant="secondary"
+      className="shrink-0 rounded-sm bg-ink-accent-dim text-accent-foreground hover:bg-muted"
+    >
+      {t('newBadge')}
+    </Badge>
   )
 }
 
@@ -149,6 +178,7 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
                       {t('recommended')}
                     </Badge>
                   )}
+                  <NewArtistBadge createdAt={artist.created_at} t={t} />
                 </div>
                 <p className="text-sm text-muted-foreground">{artist.city}</p>
               </div>
@@ -236,9 +266,12 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
           size="sm"
         />
         <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">
-            {artist.display_name}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="truncate font-medium text-foreground">
+              {artist.display_name}
+            </p>
+            <NewArtistBadge createdAt={artist.created_at} t={t} />
+          </div>
           <p className="text-xs text-muted-foreground">
             {artist.city}
             {artist.district ? ` ${artist.district}` : ''}

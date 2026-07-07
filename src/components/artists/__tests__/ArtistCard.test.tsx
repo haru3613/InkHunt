@@ -115,6 +115,15 @@ function withSavedCount(savedCount: number | undefined): ArtistWithDetails {
   return { ...BASE, savedCount }
 }
 
+function withCreatedAt(createdAt: string): ArtistWithDetails {
+  return { ...BASE, created_at: createdAt }
+}
+
+/** One day ago — comfortably inside the 30-day new-artist window. */
+const RECENT_CREATED_AT = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+/** Well outside the window (matches BASE's own stale fixture era). */
+const OLD_CREATED_AT = '2020-01-01T00:00:00Z'
+
 async function renderCard(
   artist: ArtistWithDetails,
   variant: 'default' | 'compact' = 'default',
@@ -334,5 +343,58 @@ describe('ArtistCard — savedCount i18n parity (HAR-485)', () => {
     expect(en.default.artists.savedCount).toBeTruthy()
     expect(zh.default.artists.savedCount).toContain('{count}')
     expect(en.default.artists.savedCount).toContain('{count}')
+  })
+})
+
+/**
+ * New-artist freshness badge (HAR-583): a freshly-approved artist has 0 reviews +
+ * 0 saves, so the discovery card shows no positive signal. The card surfaces a
+ * 「新加入」/「New」badge when `isNewArtist(created_at)` (30-day window), giving
+ * cold-start supply a positive signal — in BOTH card variants. `getTranslations`
+ * is mocked to echo the key, so we assert on `newBadge`.
+ */
+describe('ArtistCard — new-artist badge (HAR-583)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders the new badge for a recently-created artist (default variant)', async () => {
+    await renderCard(withCreatedAt(RECENT_CREATED_AT))
+
+    expect(screen.getByText('newBadge')).toBeInTheDocument()
+  })
+
+  it('renders the new badge in the compact variant too', async () => {
+    await renderCard(withCreatedAt(RECENT_CREATED_AT), 'compact')
+
+    expect(screen.getByText('newBadge')).toBeInTheDocument()
+  })
+
+  it('shows NO badge for an artist older than the window (default variant)', async () => {
+    await renderCard(withCreatedAt(OLD_CREATED_AT))
+
+    expect(screen.queryByText('newBadge')).not.toBeInTheDocument()
+  })
+
+  it('shows NO badge for an old artist in the compact variant', async () => {
+    await renderCard(withCreatedAt(OLD_CREATED_AT), 'compact')
+
+    expect(screen.queryByText('newBadge')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * i18n parity (HAR-583): the `artists.newBadge` label must exist in BOTH locales
+ * with the agreed copy so neither surface falls back to a missing-message error.
+ */
+describe('ArtistCard — newBadge i18n parity (HAR-583)', () => {
+  it('defines artists.newBadge in both zh-TW and en', async () => {
+    const [zh, en] = await Promise.all([
+      import('../../../../messages/zh-TW.json'),
+      import('../../../../messages/en.json'),
+    ])
+
+    expect(zh.default.artists.newBadge).toBe('新加入')
+    expect(en.default.artists.newBadge).toBe('New')
   })
 })
