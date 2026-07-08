@@ -1838,9 +1838,36 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
 - **Outcome `noop`.** No merge → markers unchanged from Round 58 (nothing moved this round):
   `BL`=HAR-566's `updatedAt` (`2026-07-06T11:03:25.062Z`), `PICK`=0, `MAIN`=`79a007e`.
 
+### Round 60 (2026-07-08) — settling noop after Round 59 exhaustion (marker refresh only)
+
+- **Wake cause / why NOT an early-exit:** Round 59 already recorded `mc-round-outcome: noop`,
+  but `BL` moved — HAR-566's `updatedAt` bumped `2026-07-06T11:03:25.062Z →
+  2026-07-08T05:03:21.138Z` (another out-of-band touch on the `needs-human` local-checkout
+  patrol ticket; no auto-eligible work created). `PICK`/`MAIN` unchanged, so Step 1b could not
+  early-exit and a scout was mandatory.
+- **Scout:** InkHunt Todo set = the same 2 tickets, **both already `needs-human`** — HAR-566
+  (`[PM patrol R4]` re-sync local staging checkout — the primary-checkout reconciliation the
+  dispatcher must never do) and HAR-550 (`[v0.12 e2e]` local-stack e2e harness, `out_of_scope`).
+  Both already labelled → **no re-label** (idempotent; re-labelling would bump `updatedAt` and
+  break Step 1b convergence). `PICK=0`. No QA-blocked retries, nothing already-shipped to close.
+- **No drain, no ideation, no re-email.** Milestone was declared exhausted in Round 59 (the
+  state transition + email already fired); this is not a NEW exhaustion, so re-emailing would
+  spam. v0.13 Wave-2 scoping stays the autonomous-PM's / Harvey's product call (stay-the-author).
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`; `mc-sync-flagged-main`
+  already carries the current `origin/main` sha (`79a007e`) — debounce holds, **not re-emailed**;
+  did NOT merge/rebase/modify staging.
+- **Worktree hygiene:** current harness has only the two no-PR `feature-*` trees — HAR-546
+  (`feature-sweep-inkhunt-tw-refs`, ticket Done, PR #148 MERGED — stranded no-PR tree) and
+  HAR-547 (`feature-vercel-git-autodeploy-main`, `needs-human` deploy PR #145 intentionally
+  parked). Left both untouched per the never-`wt end`-someone-else's-tree rule (Rounds 55–59
+  precedent). No stranded `InkHunt-*`/`mc-dispatch` bot trees to prune.
+- **Outcome `noop`.** This commit refreshes only the `BL` marker (→ HAR-566's current
+  `updatedAt`) so the next round settles at Step 1b's early-exit instead of re-scouting every
+  fire (the Round 56 marker-refresh pattern). `PICK=0`, `MAIN=79a007e`, sync flag unchanged.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-06T11:03:25.062Z
+mc-round-bl: 2026-07-08T05:03:21.138Z
 mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-outcome: noop
