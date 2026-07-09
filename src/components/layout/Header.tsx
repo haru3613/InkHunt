@@ -15,6 +15,12 @@ export async function Header() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
+            href="/favorites"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t('favorites')}
+          </Link>
+          <Link
             href="/artist"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
