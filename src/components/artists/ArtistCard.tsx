@@ -16,6 +16,12 @@ import { isNewArtist } from '@/lib/artists/new-artist'
 interface ArtistCardProps {
   readonly artist: ArtistWithDetails
   readonly variant?: 'default' | 'compact'
+  /**
+   * Whether the current consumer has already saved this artist (HAR-594).
+   * Defaults to `false` so surfaces that don't resolve a session (e.g. the
+   * homepage rails, `/favorites`) stay unaffected.
+   */
+  readonly initialFavorited?: boolean
 }
 
 const MAX_VISIBLE_STYLES = 3
@@ -143,7 +149,11 @@ function ServiceBadges({
   )
 }
 
-export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
+export async function ArtistCard({
+  artist,
+  variant = 'default',
+  initialFavorited = false,
+}: ArtistCardProps) {
   if (variant === 'compact') {
     // Await the (async) compact card so the resolved tree is returned directly;
     // this keeps a single top-level `await ArtistCard(...)` enough to render the
@@ -228,12 +238,12 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
       {/*
        * Save-from-discovery (HAR-472): the favorite toggle sits OUTSIDE the
        * Link (top-right overlay) so a tap saves the artist instead of
-       * navigating to the profile. Every card starts unfilled —
-       * `initialFavorited` defaults to false; reflecting the user's actual
-       * saved state on the grid is a deferred follow-up slice.
+       * navigating to the profile. `initialFavorited` reflects the consumer's
+       * real saved state (HAR-594) — resolved by the caller (e.g. /artists) and
+       * defaulting to false where no session is resolved.
        */}
       <div className="absolute right-3 top-3">
-        <FavoriteButton artistId={artist.id} initialFavorited={false} />
+        <FavoriteButton artistId={artist.id} initialFavorited={initialFavorited} />
       </div>
 
       {/* Compare button sits outside the Link so clicks do not trigger navigation */}

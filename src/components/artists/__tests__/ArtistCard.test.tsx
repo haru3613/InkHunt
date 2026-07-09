@@ -127,8 +127,9 @@ const OLD_CREATED_AT = '2020-01-01T00:00:00Z'
 async function renderCard(
   artist: ArtistWithDetails,
   variant: 'default' | 'compact' = 'default',
+  initialFavorited = false,
 ) {
-  const ui = await ArtistCard({ artist, variant })
+  const ui = await ArtistCard({ artist, variant, initialFavorited })
   return render(ui)
 }
 
@@ -268,6 +269,28 @@ describe('ArtistCard — FavoriteButton (save from discovery, HAR-472)', () => {
     expect(screen.getByTestId('favorite-button')).toHaveAttribute(
       'data-initial-favorited',
       'false',
+    )
+  })
+})
+
+/**
+ * Reflect saved state on the discovery grid (HAR-594): the card now forwards an
+ * optional `initialFavorited` prop to the FavoriteButton so a logged-in
+ * consumer's already-saved artist renders a FILLED heart. The stub echoes the
+ * prop via `data-initial-favorited`; the heart's `aria-pressed="true"` mapping
+ * from `initialFavorited` is covered by FavoriteButton.test.tsx.
+ */
+describe('ArtistCard — reflects saved state (HAR-594)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('threads initialFavorited=true through to the FavoriteButton (filled heart)', async () => {
+    await renderCard(BASE, 'default', true)
+
+    expect(screen.getByTestId('favorite-button')).toHaveAttribute(
+      'data-initial-favorited',
+      'true',
     )
   })
 })
