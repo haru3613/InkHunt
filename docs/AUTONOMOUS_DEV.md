@@ -1903,9 +1903,30 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `updatedAt` (now the newest raw Todo, HAR-595/594 → Done), `PICK`=0 (HAR-566 + HAR-550 both
   `needs-human`), `MAIN`=`79a007e`, sync flag unchanged.
 
+### Round 62 (2026-07-09) — settling noop after Round 61 v0.14 drain (marker refresh only)
+
+- **Wake / why NOT early-exit:** Round 61 recorded `mc-round-outcome: drained-2`, so Step 1b
+  cannot early-exit yet (it requires `noop`). Also `BL` moved — HAR-566's `updatedAt` bumped
+  `2026-07-09T05:08 → 11:05` (another out-of-band touch on the `needs-human` PM-patrol drift ticket).
+- **Scout:** InkHunt Todo set = the same 2 tickets, **both already `needs-human`** — HAR-566
+  (`[PM patrol R4]` re-sync local staging checkout — the primary-checkout reconciliation the
+  dispatcher must never do) and HAR-550 (`[v0.12 e2e]` local-stack e2e harness). `PICK=0`.
+- **No drain, no ideation, no re-email.** v0.14 Wave 1 (收藏閉環) shipped complete Round 61;
+  Wave-2 scoping is the autonomous-PM's / Harvey's product call (stay-the-author), and R61 already
+  verified the obvious refills are moot. Not a NEW exhaustion (R59 emailed; R61 was productive) →
+  re-emailing would spam.
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`; `mc-sync-flagged-main` already
+  carries the current `origin/main` sha (`79a007e`) → debounce holds, **not re-emailed**; did NOT
+  merge/rebase/modify staging.
+- **Worktree hygiene:** pruned the 2 stale merged entries (HAR-595 / saved-state — dirs already
+  gone, only `worktrees.json` lingered); left the HAR-546/HAR-547 no-PR trees + human trees untouched.
+- **Outcome `noop`.** This commit refreshes `BL` (→ HAR-566's current `updatedAt`) and flips the
+  recorded outcome `drained-2 → noop`, arming Step 1b: the next fire early-exits cleanly if HAR-566
+  stays untouched. `PICK=0`, `MAIN=79a007e`, sync flag unchanged.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-09T05:08:04.857Z
+mc-round-bl: 2026-07-09T11:05:33.334Z
 mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-2
+mc-round-outcome: noop
