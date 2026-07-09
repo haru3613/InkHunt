@@ -45,4 +45,14 @@ describe('Header', () => {
     const cta = screen.getByText('becomeArtist')
     expect(cta.closest('a')).toHaveAttribute('href', '/artist')
   })
+
+  // HAR-595: desktop nav needs an entry point back to the consumer's saved list.
+  it('routes the 我的收藏 link to /favorites', async () => {
+    const { Header } = await import('../Header')
+    const HeaderResolved = await Header()
+    render(HeaderResolved)
+    const favLink = screen.getByText('favorites').closest('a')
+    expect(favLink).not.toBeNull()
+    expect(favLink).toHaveAttribute('href', '/favorites')
+  })
 })
