@@ -2,15 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockFrom = vi.fn()
 const mockClient = { from: mockFrom }
+// Reconfigurable so the "missing admin client" degrade path can be exercised
+// (a test makes it throw once, mirroring a missing service-role key in prod).
+const mockCreateAdminClient = vi.fn(() => mockClient)
 
 vi.mock('@/lib/supabase/server', () => ({
-  createAdminClient: () => mockClient,
+  createAdminClient: () => mockCreateAdminClient(),
 }))
 
 import {
   addFavorite,
   removeFavorite,
   getFavoriteArtists,
+  getFavoritedArtistIds,
   isFavorited,
 } from '../favorites'
 
@@ -53,6 +57,7 @@ function makeThenable<T>(result: T) {
   chain.upsert = vi.fn().mockReturnValue(chain)
   chain.delete = vi.fn().mockReturnValue(chain)
   chain.eq = vi.fn().mockReturnValue(chain)
+  chain.in = vi.fn().mockReturnValue(chain)
   chain.order = vi.fn().mockReturnValue(chain)
   chain.maybeSingle = vi.fn().mockResolvedValue(result)
   return chain
@@ -164,5 +169,55 @@ describe('isFavorited', () => {
     mockFrom.mockReturnValue(makeThenable({ data: null, error: null }))
     const result = await isFavorited(CONSUMER, ARTIST_ID)
     expect(result).toBe(false)
+  })
+})
+
+describe('getFavoritedArtistIds', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('returns a Set of exactly the favorited ids among the passed ids (one bounded query, no N+1)', async () => {
+    const chain = makeThenable({
+      data: [{ artist_id: 'a1' }, { artist_id: 'a3' }],
+      error: null,
+    })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getFavoritedArtistIds(CONSUMER, ['a1', 'a2', 'a3'])
+
+    expect(mockFrom).toHaveBeenCalledTimes(1)
+    expect(mockFrom).toHaveBeenCalledWith('favorites')
+    expect((chain.eq as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      'consumer_line_id',
+      CONSUMER,
+    )
+    expect((chain.in as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      'artist_id',
+      ['a1', 'a2', 'a3'],
+    )
+    expect(result).toBeInstanceOf(Set)
+    expect([...result].sort()).toEqual(['a1', 'a3'])
+  })
+
+  it('short-circuits to an empty Set with NO query when artistIds is empty', async () => {
+    const result = await getFavoritedArtistIds(CONSUMER, [])
+    expect(result).toEqual(new Set())
+    expect(mockFrom).not.toHaveBeenCalled()
+  })
+
+  it('returns an empty Set (never throws) on a query error', async () => {
+    mockFrom.mockReturnValue(
+      makeThenable({ data: null, error: { message: 'boom' } }),
+    )
+    const result = await getFavoritedArtistIds(CONSUMER, ['a1'])
+    expect(result).toEqual(new Set())
+  })
+
+  it('returns an empty Set (never throws) when the admin client is missing', async () => {
+    mockCreateAdminClient.mockImplementationOnce(() => {
+      throw new Error('no admin client')
+    })
+    const result = await getFavoritedArtistIds(CONSUMER, ['a1'])
+    expect(result).toEqual(new Set())
+    expect(mockFrom).not.toHaveBeenCalled()
   })
 })

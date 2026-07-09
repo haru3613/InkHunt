@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { setRequestLocale, getTranslations } from 'next-intl/server'
 import { getArtists } from '@/lib/supabase/queries/artists'
 import { getAllStyles } from '@/lib/supabase/queries/styles'
+import { getFavoritedArtistIds } from '@/lib/supabase/queries/favorites'
+import { getCurrentUser } from '@/lib/auth/helpers'
 import { parseListingSearchParams, hasActiveListingFilters } from '@/lib/validations/listing'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { ArtistFilters } from '@/components/artists/ArtistFilters'
@@ -77,10 +79,18 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     isNew,
   }
 
-  const [{ data: artists, total }, styles] = await Promise.all([
+  const [{ data: artists, total }, styles, user] = await Promise.all([
     getArtists(filters),
     getAllStyles(),
+    getCurrentUser(),
   ])
+
+  // Reflect the consumer's real saved state on the grid (HAR-594): one bounded
+  // favorites lookup over this page's artist ids. Logged-out → skip it entirely,
+  // so every heart stays empty exactly as before.
+  const savedArtistIds = user
+    ? await getFavoritedArtistIds(user.lineUserId, artists.map((a) => a.id))
+    : new Set<string>()
 
   const hasActiveFilters = hasActiveListingFilters({
     style: filters.style,
@@ -110,7 +120,11 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
         {total > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {artists.map((artist) => (
-              <ArtistCard key={artist.id} artist={artist} />
+              <ArtistCard
+                key={artist.id}
+                artist={artist}
+                initialFavorited={savedArtistIds.has(artist.id)}
+              />
             ))}
           </div>
         ) : null}
