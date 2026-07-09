@@ -1865,9 +1865,47 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `updatedAt`) so the next round settles at Step 1b's early-exit instead of re-scouting every
   fire (the Round 56 marker-refresh pattern). `PICK=0`, `MAIN=79a007e`, sync flag unchanged.
 
+### Round 61 (2026-07-09) — v0.14 Wave 1 drained (收藏閉環, 2/2 merged)
+
+- **Wake cause / why NOT an early-exit:** the autonomous-PM opened **v0.14 — 收藏閉環
+  (Saved-artist loop) Wave 1** after Round 59's v0.13 exhaustion call. `BL` moved
+  (`2026-07-08T05:03:21.138Z → 2026-07-09T04:07:56.485Z`) and `PICK` moved (`0 → 2`) — two
+  new `auto-claude` Todos, so Step 1b correctly could not early-exit.
+- **Scout:** raw Todo set = 4. Two auto-eligible — **HAR-595** (S: desktop `Header.tsx`
+  `/favorites` nav link) and **HAR-594** (M: reflect saved state on the `/artists` grid via a
+  bounded `getFavoritedArtistIds` helper). HAR-566 + HAR-550 both already `needs-human` → **no
+  re-label** (idempotent). Already-shipped guard: both confirmed NOT shipped (no `/favorites`
+  link in `Header.tsx`; `getFavoritedArtistIds` absent + `ArtistCard.tsx:236` still hardcodes
+  `initialFavorited={false}`). Independent (zero file overlap), no migration/money/irreversible
+  data → both auto-mergeable on staging.
+- **Drain → 2/2 merged.** `mc-drain` shipped both: **HAR-595 → PR #156**, **HAR-594 → PR #157**,
+  squash-merged to staging on the green required `ci-passed` gate; 0 deferred; both queued for
+  **promotion review**; worktrees `wt end`ed + remote branches deleted; tickets Done.
+- **Build-check observation (not a blocker):** PR #157's *non-required* `build` job conclusion =
+  **cancelled** at 15m1s — a CI-runner timeout, NOT a `next build` failure (`lint-and-typecheck`,
+  `test`, `migration-check`, and the required `ci-passed` gate all green; `--log-failed` empty →
+  no failed step). Not a HAR-594 regression; did not gate the merge. Worth a glance only if it
+  recurs on the post-merge staging CI run.
+- **No ideation — Wave 1 closed the loop's core.** The save loop now works on the only surface
+  with favorite affordances: the **default-variant** `/artists` grid (HAR-594) + the desktop nav
+  to `/favorites` (HAR-595). Verified the obvious refills are moot: the homepage Featured/新進
+  rails **and** the `/styles/[style]` grid both render `ArtistCard variant="compact"` →
+  `CompactCard` has **no** `FavoriteButton` → no empty-heart gap to close. Remaining extensions
+  (favorite affordance on compact cards, a saved-count badge on the nav link) are UX/product
+  decisions = the autonomous-PM's / Harvey's **Wave-2** scoping call (stay-the-author). No new
+  exhaustion email — Round 59 already sent one and this round was productive.
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`; `mc-sync-flagged-main`
+  already carries the current `origin/main` sha (`79a007e`) → debounce holds, **not re-emailed**;
+  did NOT merge/rebase/modify staging.
+- **Worktree hygiene:** the drain ended its own two `feature-*` worktrees; left the HAR-546/
+  HAR-547 no-PR trees + any human trees untouched.
+- **Outcome `drained-2`.** Markers refreshed to the post-drain state: `BL`=HAR-566's current
+  `updatedAt` (now the newest raw Todo, HAR-595/594 → Done), `PICK`=0 (HAR-566 + HAR-550 both
+  `needs-human`), `MAIN`=`79a007e`, sync flag unchanged.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-08T05:03:21.138Z
+mc-round-bl: 2026-07-09T05:08:04.857Z
 mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: noop
+mc-round-outcome: drained-2
