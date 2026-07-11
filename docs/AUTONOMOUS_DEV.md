@@ -1924,9 +1924,31 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   recorded outcome `drained-2 → noop`, arming Step 1b: the next fire early-exits cleanly if HAR-566
   stays untouched. `PICK=0`, `MAIN=79a007e`, sync flag unchanged.
 
+### Round 63 (2026-07-12) — settling noop after Round 62 (marker refresh only)
+
+- **Wake / why NOT early-exit:** `BL` moved — HAR-566's `updatedAt` bumped
+  `2026-07-09T11:05:33.334Z → 2026-07-11T05:12:58.681Z` (another out-of-band touch on the
+  `needs-human` PM-patrol drift ticket). `PICK`/`MAIN` unchanged, so Step 1b could not
+  early-exit and a scout was mandatory.
+- **Scout:** InkHunt Todo set = the same 2 tickets, **both already `needs-human`** — HAR-566
+  (`[PM patrol R4]` re-sync local staging checkout) and HAR-550 (`[v0.12 e2e]` local-stack e2e
+  harness, `out_of_scope`). Both already labelled → **no re-label** (idempotent). `PICK=0`. No
+  QA-blocked retries, nothing already-shipped to close.
+- **No drain, no ideation, no re-email.** v0.14 Wave 1 shipped complete Round 61; Wave-2 scoping
+  remains the autonomous-PM's / Harvey's product call (stay-the-author). Not a NEW exhaustion
+  (Round 59 already emailed) → re-emailing would spam.
+- **Sync check (detect-only):** `origin/staging..origin/main = 18`; `mc-sync-flagged-main`
+  already carries the current `origin/main` sha (`79a007e`) — debounce holds, **not
+  re-emailed**; did NOT merge/rebase/modify staging.
+- **Worktree hygiene:** harness shows no active worktrees; left the stale HAR-546/HAR-547
+  no-PR trees untouched (already-abandoned state, not a live session).
+- **Outcome `noop`.** This commit refreshes only the `BL` marker (→ HAR-566's current
+  `updatedAt`) so the next round settles at Step 1b's early-exit instead of re-scouting every
+  fire. `PICK=0`, `MAIN=79a007e`, sync flag unchanged.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-09T11:05:33.334Z
+mc-round-bl: 2026-07-11T05:12:58.681Z
 mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-outcome: noop
