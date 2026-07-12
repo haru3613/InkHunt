@@ -207,6 +207,69 @@ describe('POST /api/artists', () => {
     expect(response.status).toBe(201)
     expect(mockInsertStyles).not.toHaveBeenCalled()
   })
+
+  it('resolves style_slugs to style_ids and persists service flags (the OnboardingWizard payload shape)', async () => {
+    vi.mocked(requireAuth).mockResolvedValue(mockUser)
+
+    const mockArtist = {
+      id: 'artist-uuid-4',
+      slug: 'wizard-artist-abc123',
+      display_name: 'Wizard Artist',
+      city: '台北市',
+      status: 'pending',
+    }
+
+    const mockSingle = vi.fn().mockResolvedValue({ data: mockArtist, error: null })
+    const mockSelect = vi.fn().mockReturnValue({ single: mockSingle })
+    const mockInsertArtist = vi.fn().mockReturnValue({ select: mockSelect })
+    const mockInsertStyles = vi.fn().mockResolvedValue({ error: null })
+    const mockStylesIn = vi
+      .fn()
+      .mockResolvedValue({ data: [{ id: 5 }, { id: 9 }], error: null })
+    const mockStylesSelect = vi.fn().mockReturnValue({ in: mockStylesIn })
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'artists') return { insert: mockInsertArtist }
+      if (table === 'artist_styles') return { insert: mockInsertStyles }
+      if (table === 'styles') return { select: mockStylesSelect }
+      return {}
+    })
+
+    vi.mocked(createAdminClient).mockReturnValue({ from: mockFrom } as never)
+
+    // This is the exact payload shape OnboardingWizard.tsx builds (see
+    // handleSubmit): style_slugs (not style_ids) + the three service flags.
+    const request = makeRequest('POST', 'http://localhost:3000/api/artists', {
+      display_name: 'Wizard Artist',
+      city: '台北市',
+      style_slugs: ['fine-line', 'blackwork'],
+      can_cover: true,
+      accept_custom: true,
+      has_flash_designs: true,
+    })
+
+    const response = await POST(request)
+
+    expect(response.status).toBe(201)
+
+    // style_slugs were resolved to ids via the `styles` table lookup
+    expect(mockStylesSelect).toHaveBeenCalledWith('id')
+    expect(mockStylesIn).toHaveBeenCalledWith('slug', ['fine-line', 'blackwork'])
+    expect(mockInsertStyles).toHaveBeenCalledWith([
+      { artist_id: 'artist-uuid-4', style_id: 5 },
+      { artist_id: 'artist-uuid-4', style_id: 9 },
+    ])
+
+    // service flags land on the artists insert under their real column names
+    const insertCall = mockInsertArtist.mock.calls[0][0]
+    expect(insertCall.offers_coverup).toBe(true)
+    expect(insertCall.offers_custom_design).toBe(true)
+    expect(insertCall.has_flash_designs).toBe(true)
+    // wizard field names never leak into the insert payload
+    expect(insertCall.can_cover).toBeUndefined()
+    expect(insertCall.accept_custom).toBeUndefined()
+    expect(insertCall.style_slugs).toBeUndefined()
+  })
 })
 
 describe('GET /api/artists', () => {
