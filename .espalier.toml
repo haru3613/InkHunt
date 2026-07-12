@@ -1,0 +1,21 @@
+schema_version = 1
+base_branch = "staging"
+linear_team_id = "04886110-ac98-435f-aaa2-dfc62afc9c79"
+linear_project_id = "e80ec8b8-436e-422d-ba84-f3120d0a21a4"
+
+[test]
+cmd = "npm test -- --run {paths}"
+lint_cmd = "npm run lint"
+
+[surface]
+kind = "web-ui"
+sales_facing = true
+
+[scope]
+out_of_scope = ["e2e/**", "playwright.config.ts"]
+migration_globs = ["supabase/migrations/*.sql"]
+
+[qa]
+ui_globs = ["src/app/**", "src/components/**", "src/contexts/**", "src/hooks/**"]
+test_globs = ["src/**/*.test.ts", "src/**/*.test.tsx"]
+ui_exclude_globs = ["src/**/__tests__/**"]
