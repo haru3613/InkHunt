@@ -20,11 +20,15 @@ export async function uploadFile(
 
   const { signed_url, public_url } = await res.json()
 
-  await fetch(signed_url, {
+  const putRes = await fetch(signed_url, {
     method: 'PUT',
     headers: { 'Content-Type': file.type },
     body: file,
   })
+
+  if (!putRes.ok) {
+    throw new Error(`Failed to upload file: ${file.name} (${putRes.status})`)
+  }
 
   return public_url
 }
