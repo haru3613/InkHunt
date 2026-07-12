@@ -73,8 +73,14 @@ export async function respondToQuote(
   quoteId: string,
   inquiryId: string,
   status: 'accepted' | 'rejected',
+  inquiryStatus?: string,
 ): Promise<Quote> {
   const admin = createAdminClient()
+
+  // State machine guard: prevent responding to quotes if inquiry is already accepted
+  if (inquiryStatus === 'accepted') {
+    throw new Error('Inquiry is already accepted')
+  }
 
   const { data: quote, error } = await admin
     .from('quotes')

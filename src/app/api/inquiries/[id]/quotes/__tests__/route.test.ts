@@ -338,7 +338,7 @@ describe('PATCH /api/inquiries/[id]/quotes', () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.status).toBe('accepted')
-    expect(mockRespondToQuote).toHaveBeenCalledWith('quote-uuid-1', INQUIRY_ID, 'accepted')
+    expect(mockRespondToQuote).toHaveBeenCalledWith('quote-uuid-1', INQUIRY_ID, 'accepted', MOCK_INQUIRY.status)
   })
 
   it('returns 200 with updated quote when consumer rejects', async () => {
@@ -355,6 +355,23 @@ describe('PATCH /api/inquiries/[id]/quotes', () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.status).toBe('rejected')
+  })
+
+  it('returns 409 when inquiry is already accepted', async () => {
+    const acceptedInquiry = { ...MOCK_INQUIRY, status: 'accepted' }
+    mockRequireAuth.mockResolvedValueOnce(MOCK_CONSUMER_USER)
+    mockGetInquiryById.mockResolvedValueOnce(acceptedInquiry as never)
+    mockRespondToQuote.mockRejectedValueOnce(new Error('Inquiry is already accepted'))
+
+    const req = makeRequest('PATCH', `/api/inquiries/${INQUIRY_ID}/quotes`, {
+      quote_id: 'quote-uuid-1',
+      status: 'accepted',
+    })
+    const res = await PATCH(req, params)
+
+    expect(res.status).toBe(409)
+    const body = await res.json()
+    expect(body.error).toBe('Inquiry is already accepted')
   })
 
   it('calls markQuoteViewed and returns result when status=viewed', async () => {
