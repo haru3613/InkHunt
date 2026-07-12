@@ -123,4 +123,117 @@ describe('ProfileForm', () => {
 
     fetchSpy.mockRestore()
   })
+
+  it('populates form with artist data when artist prop is provided', () => {
+    const existingArtist: Artist = {
+      id: '1', slug: 'harvey', display_name: 'Harvey Chen', bio: 'Professional tattoo artist',
+      city: '台北市', district: '大安區', address: '信義路二段100號',
+      price_min: 2000, price_max: 5000, ig_handle: '@harveytattoo',
+      pricing_note: '依大小複雜度報價', booking_notice: '需提前預約',
+      avatar_url: null,
+      status: 'active', featured: false, is_claimed: true,
+      lat: null, lng: null, offers_coverup: false,
+      offers_custom_design: false, has_flash_designs: false,
+      deposit_amount: null, line_user_id: 'U123',
+      admin_note: null, quote_templates: null,
+      created_at: '', updated_at: '',
+    }
+
+    render(<ProfileForm artist={existingArtist} styles={mockStyles} selectedStyleIds={[1, 3]} />)
+
+    // Check that the form is populated with artist data
+    expect((screen.getByDisplayValue('Harvey Chen') as HTMLInputElement).value).toBe('Harvey Chen')
+    expect((screen.getByDisplayValue('Professional tattoo artist') as HTMLTextAreaElement).value).toBe('Professional tattoo artist')
+    expect((screen.getByDisplayValue('台北市') as HTMLInputElement).value).toBe('台北市')
+    expect((screen.getByDisplayValue('大安區') as HTMLInputElement).value).toBe('大安區')
+    expect((screen.getByDisplayValue('信義路二段100號') as HTMLInputElement).value).toBe('信義路二段100號')
+    expect((screen.getByDisplayValue('2000') as HTMLInputElement).value).toBe('2000')
+    expect((screen.getByDisplayValue('5000') as HTMLInputElement).value).toBe('5000')
+    expect((screen.getByDisplayValue('@harveytattoo') as HTMLInputElement).value).toBe('@harveytattoo')
+    expect((screen.getByDisplayValue('依大小複雜度報價') as HTMLInputElement).value).toBe('依大小複雜度報價')
+    expect((screen.getByDisplayValue('需提前預約') as HTMLTextAreaElement).value).toBe('需提前預約')
+
+    // Check that selected styles are marked with accent color
+    const fineLine = screen.getByText('極簡線條')
+    const realism = screen.getByText('寫實')
+    expect(fineLine.className).toContain('bg-[#C8A97E]')
+    expect(realism.className).toContain('bg-[#C8A97E]')
+  })
+
+  it('updates form when artist prop changes (hard refresh scenario)', () => {
+    const artist1: Artist = {
+      id: '1', slug: 'artist1', display_name: 'Artist One', bio: 'First bio',
+      city: '台北市', district: null, address: null,
+      price_min: 1000, price_max: 2000, ig_handle: '@artist1',
+      pricing_note: null, booking_notice: null, avatar_url: null,
+      status: 'active', featured: false, is_claimed: true,
+      lat: null, lng: null, offers_coverup: false,
+      offers_custom_design: false, has_flash_designs: false,
+      deposit_amount: null, line_user_id: 'U123',
+      admin_note: null, quote_templates: null,
+      created_at: '', updated_at: '',
+    }
+
+    const artist2: Artist = {
+      id: '2', slug: 'artist2', display_name: 'Artist Two', bio: 'Second bio',
+      city: '台中市', district: '中區', address: '文心路100號',
+      price_min: 3000, price_max: 5000, ig_handle: '@artist2',
+      pricing_note: 'Deposit required', booking_notice: 'Call first',
+      avatar_url: null,
+      status: 'active', featured: false, is_claimed: true,
+      lat: null, lng: null, offers_coverup: false,
+      offers_custom_design: false, has_flash_designs: false,
+      deposit_amount: null, line_user_id: 'U456',
+      admin_note: null, quote_templates: null,
+      created_at: '', updated_at: '',
+    }
+
+    const { rerender } = render(<ProfileForm artist={artist1} styles={mockStyles} selectedStyleIds={[1]} />)
+
+    // Verify first artist data is shown
+    expect((screen.getByDisplayValue('Artist One') as HTMLInputElement).value).toBe('Artist One')
+    expect((screen.getByDisplayValue('First bio') as HTMLTextAreaElement).value).toBe('First bio')
+    expect((screen.getByDisplayValue('1000') as HTMLInputElement).value).toBe('1000')
+
+    // Simulate prop update (e.g., after hard refresh)
+    rerender(<ProfileForm artist={artist2} styles={mockStyles} selectedStyleIds={[2]} />)
+
+    // Verify form updated with new artist data
+    expect((screen.getByDisplayValue('Artist Two') as HTMLInputElement).value).toBe('Artist Two')
+    expect((screen.getByDisplayValue('Second bio') as HTMLTextAreaElement).value).toBe('Second bio')
+    expect((screen.getByDisplayValue('3000') as HTMLInputElement).value).toBe('3000')
+    expect((screen.getByDisplayValue('文心路100號') as HTMLInputElement).value).toBe('文心路100號')
+  })
+
+  it('preserves selected styles when artist prop changes', () => {
+    const artist1: Artist = {
+      id: '1', slug: 'artist1', display_name: 'Artist One', bio: null,
+      city: '台北市', district: null, address: null,
+      price_min: 1000, price_max: null, ig_handle: null,
+      pricing_note: null, booking_notice: null, avatar_url: null,
+      status: 'active', featured: false, is_claimed: true,
+      lat: null, lng: null, offers_coverup: false,
+      offers_custom_design: false, has_flash_designs: false,
+      deposit_amount: null, line_user_id: 'U123',
+      admin_note: null, quote_templates: null,
+      created_at: '', updated_at: '',
+    }
+
+    const { rerender } = render(<ProfileForm artist={artist1} styles={mockStyles} selectedStyleIds={[1, 2]} />)
+
+    // Verify initial styles are selected
+    let fineLine = screen.getByText('極簡線條')
+    let micro = screen.getByText('微刺青')
+    expect(fineLine.className).toContain('bg-[#C8A97E]')
+    expect(micro.className).toContain('bg-[#C8A97E]')
+
+    // Update prop with different artist but same styles
+    rerender(<ProfileForm artist={artist1} styles={mockStyles} selectedStyleIds={[1, 2]} />)
+
+    // Verify styles are still selected
+    fineLine = screen.getByText('極簡線條')
+    micro = screen.getByText('微刺青')
+    expect(fineLine.className).toContain('bg-[#C8A97E]')
+    expect(micro.className).toContain('bg-[#C8A97E]')
+  })
 })
