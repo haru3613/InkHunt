@@ -123,4 +123,73 @@ describe('ProfileForm', () => {
 
     fetchSpy.mockRestore()
   })
+
+  it('populates form fields when artist data loads after initial render', async () => {
+    const artist: Artist = {
+      id: '1', slug: 'tattoo-master', display_name: 'Tattoo Master', bio: 'Expert tattoo artist',
+      city: '台北市', district: '大安區', address: '台北市大安區光復南路1號',
+      price_min: 2000, price_max: 5000, ig_handle: '@tattomaster',
+      pricing_note: '依設計複雜度報價', booking_notice: '預約需提前7天',
+      avatar_url: null,
+      status: 'active', featured: false, is_claimed: true,
+      lat: null, lng: null, offers_coverup: false,
+      offers_custom_design: false, has_flash_designs: false,
+      deposit_amount: null, line_user_id: 'U123',
+      admin_note: null, quote_templates: null,
+      created_at: '', updated_at: '',
+    }
+
+    // Initial render with null artist
+    const { rerender } = render(<ProfileForm artist={null} styles={mockStyles} selectedStyleIds={[]} />)
+
+    // Form should be empty initially - check one field by placeholder
+    expect(screen.getByPlaceholderText('台北市')).toHaveValue('')
+
+    // Simulate artist data loading
+    rerender(<ProfileForm artist={artist} styles={mockStyles} selectedStyleIds={[1, 3]} />)
+
+    // Form should now be populated with artist data
+    expect(screen.getByDisplayValue('Tattoo Master')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Expert tattoo artist')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('台北市')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('大安區')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('台北市大安區光復南路1號')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('2000')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('5000')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('@tattomaster')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('依設計複雜度報價')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('預約需提前7天')).toBeInTheDocument()
+  })
+
+  it('updates styles when selectedStyleIds prop changes', async () => {
+    const artist: Artist = {
+      id: '1', slug: 'tattoo-master', display_name: 'Tattoo Master', bio: null,
+      city: '台北市', district: null, address: null,
+      price_min: 2000, price_max: 5000, ig_handle: null,
+      pricing_note: null, booking_notice: null, avatar_url: null,
+      status: 'active', featured: false, is_claimed: true,
+      lat: null, lng: null, offers_coverup: false,
+      offers_custom_design: false, has_flash_designs: false,
+      deposit_amount: null, line_user_id: 'U123',
+      admin_note: null, quote_templates: null,
+      created_at: '', updated_at: '',
+    }
+
+    const { rerender } = render(<ProfileForm artist={artist} styles={mockStyles} selectedStyleIds={[]} />)
+
+    // Initially no styles selected
+    let fineLine = screen.getByText('極簡線條')
+    let realism = screen.getByText('寫實')
+    expect(fineLine.className).toContain('bg-[#1F1F1F]')
+    expect(realism.className).toContain('bg-[#1F1F1F]')
+
+    // Simulate styles being selected
+    rerender(<ProfileForm artist={artist} styles={mockStyles} selectedStyleIds={[1, 3]} />)
+
+    // Now the styles should be selected
+    fineLine = screen.getByText('極簡線條')
+    realism = screen.getByText('寫實')
+    expect(fineLine.className).toContain('bg-[#C8A97E]')
+    expect(realism.className).toContain('bg-[#C8A97E]')
+  })
 })
