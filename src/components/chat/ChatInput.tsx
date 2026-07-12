@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { uploadFile } from '@/lib/upload/client'
 
 interface ChatInputProps {
-  readonly onSendMessage: (type: 'text' | 'image', content: string) => void
+  readonly onSendMessage: (type: 'text' | 'image', content: string) => Promise<void> | void
   readonly onSendQuote?: () => void
   readonly isArtist: boolean
   readonly disabled?: boolean
@@ -17,11 +17,16 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
   const [text, setText] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const trimmed = text.trim()
     if (!trimmed) return
-    onSendMessage('text', trimmed)
-    setText('')
+    try {
+      await onSendMessage('text', trimmed)
+      // Only clear the input after successful send
+      setText('')
+    } catch {
+      // Error is handled; input remains for user to retry
+    }
   }, [text, onSendMessage])
 
   const handleKeyDown = useCallback(
@@ -41,7 +46,11 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
 
       try {
         const publicUrl = await uploadFile('inquiries', file)
-        onSendMessage('image', publicUrl)
+        try {
+          await onSendMessage('image', publicUrl)
+        } catch {
+          // Message send failed; user can retry
+        }
       } catch {
         // Image upload failed; user can retry
       }
