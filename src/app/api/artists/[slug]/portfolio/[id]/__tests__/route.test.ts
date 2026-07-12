@@ -61,11 +61,12 @@ function makeParams(slug: string, id: string) {
   return { params: Promise.resolve({ slug, id }) }
 }
 
-// Build a chainable Supabase query builder mock for the select().eq().eq().single() lookup
-function makeQueryBuilder(singleResult: { data: unknown; error: unknown }) {
+// Build a chainable Supabase query builder mock for delete().eq().eq().select().single()
+function makeDeleteChain(singleResult: { data: unknown; error: unknown }) {
   return {
-    select: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue(singleResult),
   }
 }
@@ -115,9 +116,9 @@ describe('DELETE /api/artists/[slug]/portfolio/[id]', () => {
     mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
     mockGetArtistForUser.mockResolvedValueOnce(MOCK_ARTIST as never)
 
-    const fetchChain = makeQueryBuilder({ data: null, error: null })
+    const deleteChain = makeDeleteChain({ data: null, error: { message: 'no rows' } })
     mockCreateAdminClient.mockReturnValue({
-      from: vi.fn().mockReturnValue(fetchChain),
+      from: vi.fn().mockReturnValue(deleteChain),
     } as never)
 
     const req = makeRequest('/api/artists/test-artist/portfolio/missing-item')
@@ -131,25 +132,10 @@ describe('DELETE /api/artists/[slug]/portfolio/[id]', () => {
     mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
     mockGetArtistForUser.mockResolvedValueOnce(MOCK_ARTIST as never)
 
-    const fetchChain = makeQueryBuilder({ data: MOCK_ITEM, error: null })
-    const deleteChain = {
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-    }
-    // last .eq() call resolves the delete promise
-    let deleteEqCalls = 0
-    deleteChain.eq = vi.fn().mockImplementation(() => {
-      deleteEqCalls += 1
-      if (deleteEqCalls === 2) return Promise.resolve({ error: null })
-      return deleteChain
-    })
-
-    const fromMock = vi.fn()
-      .mockReturnValueOnce(fetchChain) // select for ownership/existence check
-      .mockReturnValueOnce(deleteChain) // delete call
+    const deleteChain = makeDeleteChain({ data: MOCK_ITEM, error: null })
 
     mockCreateAdminClient.mockReturnValue({
-      from: fromMock,
+      from: vi.fn().mockReturnValue(deleteChain),
     } as never)
 
     const req = makeRequest('/api/artists/test-artist/portfolio/item-uuid-1')

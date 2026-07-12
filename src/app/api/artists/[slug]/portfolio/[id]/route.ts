@@ -18,25 +18,19 @@ export async function DELETE(
 
     const admin = createAdminClient()
 
-    const { data: item, error: fetchError } = await admin
-      .from('portfolio_items')
-      .select('id, image_url, thumbnail_url, healed_image_url')
-      .eq('id', id)
-      .eq('artist_id', artist.id)
-      .single()
-
-    if (fetchError || !item) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-
-    const { error: deleteError } = await admin
+    // Atomic delete-and-return: one round trip, no fetch/delete race window.
+    // 0 matching rows (missing id or not owned by this artist) -> error, not
+    // a null data value, because .single() expects exactly one row.
+    const { data: item, error } = await admin
       .from('portfolio_items')
       .delete()
       .eq('id', id)
       .eq('artist_id', artist.id)
+      .select('image_url, thumbnail_url, healed_image_url')
+      .single()
 
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 400 })
+    if (error || !item) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
     await deletePortfolioStorageObjects(admin, [
