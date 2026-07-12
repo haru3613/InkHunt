@@ -5,7 +5,7 @@ linear_project_id = "e80ec8b8-436e-422d-ba84-f3120d0a21a4"
 
 [test]
 cmd = "npm test -- --run {paths}"
-lint_cmd = "npm run lint"
+lint_cmd = "npm run lint -- src"
 
 [surface]
 kind = "web-ui"
