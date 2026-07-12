@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -49,6 +49,24 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
     avatar_url: artist?.avatar_url ?? null,
     style_ids: selectedStyleIds,
   })
+
+  // Sync form state when artist or selectedStyleIds props change
+  useEffect(() => {
+    setForm({
+      display_name: artist?.display_name ?? '',
+      bio: artist?.bio ?? '',
+      city: artist?.city ?? '',
+      district: artist?.district ?? '',
+      address: artist?.address ?? '',
+      price_min: artist?.price_min?.toString() ?? '',
+      price_max: artist?.price_max?.toString() ?? '',
+      ig_handle: artist?.ig_handle ?? '',
+      pricing_note: artist?.pricing_note ?? '',
+      booking_notice: artist?.booking_notice ?? '',
+      avatar_url: artist?.avatar_url ?? null,
+      style_ids: selectedStyleIds,
+    })
+  }, [artist, selectedStyleIds])
 
   const handleChange = useCallback((field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
