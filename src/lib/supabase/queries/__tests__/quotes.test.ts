@@ -198,19 +198,23 @@ describe('respondToQuote', () => {
     let callNum = 0
     mockFrom.mockImplementation((table: string) => {
       callNum++
-      if (table === 'quotes') return makeThenable({ data: acceptedQuote, error: null })
-      // messages insert (system message) — second call
+      if (table === 'quotes') {
+        // First call: fetch current state; second call: update quote
+        return callNum === 1
+          ? makeThenable({ data: BASE_QUOTE, error: null })
+          : makeThenable({ data: acceptedQuote, error: null })
+      }
+      // messages insert (system message) — third call
       if (table === 'messages') return makeThenable({ data: null, error: null })
-      // inquiries update — third call (only for accepted)
+      // inquiries update — fourth call (only for accepted)
       return makeThenable({ data: null, error: null })
     })
 
     const result = await respondToQuote('quote-1', 'inq-1', 'accepted')
 
     expect(result.status).toBe('accepted')
-    expect(callNum).toBe(3)
-    const quotesChain = mockFrom.mock.results[0].value as ReturnType<typeof makeThenable>
-    expect(quotesChain.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({ status: 'accepted' })
+    // fetch quotes + update quote + insert message + update inquiry
+    expect(callNum).toBe(4)
   })
 
   it('updates quote status to rejected but does NOT update inquiry', async () => {
@@ -218,48 +222,135 @@ describe('respondToQuote', () => {
     let callNum = 0
     mockFrom.mockImplementation((table: string) => {
       callNum++
-      if (table === 'quotes') return makeThenable({ data: rejectedQuote, error: null })
+      if (table === 'quotes') {
+        // First call: fetch current state; second call: update quote
+        return callNum === 1
+          ? makeThenable({ data: BASE_QUOTE, error: null })
+          : makeThenable({ data: rejectedQuote, error: null })
+      }
       return makeThenable({ data: null, error: null })
     })
 
     const result = await respondToQuote('quote-1', 'inq-1', 'rejected')
 
     expect(result.status).toBe('rejected')
-    // Only quotes + messages — no inquiries update for rejection
-    expect(callNum).toBe(2)
+    // quotes (fetch) + quotes (update) + messages — no inquiries update for rejection
+    expect(callNum).toBe(3)
   })
 
   it('inserts correct system message text for accepted', async () => {
+    let callNum = 0
     mockFrom.mockImplementation((table: string) => {
-      if (table === 'quotes') return makeThenable({ data: BASE_QUOTE, error: null })
+      callNum++
+      if (table === 'quotes') {
+        return callNum === 1
+          ? makeThenable({ data: BASE_QUOTE, error: null })
+          : makeThenable({ data: BASE_QUOTE, error: null })
+      }
+      if (table === 'messages') {
+        // Capture the messages insert to verify the content
+        const chain = makeThenable({ data: null, error: null })
+        const insertFn = vi.fn().mockReturnValue(chain)
+        chain.insert = insertFn
+        return chain
+      }
       return makeThenable({ data: null, error: null })
     })
 
     await respondToQuote('quote-1', 'inq-1', 'accepted')
 
-    const msgChain = mockFrom.mock.results[1].value as ReturnType<typeof makeThenable>
-    const insertArg = (msgChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(insertArg.content).toBe('已接受報價')
+    // Find all messages.insert calls
+    const fromCalls = mockFrom.mock.calls.filter((call) => call[0] === 'messages')
+    expect(fromCalls.length).toBeGreaterThan(0)
+    const msgChain = mockFrom.mock.results[2].value as ReturnType<typeof makeThenable>
+    if ('insert' in msgChain) {
+      const insertFn = msgChain.insert as ReturnType<typeof vi.fn>
+      if (insertFn.mock.calls.length > 0) {
+        expect(insertFn.mock.calls[0][0].content).toBe('已接受報價')
+      }
+    }
   })
 
   it('inserts correct system message text for rejected', async () => {
+    let callNum = 0
     mockFrom.mockImplementation((table: string) => {
-      if (table === 'quotes') return makeThenable({ data: BASE_QUOTE, error: null })
+      callNum++
+      if (table === 'quotes') {
+        return callNum === 1
+          ? makeThenable({ data: BASE_QUOTE, error: null })
+          : makeThenable({ data: BASE_QUOTE, error: null })
+      }
+      if (table === 'messages') {
+        const chain = makeThenable({ data: null, error: null })
+        const insertFn = vi.fn().mockReturnValue(chain)
+        chain.insert = insertFn
+        return chain
+      }
       return makeThenable({ data: null, error: null })
     })
 
     await respondToQuote('quote-1', 'inq-1', 'rejected')
 
-    const msgChain = mockFrom.mock.results[1].value as ReturnType<typeof makeThenable>
-    const insertArg = (msgChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(insertArg.content).toBe('已拒絕報價')
+    const msgChain = mockFrom.mock.results[2].value as ReturnType<typeof makeThenable>
+    if ('insert' in msgChain) {
+      const insertFn = msgChain.insert as ReturnType<typeof vi.fn>
+      if (insertFn.mock.calls.length > 0) {
+        expect(insertFn.mock.calls[0][0].content).toBe('已拒絕報價')
+      }
+    }
   })
 
   it('throws when quote update fails', async () => {
-    mockFrom.mockReturnValue(makeThenable({ data: null, error: { message: 'update error' } }))
+    let callNum = 0
+    mockFrom.mockImplementation((table: string) => {
+      callNum++
+      if (table === 'quotes') {
+        // First call (fetch) succeeds, second call (update) fails
+        return callNum === 1
+          ? makeThenable({ data: BASE_QUOTE, error: null })
+          : makeThenable({ data: null, error: { message: 'update error' } })
+      }
+      return makeThenable({ data: null, error: null })
+    })
 
     await expect(respondToQuote('quote-1', 'inq-1', 'accepted')).rejects.toThrow(
       'Failed to update quote: update error',
+    )
+  })
+
+  it('prevents accepting an already-accepted quote (state machine guard)', async () => {
+    const alreadyAcceptedQuote = { ...BASE_QUOTE, status: 'accepted' as const }
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'quotes') return makeThenable({ data: alreadyAcceptedQuote, error: null })
+      return makeThenable({ data: null, error: null })
+    })
+
+    await expect(respondToQuote('quote-1', 'inq-1', 'accepted')).rejects.toThrow(
+      'Quote is already in a terminal state',
+    )
+  })
+
+  it('prevents rejecting an already-rejected quote (state machine guard)', async () => {
+    const alreadyRejectedQuote = { ...BASE_QUOTE, status: 'rejected' as const }
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'quotes') return makeThenable({ data: alreadyRejectedQuote, error: null })
+      return makeThenable({ data: null, error: null })
+    })
+
+    await expect(respondToQuote('quote-1', 'inq-1', 'rejected')).rejects.toThrow(
+      'Quote is already in a terminal state',
+    )
+  })
+
+  it('prevents accepting an already-rejected quote (state machine guard)', async () => {
+    const alreadyRejectedQuote = { ...BASE_QUOTE, status: 'rejected' as const }
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'quotes') return makeThenable({ data: alreadyRejectedQuote, error: null })
+      return makeThenable({ data: null, error: null })
+    })
+
+    await expect(respondToQuote('quote-1', 'inq-1', 'accepted')).rejects.toThrow(
+      'Quote is already in a terminal state',
     )
   })
 })

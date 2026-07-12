@@ -10,8 +10,17 @@ vi.mock('@/hooks/useRealtimeMessages', () => ({
 }))
 
 vi.mock('../MessageBubble', () => ({
-  MessageBubble: ({ message }: { message: Message }) => (
-    <div data-testid={`msg-${message.id}`}>{message.content}</div>
+  MessageBubble: ({ message, onQuoteAction }: { message: Message; onQuoteAction?: (quoteId: string, action: 'accepted' | 'rejected') => void }) => (
+    <>
+      <div data-testid={`msg-${message.id}`}>{message.content}</div>
+      {onQuoteAction && (
+        <>
+          <button onClick={() => onQuoteAction('q-1', 'accepted')} data-testid="quote-accept-btn">
+            Accept Quote
+          </button>
+        </>
+      )}
+    </>
   ),
 }))
 

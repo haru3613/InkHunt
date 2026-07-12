@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/types/database'
 import type { QuoteMetadata } from '@/types/chat'
@@ -17,6 +18,16 @@ function formatTime(dateStr: string): string {
 }
 
 export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubbleProps) {
+  const [actionInFlight, setActionInFlight] = useState(false)
+
+  const handleQuoteAction = async (quoteId: string, action: 'accepted' | 'rejected') => {
+    setActionInFlight(true)
+    try {
+      await onQuoteAction?.(quoteId, action)
+    } finally {
+      setActionInFlight(false)
+    }
+  }
   if (message.message_type === 'system') {
     const lines = (message.content ?? '').split('\n').filter(Boolean)
     const title = lines[0] ?? ''
@@ -49,7 +60,8 @@ export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubblePr
           availableDates={metadata.available_dates}
           status={metadata.status}
           isOwn={isOwn}
-          onAction={onQuoteAction}
+          onAction={handleQuoteAction}
+          disabled={actionInFlight}
         />
       </div>
     )

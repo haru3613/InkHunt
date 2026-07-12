@@ -9,6 +9,7 @@ interface QuoteCardProps {
   readonly status: string
   readonly isOwn: boolean
   readonly onAction?: (quoteId: string, action: 'accepted' | 'rejected') => void
+  readonly disabled?: boolean
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -26,8 +27,9 @@ export function QuoteCard({
   status,
   isOwn,
   onAction,
+  disabled,
 }: QuoteCardProps) {
-  const showActions = !isOwn && status === 'sent'
+  const showActions = !isOwn && status === 'sent' && !disabled
 
   return (
     <div className="max-w-[80%] bg-[#1F1F1F] border border-[#C8A97E]/30 rounded-xl p-4 space-y-3">
@@ -47,18 +49,20 @@ export function QuoteCard({
         <div className="flex gap-2 pt-2">
           <Button
             onClick={() => onAction?.(quoteId, 'accepted')}
-            className="flex-1 bg-[#C8A97E] text-[#0A0A0A] hover:bg-[#C8A97E]/90"
+            disabled={disabled}
+            className="flex-1 bg-[#C8A97E] text-[#0A0A0A] hover:bg-[#C8A97E]/90 disabled:opacity-50 disabled:cursor-not-allowed"
             size="sm"
           >
-            接受
+            {disabled ? '處理中…' : '接受'}
           </Button>
           <Button
             onClick={() => onAction?.(quoteId, 'rejected')}
+            disabled={disabled}
             variant="outline"
-            className="flex-1 border-[#F5F0EB]/20 text-[#F5F0EB]"
+            className="flex-1 border-[#F5F0EB]/20 text-[#F5F0EB] disabled:opacity-50 disabled:cursor-not-allowed"
             size="sm"
           >
-            拒絕
+            {disabled ? '處理中…' : '拒絕'}
           </Button>
         </div>
       ) : (

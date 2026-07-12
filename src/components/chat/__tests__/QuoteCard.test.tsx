@@ -124,4 +124,36 @@ describe('QuoteCard', () => {
     expect(screen.queryByRole('button', { name: '接受' })).not.toBeInTheDocument()
     expect(screen.getByText('已接受')).toBeInTheDocument()
   })
+
+  it('hides action buttons and shows status when disabled prop is true', () => {
+    render(
+      <QuoteCard
+        quoteId="q-1"
+        price={5000}
+        note={null}
+        availableDates={null}
+        status="sent"
+        isOwn={false}
+        disabled={true}
+      />,
+    )
+    expect(screen.queryByRole('button', { name: '接受' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /接受|拒絕/ })).not.toBeInTheDocument()
+  })
+
+  it('disables buttons and shows "處理中…" text when disabled prop is true', () => {
+    render(
+      <QuoteCard
+        quoteId="q-1"
+        price={5000}
+        note={null}
+        availableDates={null}
+        status="sent"
+        isOwn={false}
+        disabled={true}
+      />,
+    )
+    // When disabled, no buttons should be shown at all (showActions = false)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
 })

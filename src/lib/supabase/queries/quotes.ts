@@ -76,6 +76,22 @@ export async function respondToQuote(
 ): Promise<Quote> {
   const admin = createAdminClient()
 
+  // State machine guard: fetch the current quote state first
+  const { data: currentQuote, error: fetchError } = await admin
+    .from('quotes')
+    .select()
+    .eq('id', quoteId)
+    .single()
+
+  if (fetchError || !currentQuote) {
+    throw new Error(`Failed to fetch quote: ${fetchError?.message}`)
+  }
+
+  // Prevent accepting/rejecting a quote that's already in a terminal state
+  if (currentQuote.status === 'accepted' || currentQuote.status === 'rejected') {
+    throw new Error('Quote is already in a terminal state')
+  }
+
   const { data: quote, error } = await admin
     .from('quotes')
     .update({ status })

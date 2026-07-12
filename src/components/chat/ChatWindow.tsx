@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { MessageBubble } from './MessageBubble'
 import { ChatInput } from './ChatInput'
@@ -51,9 +51,24 @@ export function ChatWindow({
   closeError,
   budgetRange,
 }: ChatWindowProps) {
-  const { messages, isLoading, sendMessage } = useRealtimeMessages(inquiryId)
+  const { messages, isLoading, sendMessage, refetch } = useRealtimeMessages(inquiryId)
   const t = useTranslations('inquiry.budgetRange')
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const handleQuoteAction = useCallback(
+    async (quoteId: string, action: 'accepted' | 'rejected') => {
+      if (onQuoteAction) {
+        try {
+          await onQuoteAction(quoteId, action)
+          // Refetch messages to update the quote status in the UI
+          await refetch()
+        } catch {
+          // Silently handle error; the parent can handle error display if needed
+        }
+      }
+    },
+    [onQuoteAction, refetch],
+  )
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -115,7 +130,7 @@ export function ChatWindow({
               key={msg.id}
               message={msg}
               isOwn={msg.sender_id === currentUserId}
-              onQuoteAction={onQuoteAction}
+              onQuoteAction={handleQuoteAction}
             />
           ))}
         </div>

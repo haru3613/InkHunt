@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { Message } from '@/types/database'
 import type { QuoteMetadata } from '@/types/chat'
 
@@ -9,16 +10,27 @@ vi.mock('../QuoteCard', () => ({
     price,
     note,
     status,
+    disabled,
+    onAction,
   }: {
     price: number
     note: string | null
     status: string
+    disabled?: boolean
+    onAction?: (quoteId: string, action: 'accepted' | 'rejected') => void
     [key: string]: unknown
   }) => (
     <div data-testid="quote-card">
       <span data-testid="quote-price">NT${price.toLocaleString()}</span>
       {note && <span data-testid="quote-note">{note}</span>}
       <span data-testid="quote-status">{status}</span>
+      {disabled && <span data-testid="quote-disabled">disabled</span>}
+      {onAction && (
+        <>
+          <button onClick={() => onAction('q-1', 'accepted')}>Accept</button>
+          <button onClick={() => onAction('q-1', 'rejected')}>Reject</button>
+        </>
+      )}
     </div>
   ),
 }))
@@ -103,5 +115,43 @@ describe('MessageBubble', () => {
     render(<MessageBubble message={message} isOwn={false} />)
     expect(screen.getByTestId('quote-card')).toBeInTheDocument()
     expect(screen.getByTestId('quote-price')).toHaveTextContent('NT$8,000')
+  })
+
+  it('calls onQuoteAction when quote action button is clicked', async () => {
+    const { MessageBubble } = await import('../MessageBubble')
+    const onQuoteAction = vi.fn().mockResolvedValue(undefined)
+    const quoteMetadata: QuoteMetadata = {
+      quote_id: 'q-1',
+      price: 8000,
+      note: '含設計費',
+      available_dates: ['2026-04-01'],
+      status: 'sent',
+    }
+    const message = makeMessage({
+      message_type: 'quote',
+      metadata: quoteMetadata as unknown as Message['metadata'],
+    })
+    render(<MessageBubble message={message} isOwn={false} onQuoteAction={onQuoteAction} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }))
+    expect(onQuoteAction).toHaveBeenCalledWith('q-1', 'accepted')
+  })
+
+  it('passes disabled prop to QuoteCard when action is in flight', async () => {
+    const { MessageBubble } = await import('../MessageBubble')
+    const onQuoteAction = vi.fn(() => new Promise(() => {})) // Never resolves to keep it in flight
+    const quoteMetadata: QuoteMetadata = {
+      quote_id: 'q-1',
+      price: 8000,
+      note: null,
+      available_dates: null,
+      status: 'sent',
+    }
+    const message = makeMessage({
+      message_type: 'quote',
+      metadata: quoteMetadata as unknown as Message['metadata'],
+    })
+    render(<MessageBubble message={message} isOwn={false} onQuoteAction={onQuoteAction} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }))
+    expect(screen.getByTestId('quote-disabled')).toBeInTheDocument()
   })
 })
