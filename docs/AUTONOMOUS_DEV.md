@@ -1970,9 +1970,59 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `updatedAt`) so the next round settles at Step 1b's early-exit instead of re-scouting every
   fire. `PICK=0`, `MAIN=79a007e`, sync flag unchanged.
 
+### Round 65 (2026-07-12) — production-readiness audit batch (15 new tickets); HAR-647 + HAR-648 shipped, HAR-649 already-shipped-by-Espalier
+
+- **Wake cause:** `BL` jumped `2026-07-12T05:05:44.997Z → 2026-07-12T16:02:25.470Z` and `PICK`
+  `0 → 10` — a 2026-07-12 production-readiness audit landed **15 new tickets** (HAR-647–667),
+  most `ready-for-agent`, several P0/P1 `needs-human` (security/auth/observability). Step 1b
+  correctly did NOT early-exit.
+- **Scout / triage.** Excluded `needs-human`-labelled (already applied by the audit/PM pass, no
+  re-label): HAR-665 (e2e suite quality, out_of_scope), HAR-662 (error tracking — needs a Sentry
+  DSN), HAR-661 (RLS hardening — auth/migration), HAR-650 (quote IDOR — auth surface), HAR-566 +
+  HAR-550 (pre-existing, unchanged). Of the remaining `ready-for-agent` Todos, picked the 3
+  highest-severity, mutually file-independent P0 slices:
+  - **HAR-647** — onboarding wizard silently drops `style_slugs` + service flags (schema drift) —
+    headline bug: every new artist signup loses their style/service data. Files:
+    `src/app/api/artists/route.ts`, `OnboardingWizard.tsx`.
+  - **HAR-648** — portfolio delete hits a non-existent route; optimistic UI lies (item reappears
+    on reload). Files: `portfolio/page.tsx` + new `portfolio/[id]/route.ts`.
+  - **HAR-649** — `uploadFile` never checks the storage PUT response; a failed upload still
+    persists a dead image URL. Files: `src/lib/upload/client.ts`.
+  Deferred (not this round, no file overlap with above, still pickable): HAR-654 (profile blank-
+  form data-loss risk), HAR-653 (chat input clears before send confirmed), HAR-652 (quote
+  accept/reject state not reflected client-side), HAR-664 (no revalidation), HAR-663 (no
+  error/404 boundaries), HAR-667/HAR-666 (P2 UX polish batch / test-coverage gaps).
+  Already-shipped guard: grepped `origin/staging` for all 3 picks before dispatch — schema, DELETE
+  route, and PUT `.ok` check were all genuinely absent. Genuinely actionable.
+- **Drain: 2/3 merged; 1 discovered already-shipped mid-round by a concurrent automation.**
+  - **HAR-647 merged — PR #162** (squash `c154dbf`), all required checks green. `style_slugs`
+    now resolved server-side to ids; service flags persisted.
+  - **HAR-648 merged — PR #163** (squash `8935891`), all required checks green. Added
+    `DELETE /api/artists/[slug]/portfolio/[id]` (owner-checked, storage cleanup) + gated the
+    client's optimistic removal on `res.ok`.
+  - **HAR-649 — PR #161 auto-closed by GitHub as a no-diff duplicate.** A separate automation
+    ("Espalier", visible in its own tracker comments) independently implemented and merged the
+    **identical** fix first via **PR #160 ("HAR-669")** at 16:17:52Z — same file, same `.ok`
+    check. Verified the fix is present on `origin/staging:src/lib/upload/client.ts` post-merge.
+    Closed HAR-649 as **Done** with a comment pointing at PR #160; not re-implemented. **Flagged
+    for Harvey:** Espalier appears to be a second automation independently opening/merging PRs
+    against this same InkHunt repo/tracker — worth checking for collision risk with the MC
+    dispatcher (this is the first observed instance).
+  0 deferred (Product-QA), 0 tier-2 advisories. HAR-647 + HAR-648 both `promotion_review`
+  (sales-facing UI; informational, not a block).
+- **No ideation.** 7 auto-eligible Todos remain (HAR-667/666/664/663/654/653/652) — well above
+  the ~2-in-flight target; the audit batch itself is this round's refill.
+- `origin/main` still **18** ahead of `staging` (SHA `79a007e`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `drained-2`; next markers `BL=2026-07-12T15:11:19.339Z` (HAR-667's `updatedAt`, newest
+  in the raw Todo set now HAR-647/648/649 are Done), `PICK=7` (665/662/661/650/566/550 still
+  `needs-human`), `MAIN=79a007e`. Productive outcome (not `noop`) → next fire does NOT early-exit
+  at Step 1b regardless — it proceeds to Step 2 and should pick up the next 3 mutually-independent
+  P0/P1 slices (e.g. HAR-654, HAR-653, HAR-652).
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-12T05:05:44.997Z
-mc-round-pick: 0
+mc-round-bl: 2026-07-12T15:11:19.339Z
+mc-round-pick: 7
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: noop
+mc-round-outcome: drained-2
