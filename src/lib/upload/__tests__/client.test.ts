@@ -11,8 +11,8 @@ function makeSignedUrlResponse(ok: boolean) {
   }
 }
 
-function makePutResponse() {
-  return { ok: true }
+function makePutResponse(ok = true, status = 200) {
+  return { ok, status }
 }
 
 describe('uploadFile', () => {
@@ -51,6 +51,30 @@ describe('uploadFile', () => {
     vi.mocked(global.fetch).mockResolvedValueOnce(makeSignedUrlResponse(false) as never)
 
     await expect(uploadFile('portfolio', file)).rejects.toThrow('Failed to get upload URL')
+  })
+
+  it('rejects and does not return public_url when PUT is forbidden (403)', async () => {
+    const file = new File(['content'], 'test.jpg', { type: 'image/jpeg' })
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(makeSignedUrlResponse(true))
+      .mockResolvedValueOnce(makePutResponse(false, 403))
+    global.fetch = fetchMock
+
+    await expect(uploadFile('portfolio', file)).rejects.toThrow(
+      'Failed to upload file: test.jpg (403)',
+    )
+  })
+
+  it('rejects and does not return public_url when PUT errors (500)', async () => {
+    const file = new File(['content'], 'test.jpg', { type: 'image/jpeg' })
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(makeSignedUrlResponse(true))
+      .mockResolvedValueOnce(makePutResponse(false, 500))
+    global.fetch = fetchMock
+
+    await expect(uploadFile('portfolio', file)).rejects.toThrow(
+      'Failed to upload file: test.jpg (500)',
+    )
   })
 
   it('passes correct bucket, filename, content_type in signed-url request body', async () => {
