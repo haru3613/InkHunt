@@ -267,8 +267,53 @@ describe('OnboardingWizard', () => {
 
     expect(body.display_name).toBe('測試刺青師')
     expect(body.style_slugs).toEqual(['fine-line'])
+    expect(body.can_cover).toBe(false)
+    expect(body.accept_custom).toBe(true)
+    expect(body.has_flash_designs).toBe(false)
     expect(body.city).toBe('台北市')
     expect(body.price_min).toBe(2000)
+  })
+
+  it('submitted payload keys all survive POST /api/artists createArtistSchema (HAR-647 regression)', async () => {
+    // Proves the wizard→API contract stays reconciled: every key the wizard
+    // sends is one the schema actually accepts, so zod's safeParse never
+    // silently strips style_slugs/service flags again.
+    const { createArtistSchema } = await import('@/app/api/artists/schema')
+
+    mockFetch.mockResolvedValue(makeOkResponse({ slug: 'test-artist' }))
+
+    render(<OnboardingWizard />)
+
+    fireEvent.change(screen.getByTestId('name-input'), {
+      target: { value: '測試刺青師' },
+    })
+    fireEvent.click(screen.getByTestId('next-1'))
+    fireEvent.click(screen.getByTestId('select-style'))
+    fireEvent.click(screen.getByTestId('next-2'))
+    fireEvent.click(screen.getByTestId('set-city'))
+    fireEvent.click(screen.getByTestId('next-3'))
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('submit'))
+    })
+
+    await waitFor(() => expect(mockFetch).toHaveBeenCalled())
+
+    const sentBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+    const result = createArtistSchema.safeParse(sentBody)
+
+    expect(result.success).toBe(true)
+    if (result.success) {
+      // Every key the wizard sent is present in the parsed (accepted) data —
+      // none were dropped as "unrecognized keys".
+      for (const key of Object.keys(sentBody)) {
+        expect(result.data).toHaveProperty(key)
+      }
+      expect(result.data.style_slugs).toEqual(['fine-line'])
+      expect(result.data.can_cover).toBe(false)
+      expect(result.data.accept_custom).toBe(true)
+      expect(result.data.has_flash_designs).toBe(false)
+    }
   })
 
   it('shows OnboardingComplete after successful submit', async () => {
