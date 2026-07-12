@@ -137,4 +137,57 @@ describe('ChatInput', () => {
       expect(btn).toBeDisabled()
     })
   })
+
+  describe('error handling (HAR-653)', () => {
+    it('does NOT clear input if sending fails', async () => {
+      const failingSend = vi.fn().mockRejectedValue(new Error('Network error'))
+      render(<ChatInput onSendMessage={failingSend} isArtist={false} />)
+
+      const input = screen.getByPlaceholderText('輸入訊息...') as HTMLInputElement
+      await userEvent.type(input, 'Failed message')
+
+      const sendBtn = screen.getByTestId('icon-send').closest('button') as HTMLButtonElement
+      await userEvent.click(sendBtn)
+
+      // Input should still contain the text after failed send
+      expect(input.value).toBe('Failed message')
+    })
+
+    it('clears input only after successful send', async () => {
+      const successSend = vi.fn().mockResolvedValue(undefined)
+      render(<ChatInput onSendMessage={successSend} isArtist={false} />)
+
+      const input = screen.getByPlaceholderText('輸入訊息...') as HTMLInputElement
+      await userEvent.type(input, 'Success message')
+
+      const sendBtn = screen.getByTestId('icon-send').closest('button') as HTMLButtonElement
+      await userEvent.click(sendBtn)
+
+      // Input should be cleared after successful send
+      expect(input.value).toBe('')
+    })
+
+    it('handles unhandled promise rejection from send failure', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const failingSend = vi.fn().mockRejectedValue(new Error('Send failed'))
+
+      render(<ChatInput onSendMessage={failingSend} isArtist={false} />)
+
+      const input = screen.getByPlaceholderText('輸入訊息...')
+      await userEvent.type(input, 'Message')
+
+      const sendBtn = screen.getByTestId('icon-send').closest('button') as HTMLButtonElement
+      await userEvent.click(sendBtn)
+
+      // Give async operations time to settle
+      await new Promise((resolve) => setTimeout(resolve, 50))
+
+      // There should be NO unhandled rejection — error is caught and handled
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Unhandled Rejection'),
+      )
+
+      consoleErrorSpy.mockRestore()
+    })
+  })
 })
