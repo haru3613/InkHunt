@@ -229,6 +229,43 @@ describe('respondToQuote', () => {
     expect(callNum).toBe(2)
   })
 
+  it('throws when inquiry is already in accepted state and trying to accept', async () => {
+    mockFrom.mockReturnValue(
+      makeThenable({ data: null, error: null }),
+    )
+
+    // Simulate inquiry already accepted by passing inquiry_status
+    await expect(
+      respondToQuote('quote-1', 'inq-1', 'accepted', 'accepted'),
+    ).rejects.toThrow('Inquiry is already accepted')
+  })
+
+  it('throws when inquiry is already in accepted state and trying to reject', async () => {
+    mockFrom.mockReturnValue(
+      makeThenable({ data: null, error: null }),
+    )
+
+    // Simulate inquiry already accepted by passing inquiry_status
+    await expect(
+      respondToQuote('quote-1', 'inq-1', 'rejected', 'accepted'),
+    ).rejects.toThrow('Inquiry is already accepted')
+  })
+
+  it('allows accepting quote when inquiry is in quoted state', async () => {
+    const acceptedQuote = { ...BASE_QUOTE, status: 'accepted' as const }
+    let callNum = 0
+    mockFrom.mockImplementation((table: string) => {
+      callNum++
+      if (table === 'quotes') return makeThenable({ data: acceptedQuote, error: null })
+      return makeThenable({ data: null, error: null })
+    })
+
+    // Should NOT throw when inquiry is in 'quoted' state
+    const result = await respondToQuote('quote-1', 'inq-1', 'accepted', 'quoted')
+
+    expect(result.status).toBe('accepted')
+  })
+
   it('inserts correct system message text for accepted', async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === 'quotes') return makeThenable({ data: BASE_QUOTE, error: null })
