@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { validateUploadRequest, createSignedUploadUrl } from '../storage'
+import {
+  validateUploadRequest,
+  createSignedUploadUrl,
+  extractStoragePath,
+  deletePortfolioStorageObjects,
+} from '../storage'
 
 const mockCreateSignedUploadUrl = vi.fn()
 const mockGetPublicUrl = vi.fn()
@@ -154,5 +159,50 @@ describe('createSignedUploadUrl', () => {
     const result = await createSignedUploadUrl('portfolio', 'user1', 'design.webp', 'image/webp')
 
     expect(result.path).toMatch(/\.webp$/)
+  })
+})
+
+describe('extractStoragePath', () => {
+  it('extracts the path from a public storage URL for the given bucket', () => {
+    const url = 'https://xyz.supabase.co/storage/v1/object/public/portfolio/artist-1/photo.jpg'
+    expect(extractStoragePath('portfolio', url)).toBe('artist-1/photo.jpg')
+  })
+
+  it('returns null when the URL does not match the bucket', () => {
+    const url = 'https://xyz.supabase.co/storage/v1/object/public/avatars/artist-1/photo.jpg'
+    expect(extractStoragePath('portfolio', url)).toBeNull()
+  })
+
+  it('returns null for null/undefined input', () => {
+    expect(extractStoragePath('portfolio', null)).toBeNull()
+    expect(extractStoragePath('portfolio', undefined)).toBeNull()
+  })
+})
+
+describe('deletePortfolioStorageObjects', () => {
+  it('removes only the resolvable paths for the given urls, skipping nulls', async () => {
+    const mockRemove = vi.fn().mockResolvedValue({ data: null, error: null })
+    const admin = {
+      storage: { from: vi.fn(() => ({ remove: mockRemove })) },
+    } as never
+
+    await deletePortfolioStorageObjects(admin, [
+      'https://xyz.supabase.co/storage/v1/object/public/portfolio/a/1.jpg',
+      null,
+      'https://xyz.supabase.co/storage/v1/object/public/portfolio/a/2.jpg',
+    ])
+
+    expect(mockRemove).toHaveBeenCalledWith(['a/1.jpg', 'a/2.jpg'])
+  })
+
+  it('is a no-op when no urls resolve to a storage path', async () => {
+    const mockRemove = vi.fn()
+    const admin = {
+      storage: { from: vi.fn(() => ({ remove: mockRemove })) },
+    } as never
+
+    await deletePortfolioStorageObjects(admin, [null, undefined])
+
+    expect(mockRemove).not.toHaveBeenCalled()
   })
 })

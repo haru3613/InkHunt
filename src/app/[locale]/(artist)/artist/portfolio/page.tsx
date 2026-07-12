@@ -10,6 +10,7 @@ export default function PortfolioPage() {
   const { artist } = useAuth()
   const [items, setItems] = useState<PortfolioItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -51,10 +52,16 @@ export default function PortfolioPage() {
   const handleDelete = useCallback(async (id: string) => {
     if (!artist) return
     try {
-      await fetch(`/api/artists/${artist.slug}/portfolio/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/artists/${artist.slug}/portfolio/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        setError('刪除失敗，請重試')
+        return
+      }
+      setError(null)
       setItems((prev) => prev.filter((item) => item.id !== id))
     } catch {
-      // Delete failure — item remains in the grid
+      // Network failure — item remains in the grid
+      setError('刪除失敗，請重試')
     }
   }, [artist])
 
@@ -77,6 +84,7 @@ export default function PortfolioPage() {
         <PortfolioUploader onUpload={handleUpload} />
       </div>
       <p className="text-sm text-[#F5F0EB]/40">{items.length} 件作品</p>
+      {error && <div className="text-sm text-red-400">{error}</div>}
       <PortfolioManageGrid items={items} onDelete={handleDelete} onEdit={handleEdit} />
     </div>
   )

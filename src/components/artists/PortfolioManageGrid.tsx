@@ -51,6 +51,7 @@ export function PortfolioManageGrid({ items, onDelete, onEdit }: PortfolioManage
               size="icon"
               variant="ghost"
               className="text-white hover:bg-white/20"
+              aria-label="編輯"
               onClick={() => onEdit(item)}
             >
               <Edit2 className="h-4 w-4" />
@@ -59,6 +60,7 @@ export function PortfolioManageGrid({ items, onDelete, onEdit }: PortfolioManage
               size="icon"
               variant="ghost"
               className="text-red-400 hover:bg-red-400/20"
+              aria-label="刪除"
               onClick={() => void handleDelete(item.id)}
               disabled={deletingId === item.id}
             >
