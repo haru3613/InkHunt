@@ -137,4 +137,79 @@ describe('ChatInput', () => {
       expect(btn).toBeDisabled()
     })
   })
+
+  describe('send error handling (HAR-653)', () => {
+    it('does NOT clear input immediately — clears only after send succeeds', async () => {
+      // Simulate a slow/delayed send by making onSendMessage return a promise
+      onSendMessage.mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 100)),
+      )
+
+      render(<ChatInput onSendMessage={onSendMessage} isArtist={false} />)
+
+      const input = screen.getByPlaceholderText('輸入訊息...') as HTMLInputElement
+      await userEvent.type(input, 'Hello')
+
+      const sendBtn = screen.getByTestId('icon-send').closest('button') as HTMLButtonElement
+      await userEvent.click(sendBtn)
+
+      // After clicking, onSendMessage should have been called
+      expect(onSendMessage).toHaveBeenCalledOnce()
+
+      // Wait for the send to complete and input to be cleared
+      await vi.waitFor(() => {
+        expect((input).value).toBe('')
+      })
+    })
+
+    it('retains input text when send fails and shows error message', async () => {
+      const errorMessage = 'Failed to send message'
+      onSendMessage.mockRejectedValue(new Error(errorMessage))
+
+      render(<ChatInput onSendMessage={onSendMessage} isArtist={false} />)
+
+      const input = screen.getByPlaceholderText('輸入訊息...') as HTMLInputElement
+      await userEvent.type(input, 'Failed message')
+
+      const sendBtn = screen.getByTestId('icon-send').closest('button') as HTMLButtonElement
+      await userEvent.click(sendBtn)
+
+      // Input text should be retained (not cleared) on failure
+      await vi.waitFor(() => {
+        expect((input).value).toBe('Failed message')
+      })
+
+      // Error message should be displayed
+      expect(screen.getByRole('alert')).toHaveTextContent(errorMessage)
+    })
+
+    it('clears input and removes error on successful retry after failed send', async () => {
+      onSendMessage.mockRejectedValueOnce(new Error('Network error'))
+      onSendMessage.mockResolvedValueOnce(undefined)
+
+      render(<ChatInput onSendMessage={onSendMessage} isArtist={false} />)
+
+      const input = screen.getByPlaceholderText('輸入訊息...') as HTMLInputElement
+      const sendBtn = screen.getByTestId('icon-send').closest('button') as HTMLButtonElement
+
+      // First attempt fails
+      await userEvent.type(input, 'Retry message')
+      await userEvent.click(sendBtn)
+
+      // Error is shown and input is retained
+      await vi.waitFor(() => {
+        expect((input).value).toBe('Retry message')
+        expect(screen.getByRole('alert')).toBeInTheDocument()
+      })
+
+      // Second attempt succeeds
+      await userEvent.click(sendBtn)
+
+      // Now input is cleared and error is gone
+      await vi.waitFor(() => {
+        expect((input).value).toBe('')
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      })
+    })
+  })
 })
