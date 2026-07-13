@@ -74,7 +74,7 @@ export async function respondToQuote(
   inquiryId: string,
   status: 'accepted' | 'rejected',
   inquiryStatus?: string,
-): Promise<Quote> {
+): Promise<Quote | null> {
   const admin = createAdminClient()
 
   // State machine guard: prevent responding to quotes if inquiry is already accepted
@@ -82,15 +82,21 @@ export async function respondToQuote(
     throw new Error('Inquiry is already accepted')
   }
 
+  // Scope by inquiry_id too (IDOR guard) — mirrors markQuoteViewed below.
+  // 0 rows matched (quote_id belongs to a different inquiry) → null, not an error.
   const { data: quote, error } = await admin
     .from('quotes')
     .update({ status })
     .eq('id', quoteId)
+    .eq('inquiry_id', inquiryId)
     .select()
-    .single()
+    .maybeSingle()
 
-  if (error || !quote) {
-    throw new Error(`Failed to update quote: ${error?.message}`)
+  if (error) {
+    throw new Error(`Failed to update quote: ${error.message}`)
+  }
+  if (!quote) {
+    return null
   }
 
   const statusText = status === 'accepted' ? '已接受報價' : '已拒絕報價'

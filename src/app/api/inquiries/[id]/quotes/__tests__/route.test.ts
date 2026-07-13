@@ -374,6 +374,22 @@ describe('PATCH /api/inquiries/[id]/quotes', () => {
     expect(body.error).toBe('Inquiry is already accepted')
   })
 
+  it('returns 404 when quote_id does not belong to this inquiry (IDOR guard)', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_CONSUMER_USER)
+    mockGetInquiryById.mockResolvedValueOnce(MOCK_INQUIRY as never)
+    mockRespondToQuote.mockResolvedValueOnce(null)
+
+    const req = makeRequest('PATCH', `/api/inquiries/${INQUIRY_ID}/quotes`, {
+      quote_id: 'quote-belonging-to-another-inquiry',
+      status: 'accepted',
+    })
+    const res = await PATCH(req, params)
+
+    expect(res.status).toBe(404)
+    const body = await res.json()
+    expect(body.error).toBe('Quote not found')
+  })
+
   it('calls markQuoteViewed and returns result when status=viewed', async () => {
     mockRequireAuth.mockResolvedValueOnce(MOCK_CONSUMER_USER)
     mockGetInquiryById.mockResolvedValueOnce(MOCK_INQUIRY as never)

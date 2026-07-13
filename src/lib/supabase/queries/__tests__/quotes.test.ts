@@ -207,7 +207,8 @@ describe('respondToQuote', () => {
 
     const result = await respondToQuote('quote-1', 'inq-1', 'accepted')
 
-    expect(result.status).toBe('accepted')
+    expect(result).not.toBeNull()
+    expect(result?.status).toBe('accepted')
     expect(callNum).toBe(3)
     const quotesChain = mockFrom.mock.results[0].value as ReturnType<typeof makeThenable>
     expect(quotesChain.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({ status: 'accepted' })
@@ -224,7 +225,8 @@ describe('respondToQuote', () => {
 
     const result = await respondToQuote('quote-1', 'inq-1', 'rejected')
 
-    expect(result.status).toBe('rejected')
+    expect(result).not.toBeNull()
+    expect(result?.status).toBe('rejected')
     // Only quotes + messages — no inquiries update for rejection
     expect(callNum).toBe(2)
   })
@@ -263,7 +265,8 @@ describe('respondToQuote', () => {
     // Should NOT throw when inquiry is in 'quoted' state
     const result = await respondToQuote('quote-1', 'inq-1', 'accepted', 'quoted')
 
-    expect(result.status).toBe('accepted')
+    expect(result).not.toBeNull()
+    expect(result?.status).toBe('accepted')
   })
 
   it('inserts correct system message text for accepted', async () => {
@@ -298,6 +301,31 @@ describe('respondToQuote', () => {
     await expect(respondToQuote('quote-1', 'inq-1', 'accepted')).rejects.toThrow(
       'Failed to update quote: update error',
     )
+  })
+
+  it('scopes the update by inquiry_id (IDOR guard)', async () => {
+    const chain = makeThenable({ data: BASE_QUOTE, error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await respondToQuote('quote-1', 'inq-1', 'accepted')
+
+    expect(chain.eq as ReturnType<typeof vi.fn>).toHaveBeenCalledWith('id', 'quote-1')
+    expect(chain.eq as ReturnType<typeof vi.fn>).toHaveBeenCalledWith('inquiry_id', 'inq-1')
+  })
+
+  it('returns null (no throw) when quote_id does not belong to inquiry_id, and does not insert a message or touch the inquiry', async () => {
+    let callNum = 0
+    mockFrom.mockImplementation(() => {
+      callNum++
+      // 0 rows matched (quote belongs to a different inquiry) → no error, no data
+      return makeThenable({ data: null, error: null })
+    })
+
+    const result = await respondToQuote('quote-from-other-inquiry', 'inq-1', 'accepted')
+
+    expect(result).toBeNull()
+    // Only the quotes update was attempted — no system message, no inquiry update
+    expect(callNum).toBe(1)
   })
 })
 

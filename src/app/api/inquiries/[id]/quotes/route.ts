@@ -86,6 +86,9 @@ export async function PATCH(
 
     try {
       const quote = await respondToQuote(quote_id, id, status, inquiry.status)
+      if (!quote) {
+        return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
+      }
       return NextResponse.json(quote)
     } catch (err) {
       if (err instanceof Error && err.message === 'Inquiry is already accepted') {
