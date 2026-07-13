@@ -107,7 +107,9 @@ export interface ArtistFilters {
   isNew?: boolean
 }
 
-const DEFAULT_PAGE_SIZE = 12
+// Exported so the /artists pagination UI (HAR-667) computes the same page
+// count the query itself uses, without hand-duplicating the constant.
+export const DEFAULT_PAGE_SIZE = 12
 
 /**
  * Map a budget bucket to its `price_min` predicate (HAR-434). `null` means "no

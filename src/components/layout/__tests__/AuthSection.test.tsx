@@ -8,9 +8,6 @@ vi.mock('next/image', () => ({
 
 const mockPush = vi.fn()
 const mockRefresh = vi.fn()
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
-}))
 
 const mockLogout = vi.fn().mockResolvedValue(undefined)
 const mockLoginWithRedirect = vi.fn()
@@ -28,10 +25,12 @@ vi.mock('@/hooks/useAuth', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
 vi.mock('@/i18n/navigation', () => ({
   Link: ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) => (
     <a href={href} {...props}>{children}</a>
   ),
+  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
 }))
 
 describe('AuthSection', () => {

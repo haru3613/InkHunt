@@ -1,4 +1,5 @@
-import { useRouter } from 'next/navigation'
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/components/ui/button'
 
 export function OnboardingComplete() {

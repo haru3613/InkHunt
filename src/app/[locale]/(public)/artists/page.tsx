@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { setRequestLocale, getTranslations } from 'next-intl/server'
-import { getArtists } from '@/lib/supabase/queries/artists'
+import { getArtists, DEFAULT_PAGE_SIZE } from '@/lib/supabase/queries/artists'
 import { getAllStyles } from '@/lib/supabase/queries/styles'
 import { getFavoritedArtistIds } from '@/lib/supabase/queries/favorites'
 import { getCurrentUser } from '@/lib/auth/helpers'
@@ -9,6 +9,7 @@ import { ArtistCard } from '@/components/artists/ArtistCard'
 import { ArtistFilters } from '@/components/artists/ArtistFilters'
 import { ActiveFilterChips } from '@/components/artists/ActiveFilterChips'
 import { ArtistListingHeader } from '@/components/artists/ArtistListingHeader'
+import { ArtistPagination } from '@/components/artists/ArtistPagination'
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
 
@@ -118,15 +119,27 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
         <ArtistListingHeader total={total} hasActiveFilters={hasActiveFilters} />
 
         {total > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {artists.map((artist) => (
-              <ArtistCard
-                key={artist.id}
-                artist={artist}
-                initialFavorited={savedArtistIds.has(artist.id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {artists.map((artist) => (
+                <ArtistCard
+                  key={artist.id}
+                  artist={artist}
+                  initialFavorited={savedArtistIds.has(artist.id)}
+                />
+              ))}
+            </div>
+
+            {/* Pagination UI (HAR-667) — artists beyond the first page were
+                previously unreachable even though getArtists already supports
+                page/pageSize. */}
+            <ArtistPagination
+              page={filters.page}
+              pageSize={DEFAULT_PAGE_SIZE}
+              total={total}
+              searchParams={sp}
+            />
+          </>
         ) : null}
       </div>
     </div>

@@ -153,3 +153,29 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   `TS2322: Property 'asChild' does not exist on type '...ButtonProps...'`
   (verified by adding a throwaway file and running tsc). Evidence: HAR-663
   (`src/app/[locale]/error.tsx`, `not-found.tsx`; PR pending).
+- **A repo-wide convention leak (e.g. `useRouter` imported from bare
+  `next/navigation` instead of `@/i18n/navigation`) is cheaper to catch with
+  ONE static grep-based vitest test than a consuming test per offending file.**
+  Scan `src/` for the file-content combination that reproduces the bug (here:
+  imports `useRouter` from `'next/navigation'` AND calls `.push(`/`.replace(`)
+  and assert zero matches — a future regression fails CI even in a file no one
+  thought to unit-test. Per-file behavioral tests still matter for files that
+  already have a consuming test (update their `vi.mock` target too — a stale
+  mock of the OLD import path silently no-ops and the component crashes with
+  "invariant expected app router to be mounted" once the import is swapped).
+  Evidence: HAR-667 (`src/__tests__/i18n-navigation-leak.test.ts`; caught 7
+  real offenders — `artist/page.tsx`, `artist/onboarding/page.tsx`,
+  `inquiries/page.tsx`, `inquiries/[id]/page.tsx`, `quote-requests/new/page.tsx`,
+  `AuthSection.tsx`, `OnboardingComplete.tsx`; PR pending).
+- **`vitest.config.ts` `coverage.thresholds` is INERT under CI's actual gate
+  unless `coverage.enabled: true` is also set.** `.github/workflows/ci.yml`
+  runs the bare `npx vitest run --reporter=verbose` (no `--coverage` flag), so
+  a `thresholds` block alone silently never triggers — coverage is only
+  collected (and thus only enforced) when `--coverage` is passed OR
+  `test.coverage.enabled: true` is in the config. Also: `@vitest/coverage-v8`
+  is NOT a pre-installed dep — `vitest run --coverage` fails with `MISSING
+  DEPENDENCY` until you `npm install --save-dev @vitest/coverage-v8@<vitest's
+  own version>`. Verified by deliberately bumping `lines` above the real total
+  (exit 1) then reverting (exit 0) with `CI=true npx vitest run
+  --reporter=verbose` — the exact CI invocation. Evidence: HAR-666
+  (`vitest.config.ts` `coverage.enabled: true` + `thresholds`; PR pending).

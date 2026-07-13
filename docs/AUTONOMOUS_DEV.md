@@ -2072,9 +2072,57 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   `needs-human`), `MAIN=79a007e`. Productive outcome (not `noop`) → next fire does NOT early-exit
   at Step 1b regardless — it proceeds to Step 2 and should pick up HAR-667 and/or HAR-666.
 
+### Round 67 (2026-07-13) — worktree registry cleanup + HAR-667/666 drained; HAR-683 re-scoped
+
+- **Wake cause:** prior outcome was `drained-3` (productive), so Step 1b proceeded to Step 2
+  regardless of marker match. (`BL` had also moved — HAR-667's `updatedAt` ticked from
+  `2026-07-12T15:11:19.339Z` to `2026-07-13T08:03:14.647Z` with no comment/description diff
+  visible; harmless.)
+- **Worktree hygiene first.** `harness status` showed 1 `active` (HAR-650, no PR recorded) + 2
+  `merged` (HAR-663/664) registry entries, all 3 directories already gone from disk. Cross-checked
+  each against `gh pr view`: HAR-650 → **PR #170 MERGED** (`2026-07-13T04:40:18Z`, same branch
+  `feature/fix-quote-idor-respond-to-quote`) — the registry just never got the `merged`/`pr_number`
+  update. Hand-patched via `WorktreeManager.set_pr_number`/`set_status` (git couldn't `wt end
+  --merged` normally since the worktree dir + git's own admin entry were both already gone), then
+  `wt prune` removed all 3 entries cleanly.
+- **Scout / triage.** Raw Todo set: HAR-667/666 (`ready-for-agent`), HAR-665/662/661/566/550
+  (`needs-human`, unchanged, excluded). Both auto-eligible tickets picked — at the ~2-in-flight
+  target, no refill ideation needed. Spot-checked 3 of HAR-667's findings (`ArtistCard`
+  `initialFavorited=false` hardcode, `MobileNav` bare `startsWith`, missing `vitest.config.ts`
+  coverage thresholds) still live before dispatching — not already shipped.
+- **Drain: 2/2 merged, 0 deferred.**
+  - **HAR-667 merged — PR #176** (squash `46c073a`). Shipped 4 of 5 title-named items: `/artists`
+    pagination (new `ArtistPagination`), real `/favorites` saved-state, `InquiryForm` double-submit
+    guard, and the `/en` routing leak (7 call sites moved to `@/i18n/navigation` + a repo-wide
+    static guard test) plus the 2 named hardcoded-string fixes. Reviewer ran the suite independently
+    (129→131 files after adding 3 more tests for a gap in the string-fix claim, 1462/1462 green),
+    fixed the gap in-branch, then approved. Implementer carved the DB-index item + 5 remaining
+    audit findings into **HAR-683** per the ticket's own "split into its own ticket" instruction.
+  - **HAR-666 merged — PR #175** (squash, `.mc/learnings.md` trivial rebase conflict resolved by
+    the merge agent — kept both tickets' entries). Added page-level tests for the two most-cited
+    0%-coverage gaps + a coverage-threshold acceptance item; RLS/integration coverage explicitly
+    deferred to HAR-550 (not duplicated) per the ticket's own scope note.
+  Both `promotion_review` for HAR-667 (sales-facing UI; informational, not a block); HAR-666 was
+  test-only so Tier-1 passed outright. 0 deferred (Product-QA), 0 tier-2 advisories.
+- **Re-scope: HAR-683 → HAR-683 + HAR-684.** The implementer's carve-out ticket (HAR-683) bundled
+  5 ordinary app-code bugs (favorites login 404, blank chat page for logged-out users, mobile chat
+  CSS, portfolio infinite-loading, MobileNav double-highlight) under `needs-human` alongside the
+  one genuine item (additive DB-index migration — Harvey asked for DB-touching changes to stay
+  human-reviewed on this repo specifically). None of the 5 are money/irreversible-data, so per the
+  fleet-wide 2026-06-06 loosening they're auto-mergeable. Split: trimmed HAR-683 to the migration
+  item only, opened **HAR-684** (`ready-for-agent` + `auto-claude`, Todo) with the 5 bugs — 1
+  self-ideated follow-up ticket this round, well under the ≤2 cap.
+- `origin/main` still **18** ahead of `staging` (SHA `79a007e`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `drained-2`; next markers `BL=2026-07-13T11:14:01.642Z` (HAR-684's `updatedAt`, newest in
+  the raw Todo set now HAR-667/666 are Done and HAR-684 exists), `PICK=1` (665/662/661/566/550
+  still `needs-human`; HAR-683 is `Backlog` state, not in the raw Todo set), `MAIN=79a007e`.
+  Productive outcome (not `noop`) → next fire does NOT early-exit at Step 1b regardless — it
+  proceeds to Step 2 and should pick up HAR-684.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-12T15:11:19.339Z
-mc-round-pick: 2
+mc-round-bl: 2026-07-13T11:14:01.642Z
+mc-round-pick: 1
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-3
+mc-round-outcome: drained-2

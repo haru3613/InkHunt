@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event'
 
 // --- Mocks (must be declared before component imports) ---
 
-vi.mock('next/navigation', () => ({
+// HAR-667: the form must navigate via the LOCALE-AWARE router
+// (`@/i18n/navigation`), not bare `next/navigation` — the latter drops the
+// current locale segment and bounces English visitors back to `/zh-TW`.
+vi.mock('@/i18n/navigation', () => ({
   useRouter: vi.fn(() => ({ push: vi.fn() })),
 }))
 
@@ -92,7 +95,7 @@ vi.mock('@/components/ui/select', () => ({
 import { InquiryForm } from '../InquiryForm'
 import { useAuth } from '@/hooks/useAuth'
 import { trackSubmitInquiry } from '@/lib/analytics'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 
 const mockedUseAuth = vi.mocked(useAuth)
 const mockedTrackSubmitInquiry = vi.mocked(trackSubmitInquiry)
@@ -188,11 +191,13 @@ describe('InquiryForm', () => {
   })
 
   describe('auth gate — button label', () => {
-    it('shows LINE login button text when user is not logged in', () => {
+    it('shows the localized login button text (translation key, not a hardcoded zh-TW string — HAR-667) when user is not logged in', () => {
       makeAuthGuest()
       render(<InquiryForm {...defaultProps} />)
 
-      expect(screen.getByRole('button', { name: /LINE 登入後詢價/i })).toBeInTheDocument()
+      // The mock translator echoes the key itself; a hardcoded '登入後詢價'
+      // literal would fail this and would also render untranslated on /en.
+      expect(screen.getByRole('button', { name: 'loginToSubmit' })).toBeInTheDocument()
     })
 
     it('shows submit button text (translation key) when user is logged in', () => {
@@ -218,7 +223,7 @@ describe('InquiryForm', () => {
 
       render(<InquiryForm {...defaultProps} />)
 
-      const form = screen.getByRole('button', { name: /LINE 登入後詢價/i }).closest('form')!
+      const form = screen.getByRole('button', { name: 'loginToSubmit' }).closest('form')!
       fireEvent.submit(form)
 
       await waitFor(() => {
@@ -566,6 +571,96 @@ describe('InquiryForm', () => {
         )
         expect(body.budget_range).toBeUndefined()
         expect('budget_range' in body).toBe(false)
+      })
+    })
+  })
+
+  describe('double-submit guard (HAR-667)', () => {
+    beforeEach(() => {
+      makeAuthLoggedIn()
+    })
+
+    async function fillValidForm() {
+      const descriptionInput = screen.getByRole('textbox', { name: /description/i })
+      await userEvent.type(descriptionInput, '希望刺一個極簡風格的玫瑰花，放在手腕內側')
+      const sizeInput = screen.getByLabelText(/sizeEstimate/i)
+      await userEvent.type(sizeInput, '5cm x 5cm')
+      fireEvent.change(screen.getByRole('combobox', { name: 'body-part-select' }), {
+        target: { value: '手腕' },
+      })
+    }
+
+    it('disables the submit button while the request is in flight', async () => {
+      let resolveFetch: (value: unknown) => void = () => {}
+      global.fetch = vi.fn().mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve
+        }),
+      )
+
+      render(<InquiryForm {...defaultProps} />)
+      await fillValidForm()
+
+      const form = screen.getByTestId('drawer').querySelector('form')!
+      fireEvent.submit(form)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'submit' })).toBeDisabled()
+      })
+
+      resolveFetch({ ok: true, json: async () => ({ id: 'inquiry-uuid-guard' }) })
+    })
+
+    it('only POSTs once when the form is submitted twice in rapid succession', async () => {
+      let resolveFetch: (value: unknown) => void = () => {}
+      global.fetch = vi.fn().mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve
+        }),
+      )
+
+      render(<InquiryForm {...defaultProps} />)
+      await fillValidForm()
+
+      const form = screen.getByTestId('drawer').querySelector('form')!
+      fireEvent.submit(form)
+      fireEvent.submit(form)
+      fireEvent.submit(form)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+
+      resolveFetch({ ok: true, json: async () => ({ id: 'inquiry-uuid-guard-2' }) })
+    })
+
+    it('re-enables the submit button after the request settles (success)', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'inquiry-uuid-guard-3' }),
+      })
+
+      const onOpenChange = vi.fn()
+      render(<InquiryForm {...defaultProps} onOpenChange={onOpenChange} />)
+      await fillValidForm()
+
+      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
+
+      await waitFor(() => {
+        expect(onOpenChange).toHaveBeenCalledWith(false)
+      })
+    })
+
+    it('re-enables the submit button after the request fails so the consumer can retry', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'))
+
+      render(<InquiryForm {...defaultProps} />)
+      await fillValidForm()
+
+      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'submit' })).not.toBeDisabled()
       })
     })
   })
