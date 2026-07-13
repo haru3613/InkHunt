@@ -19,14 +19,20 @@ vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: vi.fn(),
 }))
 
+vi.mock('@/lib/cache/revalidate-artist', () => ({
+  revalidateArtistPage: vi.fn(),
+}))
+
 import { GET, POST } from '../route'
 import { requireAuth, getArtistForUser } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 
 const mockRequireAuth = vi.mocked(requireAuth)
 const mockGetArtistForUser = vi.mocked(getArtistForUser)
 const mockCreateServerClient = vi.mocked(createServerClient)
 const mockCreateAdminClient = vi.mocked(createAdminClient)
+const mockRevalidateArtistPage = vi.mocked(revalidateArtistPage)
 
 const MOCK_USER = {
   supabaseId: 'supabase-uuid-artist',
@@ -311,5 +317,54 @@ describe('POST /api/artists/[slug]/portfolio', () => {
     expect(insertChain.insert).toHaveBeenCalledWith(
       expect.objectContaining({ sort_order: 0 }),
     )
+  })
+
+  // HAR-664: a new portfolio item must revalidate the public slug page so it
+  // is visible without waiting for the next deploy.
+  it('revalidates the public artist page after a successful portfolio create', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetArtistForUser.mockResolvedValueOnce(MOCK_ARTIST as never)
+
+    const maxOrderChain = makeQueryBuilder({ data: { sort_order: 2 }, error: null })
+    const insertChain = makeQueryBuilder({
+      data: { id: 'item-uuid-new', artist_id: 'artist-uuid-1', sort_order: 3 },
+      error: null,
+    })
+
+    const adminFromMock = vi.fn()
+      .mockReturnValueOnce(maxOrderChain)
+      .mockReturnValueOnce(insertChain)
+
+    mockCreateAdminClient.mockReturnValue({ from: adminFromMock } as never)
+
+    const req = makeRequest('POST', '/api/artists/test-artist/portfolio', {
+      image_url: 'https://example.com/new.jpg',
+    })
+    const res = await POST(req, makeParams('test-artist'))
+
+    expect(res.status).toBe(201)
+    expect(mockRevalidateArtistPage).toHaveBeenCalledWith('test-artist')
+  })
+
+  it('does not revalidate when the insert fails', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetArtistForUser.mockResolvedValueOnce(MOCK_ARTIST as never)
+
+    const maxOrderChain = makeQueryBuilder({ data: null, error: null })
+    const insertChain = makeQueryBuilder({ data: null, error: { message: 'DB error' } })
+
+    const adminFromMock = vi.fn()
+      .mockReturnValueOnce(maxOrderChain)
+      .mockReturnValueOnce(insertChain)
+
+    mockCreateAdminClient.mockReturnValue({ from: adminFromMock } as never)
+
+    const req = makeRequest('POST', '/api/artists/test-artist/portfolio', {
+      image_url: 'https://example.com/new.jpg',
+    })
+    const res = await POST(req, makeParams('test-artist'))
+
+    expect(res.status).toBe(400)
+    expect(mockRevalidateArtistPage).not.toHaveBeenCalled()
   })
 })

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { flattenArtistStyles } from '@/lib/supabase/transforms'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 import { updateArtistSchema } from './schema'
 
 export async function GET(
@@ -57,6 +58,10 @@ export async function PATCH(
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+    // HAR-664: the public slug page is statically cached — revalidate it so
+    // a profile edit is visible without waiting for the next deploy.
+    revalidateArtistPage(slug)
 
     if (style_ids !== undefined) {
       const { data: oldStyles } = await admin

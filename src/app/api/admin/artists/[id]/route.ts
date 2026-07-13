@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, handleApiError } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { pushReviewOutcomeNotification } from '@/lib/line/messaging'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 import type { Artist } from '@/types/database'
 import { z } from 'zod'
 
@@ -57,6 +58,10 @@ export async function PATCH(
     if (error || !data) {
       return NextResponse.json({ error: 'Artist not found' }, { status: 404 })
     }
+
+    // HAR-664: the public slug page is statically cached — revalidate it
+    // immediately so a suspend/approve doesn't wait for the next deploy.
+    revalidateArtistPage((data as { slug: string }).slug)
 
     if ((prior as { status?: string } | null)?.status === 'pending') {
       // Fire-and-forget: LINE push is non-fatal to the admin action.

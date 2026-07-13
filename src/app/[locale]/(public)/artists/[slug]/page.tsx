@@ -26,6 +26,15 @@ interface PageProps {
   params: Promise<{ locale: string; slug: string }>
 }
 
+/**
+ * HAR-664: this page is SSG (`generateStaticParams`) and had no revalidation
+ * strategy — a suspended/edited artist stayed cached until the next deploy.
+ * The mutating endpoints (admin status PATCH, self profile PATCH, portfolio
+ * create/delete) now call `revalidateArtistPage` for immediate freshness;
+ * this time-based window is the safety net for any path that doesn't.
+ */
+export const revalidate = 300
+
 export async function generateStaticParams() {
   const { data: artists } = await getArtists()
   return artists.map((artist) => ({ slug: artist.slug }))

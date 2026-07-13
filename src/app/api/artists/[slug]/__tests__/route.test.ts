@@ -36,9 +36,16 @@ vi.mock('@/lib/supabase/transforms', () => ({
   }),
 }))
 
+vi.mock('@/lib/cache/revalidate-artist', () => ({
+  revalidateArtistPage: vi.fn(),
+}))
+
 import { GET, PATCH } from '../route'
 import { requireAuth, getArtistForUser } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
+
+const mockRevalidateArtistPage = vi.mocked(revalidateArtistPage)
 
 function makeRequest(method: string, url: string, body?: unknown): NextRequest {
   const init: Record<string, unknown> = { method }
@@ -251,6 +258,60 @@ describe('PATCH /api/artists/[slug]', () => {
 
     // Verify update was applied to the correct artist id
     expect(mockEqId).toHaveBeenCalledWith('id', 'artist-uuid-1')
+  })
+
+  // HAR-664: a profile edit must revalidate the public slug page so the
+  // change is visible without waiting for the next deploy.
+  it('revalidates the public artist page after a successful profile edit', async () => {
+    vi.mocked(requireAuth).mockResolvedValue(mockUser)
+    vi.mocked(getArtistForUser).mockResolvedValue({
+      id: 'artist-uuid-1',
+      slug: 'ink-master',
+      line_user_id: 'U1234567890',
+    } as never)
+
+    const mockSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { id: 'artist-uuid-1', slug: 'ink-master' }, error: null })
+    const mockSelectUpdate = vi.fn().mockReturnValue({ single: mockSingle })
+    const mockEqId = vi.fn().mockReturnValue({ select: mockSelectUpdate })
+    const mockUpdate = vi.fn().mockReturnValue({ eq: mockEqId })
+    const mockFrom = vi.fn().mockReturnValue({ update: mockUpdate })
+
+    vi.mocked(createAdminClient).mockReturnValue({ from: mockFrom } as never)
+
+    const request = makeRequest('PATCH', 'http://localhost:3000/api/artists/ink-master', {
+      bio: '更新後的介紹',
+    })
+    const response = await PATCH(request, { params: Promise.resolve({ slug: 'ink-master' }) })
+
+    expect(response.status).toBe(200)
+    expect(mockRevalidateArtistPage).toHaveBeenCalledWith('ink-master')
+  })
+
+  it('does not revalidate when the update fails', async () => {
+    vi.mocked(requireAuth).mockResolvedValue(mockUser)
+    vi.mocked(getArtistForUser).mockResolvedValue({
+      id: 'artist-uuid-1',
+      slug: 'ink-master',
+      line_user_id: 'U1234567890',
+    } as never)
+
+    const mockSingle = vi.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } })
+    const mockSelectUpdate = vi.fn().mockReturnValue({ single: mockSingle })
+    const mockEqId = vi.fn().mockReturnValue({ select: mockSelectUpdate })
+    const mockUpdate = vi.fn().mockReturnValue({ eq: mockEqId })
+    const mockFrom = vi.fn().mockReturnValue({ update: mockUpdate })
+
+    vi.mocked(createAdminClient).mockReturnValue({ from: mockFrom } as never)
+
+    const request = makeRequest('PATCH', 'http://localhost:3000/api/artists/ink-master', {
+      bio: '更新後的介紹',
+    })
+    const response = await PATCH(request, { params: Promise.resolve({ slug: 'ink-master' }) })
+
+    expect(response.status).toBe(400)
+    expect(mockRevalidateArtistPage).not.toHaveBeenCalled()
   })
 
   it('replaces style associations when style_ids provided in PATCH', async () => {
