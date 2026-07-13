@@ -15,6 +15,8 @@ interface ChatInputProps {
 
 export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: ChatInputProps) {
   const [text, setText] = useState('')
+  // HAR-653: failed sends must be visible, not silent
+  const [sendFailed, setSendFailed] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleSend = useCallback(async () => {
@@ -24,8 +26,10 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
       await onSendMessage('text', trimmed)
       // Only clear the input after successful send
       setText('')
+      setSendFailed(false)
     } catch {
-      // Error is handled; input remains for user to retry
+      // Input remains for user to retry
+      setSendFailed(true)
     }
   }, [text, onSendMessage])
 
@@ -46,13 +50,11 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
 
       try {
         const publicUrl = await uploadFile('inquiries', file)
-        try {
-          await onSendMessage('image', publicUrl)
-        } catch {
-          // Message send failed; user can retry
-        }
+        await onSendMessage('image', publicUrl)
+        setSendFailed(false)
       } catch {
-        // Image upload failed; user can retry
+        // Upload or message send failed; user can retry
+        setSendFailed(true)
       }
 
       if (fileInputRef.current) {
@@ -64,6 +66,11 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
 
   return (
     <div className="border-t border-[#2A2A2A] bg-[#0A0A0A] px-4 py-3">
+    {sendFailed && (
+      <p role="alert" className="mx-auto max-w-2xl pb-2 text-[13px] text-red-400">
+        訊息傳送失敗，請重試
+      </p>
+    )}
     <div className="mx-auto flex max-w-2xl items-center gap-2">
       <input
         ref={fileInputRef}

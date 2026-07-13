@@ -167,6 +167,55 @@ describe('ChatInput', () => {
       expect(input.value).toBe('')
     })
 
+    it('shows a retriable error message when send fails', async () => {
+      const failingSend = vi.fn().mockRejectedValue(new Error('Network error'))
+      render(<ChatInput onSendMessage={failingSend} isArtist={false} />)
+
+      const input = screen.getByPlaceholderText('輸入訊息...')
+      await userEvent.type(input, 'Failed message')
+      await userEvent.click(
+        screen.getByTestId('icon-send').closest('button') as HTMLButtonElement,
+      )
+
+      expect(screen.getByRole('alert')).toHaveTextContent('訊息傳送失敗，請重試')
+    })
+
+    it('clears the error once a retry succeeds', async () => {
+      const send = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce(undefined)
+      render(<ChatInput onSendMessage={send} isArtist={false} />)
+
+      const input = screen.getByPlaceholderText('輸入訊息...') as HTMLInputElement
+      await userEvent.type(input, 'Retry me')
+      const sendBtn = screen.getByTestId('icon-send').closest('button') as HTMLButtonElement
+
+      await userEvent.click(sendBtn)
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+
+      await userEvent.click(sendBtn)
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(input.value).toBe('')
+    })
+
+    it('shows the error message when an image message send fails', async () => {
+      const { uploadFile } = await import('@/lib/upload/client')
+      vi.mocked(uploadFile).mockResolvedValue('https://cdn.example.com/img.jpg')
+      const failingSend = vi.fn().mockRejectedValue(new Error('API error'))
+      const { container } = render(
+        <ChatInput onSendMessage={failingSend} isArtist={false} />,
+      )
+
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+      await userEvent.upload(
+        fileInput,
+        new File(['x'], 'tattoo.png', { type: 'image/png' }),
+      )
+
+      expect(screen.getByRole('alert')).toHaveTextContent('訊息傳送失敗，請重試')
+    })
+
     it('handles unhandled promise rejection from send failure', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const failingSend = vi.fn().mockRejectedValue(new Error('Send failed'))
