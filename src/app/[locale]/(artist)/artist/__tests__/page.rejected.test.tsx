@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 
 const mockPush = vi.fn()
 
-vi.mock('next/navigation', () => ({
+vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 

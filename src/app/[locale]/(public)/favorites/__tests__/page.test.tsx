@@ -44,10 +44,22 @@ vi.mock('next-intl/server', () => ({
 }))
 
 // ArtistCard is an async server component that renders deeply-nested async
-// children; stub it to a sync marker echoing the artist it received.
+// children; stub it to a sync marker echoing the artist + initialFavorited it
+// received (HAR-667: /favorites must pass initialFavorited=true — these ARE
+// the consumer's saved artists, so the heart must never render unfavorited).
 vi.mock('@/components/artists/ArtistCard', () => ({
-  ArtistCard: ({ artist }: { artist: { id: string; display_name: string } }) => (
-    <div data-testid="artist-card" data-artist-id={artist.id}>
+  ArtistCard: ({
+    artist,
+    initialFavorited,
+  }: {
+    artist: { id: string; display_name: string }
+    initialFavorited?: boolean
+  }) => (
+    <div
+      data-testid="artist-card"
+      data-artist-id={artist.id}
+      data-initial-favorited={String(initialFavorited ?? false)}
+    >
       {artist.display_name}
     </div>
   ),
@@ -116,5 +128,13 @@ describe('FavoritesPage — favorites read path', () => {
     await renderPage()
     expect(getFavoriteArtists).not.toHaveBeenCalled()
     expect(screen.getByTestId('favorites-login-prompt')).toBeInTheDocument()
+  })
+
+  it('passes initialFavorited=true to every saved-artist card (HAR-667)', async () => {
+    getFavoriteArtists.mockResolvedValue([ARTIST_A, ARTIST_B])
+    await renderPage()
+    for (const card of screen.getAllByTestId('artist-card')) {
+      expect(card).toHaveAttribute('data-initial-favorited', 'true')
+    }
   })
 })

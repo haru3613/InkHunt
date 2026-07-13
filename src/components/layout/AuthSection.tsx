@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { UserIcon, LogOut, ChevronDown } from 'lucide-react'
-import { Link } from '@/i18n/navigation'
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+import { Link, useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
 const DEV_TEST_USERS = [

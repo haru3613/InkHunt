@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatWindow } from '@/components/chat/ChatWindow'
@@ -24,7 +26,7 @@ export default function ConsumerChatPage() {
         if (res.ok) {
           const data = await res.json()
           setArtistName(
-            (data.artist?.display_name as string | undefined) ?? '刺青師',
+            (data.artist?.display_name as string | undefined) ?? t('defaultArtistName'),
           )
           setStatus(
             (data.inquiry?.status as Inquiry['status'] | undefined) ?? null,
@@ -35,7 +37,7 @@ export default function ConsumerChatPage() {
       }
     }
     loadInquiry()
-  }, [id])
+  }, [id, t])
 
   const handleQuoteAction = useCallback(
     async (quoteId: string, action: 'accepted' | 'rejected') => {

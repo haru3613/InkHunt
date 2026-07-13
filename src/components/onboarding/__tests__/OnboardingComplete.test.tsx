@@ -3,7 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 const mockReplace = vi.fn()
 
-vi.mock('next/navigation', () => ({
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+vi.mock('@/i18n/navigation', () => ({
   useRouter: vi.fn(() => ({ replace: mockReplace })),
 }))
 

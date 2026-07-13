@@ -4,7 +4,9 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 // --- Module mocks (must be hoisted before component import) ---
 
 vi.mock('@/lib/upload/client', () => ({ uploadFile: vi.fn() }))
-vi.mock('next/navigation', () => ({ useRouter: vi.fn(() => ({ replace: vi.fn() })) }))
+// HAR-667: OnboardingComplete (rendered on the final step) uses the
+// locale-aware router — bare next/navigation drops the locale segment.
+vi.mock('@/i18n/navigation', () => ({ useRouter: vi.fn(() => ({ replace: vi.fn() })) }))
 
 vi.mock('../OnboardingProgress', () => ({
   OnboardingProgress: ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => (

@@ -56,7 +56,10 @@ export default async function FavoritesPage({ params }: FavoritesPageProps) {
       {favorites.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {favorites.map((artist) => (
-            <ArtistCard key={artist.id} artist={artist} />
+            // Every artist here IS the consumer's saved favorite by
+            // definition of this read path — the heart must render filled,
+            // not the default unfavorited state (HAR-667).
+            <ArtistCard key={artist.id} artist={artist} initialFavorited />
           ))}
         </div>
       ) : (

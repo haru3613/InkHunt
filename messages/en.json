@@ -37,6 +37,10 @@
     "clearFilters": "Clear filters",
     "activeFiltersLabel": "Active filters",
     "removeFilter": "Remove filter",
+    "paginationLabel": "Pagination",
+    "paginationPrev": "Previous",
+    "paginationNext": "Next",
+    "paginationStatus": "Page {page} of {totalPages}",
     "clearAll": "Clear all",
     "searchChipLabel": "“{q}”",
     "searchPlaceholder": "Search by name or bio",
@@ -123,6 +127,7 @@
       }
     },
     "submit": "Submit Inquiry",
+    "loginToSubmit": "Log in with LINE to Inquire",
     "required": "*",
     "comingSoon": "Coming soon",
     "uploadImage": "Upload",
@@ -131,6 +136,8 @@
     "invalidImageType": "Only JPG, PNG, and WebP files are supported",
     "imageTooLarge": "Image must be under 5MB",
     "uploadFailed": "Upload failed, please try again",
+    "myInquiries": "My Inquiries",
+    "defaultArtistName": "the artist",
     "filters": {
       "all": "All",
       "pending": "Awaiting reply",

@@ -5,6 +5,10 @@ import { render, screen, waitFor, cleanup } from '@testing-library/react'
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ id: 'inq_1' }),
+}))
+
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
@@ -70,5 +74,20 @@ describe('ConsumerChatPage next-step expectation copy (HAR-513)', () => {
       expect(screen.getByText('nextStep.quoted')).toBeInTheDocument(),
     )
     expect(screen.queryByText('nextStep.pending')).not.toBeInTheDocument()
+  })
+
+  // HAR-667: the '刺青師' fallback for a missing artist display_name was a
+  // hardcoded zh-TW literal; it now falls back to t('defaultArtistName').
+  it('falls back to the defaultArtistName translation key when artist.display_name is missing', async () => {
+    global.fetch = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ inquiry: { id: 'inq_1', status: 'pending' }, artist: {} }),
+    })) as unknown as typeof fetch
+
+    render(<ConsumerChatPage />)
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'defaultArtistName' })).toBeInTheDocument(),
+    )
   })
 })
