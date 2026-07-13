@@ -31,11 +31,13 @@ export default function LocaleError({
   }, [error])
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#0A0A0A] px-6 text-center">
-      <h1 className="font-display text-2xl font-semibold text-[#F5F0EB]">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center">
+      <h1 className="font-display text-2xl font-semibold text-foreground">
         {t("title")}
       </h1>
-      <p className="max-w-md text-sm text-[#8A8A8A]">{t("description")}</p>
+      <p className="max-w-md text-sm text-muted-foreground">
+        {t("description")}
+      </p>
       <div className="flex gap-3">
         <Button onClick={unstable_retry}>{t("retry")}</Button>
         <Button variant="outline" render={<Link href="/">{t("goHome")}</Link>} />
