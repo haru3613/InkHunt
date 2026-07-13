@@ -26,7 +26,8 @@ export function MobileNav() {
           const isActive =
             tab.href === "/"
               ? pathname === "/"
-              : pathname.startsWith(tab.href)
+              : pathname === tab.href ||
+                pathname.startsWith(`${tab.href}/`)
           const Icon = tab.icon
 
           return (
