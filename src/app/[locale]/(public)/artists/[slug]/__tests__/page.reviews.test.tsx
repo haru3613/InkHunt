@@ -87,7 +87,7 @@ vi.mock('@/components/artist/ArtistReviewFormSection', () => ({
   ),
 }))
 
-import ArtistProfilePage from '../page'
+import ArtistProfilePage, { revalidate } from '../page'
 
 async function renderPage() {
   const ui = await ArtistProfilePage({
@@ -141,6 +141,16 @@ describe('ArtistProfilePage — reviews wiring', () => {
     expect(generateArtistJsonLd).toHaveBeenCalledTimes(1)
     const summaryArg = generateArtistJsonLd.mock.calls[0]?.[1]
     expect(summaryArg).toMatchObject({ count: 2, average: 4 })
+  })
+
+  // HAR-664: the page is SSG (generateStaticParams) with no revalidation
+  // strategy, so a suspended/edited artist stayed cached until the next
+  // deploy. A bounded time-based `revalidate` (ISR) is the safety net for
+  // any mutation path that doesn't call `revalidateArtistPage` directly.
+  it('sets a positive, bounded time-based revalidate window (ISR safety net)', () => {
+    expect(typeof revalidate).toBe('number')
+    expect(revalidate).toBeGreaterThan(0)
+    expect(revalidate).toBeLessThanOrEqual(3600)
   })
 
   it('degrades to the empty reviews state without crashing when the query fails', async () => {

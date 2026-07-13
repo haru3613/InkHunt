@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { deletePortfolioStorageObjects } from '@/lib/upload/storage'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 
 export async function DELETE(
   request: NextRequest,
@@ -32,6 +33,10 @@ export async function DELETE(
     if (error || !item) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
+
+    // HAR-664: the public slug page is statically cached — revalidate it so
+    // a portfolio removal is visible without waiting for the next deploy.
+    revalidateArtistPage(slug)
 
     await deletePortfolioStorageObjects(admin, [
       item.image_url,

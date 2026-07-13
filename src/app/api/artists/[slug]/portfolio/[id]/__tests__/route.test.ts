@@ -22,15 +22,21 @@ vi.mock('@/lib/upload/storage', () => ({
   deletePortfolioStorageObjects: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('@/lib/cache/revalidate-artist', () => ({
+  revalidateArtistPage: vi.fn(),
+}))
+
 import { DELETE } from '../route'
 import { requireAuth, getArtistForUser } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { deletePortfolioStorageObjects } from '@/lib/upload/storage'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 
 const mockRequireAuth = vi.mocked(requireAuth)
 const mockGetArtistForUser = vi.mocked(getArtistForUser)
 const mockCreateAdminClient = vi.mocked(createAdminClient)
 const mockDeletePortfolioStorageObjects = vi.mocked(deletePortfolioStorageObjects)
+const mockRevalidateArtistPage = vi.mocked(revalidateArtistPage)
 
 const MOCK_USER = {
   supabaseId: 'supabase-uuid-artist',
@@ -146,5 +152,39 @@ describe('DELETE /api/artists/[slug]/portfolio/[id]', () => {
       expect.anything(),
       [MOCK_ITEM.image_url, MOCK_ITEM.thumbnail_url, MOCK_ITEM.healed_image_url],
     )
+  })
+
+  // HAR-664: deleting a portfolio item must revalidate the public slug page
+  // so the change is visible without waiting for the next deploy.
+  it('revalidates the public artist page after a successful delete', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetArtistForUser.mockResolvedValueOnce(MOCK_ARTIST as never)
+
+    const deleteChain = makeDeleteChain({ data: MOCK_ITEM, error: null })
+    mockCreateAdminClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(deleteChain),
+    } as never)
+
+    const req = makeRequest('/api/artists/test-artist/portfolio/item-uuid-1')
+    const res = await DELETE(req, makeParams('test-artist', 'item-uuid-1'))
+
+    expect(res.status).toBe(200)
+    expect(mockRevalidateArtistPage).toHaveBeenCalledWith('test-artist')
+  })
+
+  it('does not revalidate when the item is not found', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetArtistForUser.mockResolvedValueOnce(MOCK_ARTIST as never)
+
+    const deleteChain = makeDeleteChain({ data: null, error: { message: 'no rows' } })
+    mockCreateAdminClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(deleteChain),
+    } as never)
+
+    const req = makeRequest('/api/artists/test-artist/portfolio/missing-item')
+    const res = await DELETE(req, makeParams('test-artist', 'missing-item'))
+
+    expect(res.status).toBe(404)
+    expect(mockRevalidateArtistPage).not.toHaveBeenCalled()
   })
 })
