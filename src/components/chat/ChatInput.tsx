@@ -67,7 +67,7 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
   return (
     <div className="border-t border-[#2A2A2A] bg-[#0A0A0A] px-4 py-3">
     {sendFailed && (
-      <p role="alert" className="mx-auto max-w-2xl pb-2 text-[13px] text-red-400">
+      <p role="alert" className="mx-auto max-w-2xl pb-2 text-[12px] text-[#E25C5C]">
         訊息傳送失敗，請重試
       </p>
     )}
