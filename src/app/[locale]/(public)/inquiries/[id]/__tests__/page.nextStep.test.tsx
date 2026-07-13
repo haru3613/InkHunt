@@ -17,6 +17,7 @@ vi.mock('@/i18n/navigation', () => ({
 // covered by inquiry-i18n.statusPill.test.ts).
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => 'zh-TW',
 }))
 
 vi.mock('@/hooks/useAuth', () => ({

@@ -2120,9 +2120,46 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   Productive outcome (not `noop`) → next fire does NOT early-exit at Step 1b regardless — it
   proceeds to Step 2 and should pick up HAR-684.
 
+### Round 68 (2026-07-14) — 0 auto-eligible Todos; remaining audit-batch scope claimed by Espalier, not exhausted
+
+- **Wake cause:** Round 67's outcome was `drained-2` (not `noop`), so Step 1b correctly did NOT
+  early-exit — proceeded to Step 2 to pick up HAR-684 as planned.
+- **Worktree hygiene first.** `harness status` showed 2 stale `merged` entries (HAR-666/667,
+  dirs already gone) — pruned cleanly, 0 active.
+- **HAR-684 already Done — shipped by Espalier, not us.** The concurrent automation first flagged
+  in Round 65 (a separate system independently opening/merging PRs against this same InkHunt
+  repo/tracker) merged HAR-684 itself: PR **#177**, comment signed "Harvey Chan" but referencing
+  its own code-reviewer/typescript-reviewer agents (Espalier's review pattern, not `mc-drain`'s).
+  4 of 5 items fixed with tests; the 5th (MobileNav double-highlight) was already fixed by
+  Espalier's HAR-678. Verified via `linear_getIssueById` — state `Done`, not re-implemented.
+- **Scout: 0 auto-eligible Todos.** The raw Todo set is unchanged in membership from Round 67's
+  `needs-human` tail — HAR-665/662/661/566/550, all already labelled, none re-touched (idempotent).
+  `PICK=0`.
+- **Escalating collision signal (extends the Round 65 flag).** Checked non-Todo states in the
+  project: **HAR-666 `In Progress`, HAR-677/HAR-683/HAR-547 `In Review`** — all assigned to
+  "Harvey Chan" but on Espalier-pattern branches/PRs (`InkHunt-espalier-worktrees/har-649-*`,
+  `har-669-*`, `har-677-*`, `har-678-*` were already visible in this round's `git worktree list`).
+  Espalier is not just occasionally overlapping (Round 65's "first observed instance") — it is now
+  concurrently draining the SAME production-readiness-audit backlog this dispatcher has been
+  working since Round 65, and appears to hold most of the currently-actionable remainder.
+- **No ideation, deliberately.** The production-readiness milestone is **NOT exhausted** — Espalier
+  is actively shipping against it (4 tickets in flight). Ideating new tickets now risks a second
+  bot writing to files Espalier is already mid-edit on, and sending the Step-2 "milestone exhausted"
+  email would misreport a live, non-idle backlog as dead. Treating "no work availed to *this*
+  dispatcher" as equivalent to "no work exists" would be wrong here — so this round takes neither
+  the ideation branch nor the exhaustion-email branch of the ideation policy; it just stands down
+  and lets Espalier's in-flight PRs land. No email this round (not a failure, not a new state
+  needing Harvey's attention beyond what Round 65 already flagged).
+- `origin/main` still **18** ahead of `staging` (SHA `79a007e2`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `noop`; markers refreshed to `BL=2026-07-12T15:10:50.747Z` (HAR-665's `updatedAt`, newest
+  in the raw Todo set now HAR-684 has left it), `PICK=0`, `MAIN=79a007e2`. Next fire early-exits
+  unless: Espalier's in-flight PRs merge and free up new backlog, a new auto-eligible Todo appears,
+  HAR-665/662/661/566/550 are un-gated, or `origin/main` moves.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-13T11:14:01.642Z
-mc-round-pick: 1
+mc-round-bl: 2026-07-12T15:10:50.747Z
+mc-round-pick: 0
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: drained-2
+mc-round-outcome: noop

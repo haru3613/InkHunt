@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 // HAR-667: locale-aware router — bare next/navigation drops the locale segment.
 import { useRouter } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { ArrowLeft } from 'lucide-react'
@@ -14,12 +14,21 @@ export default function ConsumerChatPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const t = useTranslations('inquiry')
-  const { user, isLoggedIn, isLoading: authLoading } = useAuth()
+  const locale = useLocale()
+  const { user, isLoggedIn, isLoading: authLoading, loginWithRedirect } = useAuth()
   const [artistName, setArtistName] = useState('')
   const [status, setStatus] = useState<Inquiry['status'] | null>(null)
 
+  // HAR-684: logged-out visitors used to get a blank page (`return null`) —
+  // send them through LINE login and back to this chat, locale preserved.
   useEffect(() => {
-    if (!id) return
+    if (authLoading || isLoggedIn) return
+    loginWithRedirect(`/${locale}/inquiries/${id}`)
+  }, [authLoading, isLoggedIn, loginWithRedirect, locale, id])
+
+  useEffect(() => {
+    // Skip the guaranteed-401 fetch while logged out / redirecting to login
+    if (!id || !isLoggedIn) return
     async function loadInquiry() {
       try {
         const res = await fetch(`/api/inquiries/${id}`)
@@ -37,7 +46,7 @@ export default function ConsumerChatPage() {
       }
     }
     loadInquiry()
-  }, [id, t])
+  }, [id, isLoggedIn, t])
 
   const handleQuoteAction = useCallback(
     async (quoteId: string, action: 'accepted' | 'rejected') => {
@@ -50,7 +59,7 @@ export default function ConsumerChatPage() {
     [id],
   )
 
-  if (authLoading) {
+  if (authLoading || !isLoggedIn || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0A0A0A] text-[#F5F0EB]/40">
         Loading...
@@ -58,10 +67,12 @@ export default function ConsumerChatPage() {
     )
   }
 
-  if (!isLoggedIn || !user) return null
-
   return (
-    <div className="flex flex-col h-screen bg-[#0A0A0A]">
+    // HAR-684: h-screen overflowed the viewport under the public layout's
+    // sticky header (h-14 = 56px) and fixed MobileNav (main pb-16 = 64px),
+    // pushing the chat input off-screen on mobile. Same approach as the
+    // artist inquiries page, offsets per this layout's chrome.
+    <div className="flex flex-col h-[calc(100dvh-56px-64px)] lg:h-[calc(100dvh-56px)] bg-[#0A0A0A]">
       <div className="flex items-center gap-3 p-4 border-b border-[#1F1F1F]">
         <button
           onClick={() => router.push('/inquiries')}

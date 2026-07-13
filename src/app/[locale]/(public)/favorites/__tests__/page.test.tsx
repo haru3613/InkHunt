@@ -130,6 +130,17 @@ describe('FavoritesPage — favorites read path', () => {
     expect(screen.getByTestId('favorites-login-prompt')).toBeInTheDocument()
   })
 
+  it('login CTA points at the real LINE login entry, not the nonexistent /login (HAR-684)', async () => {
+    getCurrentUser.mockResolvedValue(null)
+    await renderPage()
+    const cta = screen.getByRole('link', { name: '登入' })
+    // Locale prefix preserved so the post-login redirect keeps the language
+    expect(cta).toHaveAttribute(
+      'href',
+      '/api/auth/line?redirect=%2Fzh-TW%2Ffavorites',
+    )
+  })
+
   it('passes initialFavorited=true to every saved-artist card (HAR-667)', async () => {
     getFavoriteArtists.mockResolvedValue([ARTIST_A, ARTIST_B])
     await renderPage()
