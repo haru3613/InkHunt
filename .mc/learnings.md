@@ -153,3 +153,17 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   `TS2322: Property 'asChild' does not exist on type '...ButtonProps...'`
   (verified by adding a throwaway file and running tsc). Evidence: HAR-663
   (`src/app/[locale]/error.tsx`, `not-found.tsx`; PR pending).
+- **A repo-wide convention leak (e.g. `useRouter` imported from bare
+  `next/navigation` instead of `@/i18n/navigation`) is cheaper to catch with
+  ONE static grep-based vitest test than a consuming test per offending file.**
+  Scan `src/` for the file-content combination that reproduces the bug (here:
+  imports `useRouter` from `'next/navigation'` AND calls `.push(`/`.replace(`)
+  and assert zero matches — a future regression fails CI even in a file no one
+  thought to unit-test. Per-file behavioral tests still matter for files that
+  already have a consuming test (update their `vi.mock` target too — a stale
+  mock of the OLD import path silently no-ops and the component crashes with
+  "invariant expected app router to be mounted" once the import is swapped).
+  Evidence: HAR-667 (`src/__tests__/i18n-navigation-leak.test.ts`; caught 7
+  real offenders — `artist/page.tsx`, `artist/onboarding/page.tsx`,
+  `inquiries/page.tsx`, `inquiries/[id]/page.tsx`, `quote-requests/new/page.tsx`,
+  `AuthSection.tsx`, `OnboardingComplete.tsx`; PR pending).

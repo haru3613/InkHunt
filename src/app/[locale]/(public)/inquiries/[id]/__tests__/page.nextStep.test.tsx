@@ -5,6 +5,10 @@ import { render, screen, waitFor, cleanup } from '@testing-library/react'
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ id: 'inq_1' }),
+}))
+
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 

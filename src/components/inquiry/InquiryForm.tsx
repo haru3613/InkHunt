@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+// HAR-667: use the LOCALE-AWARE router — bare `next/navigation` drops the
+// current locale segment on push, bouncing English visitors to `/zh-TW`.
+import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import {
   BottomDrawer,
@@ -77,6 +79,10 @@ export function InquiryForm({
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [referenceImages, setReferenceImages] = useState<string[]>([])
+  // HAR-667: guards against duplicate inquiries from a double-tap/double-submit
+  // — the button disables while a request is in flight and re-enables once it
+  // settles (success or failure) so a retry after a failed submit still works.
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleFieldChange = useCallback(
     (field: keyof FormState, value: string) => {
@@ -96,6 +102,10 @@ export function InquiryForm({
       return
     }
 
+    // Double-submit guard (HAR-667): ignore a re-entrant submit (double-tap,
+    // Enter + click) while the previous request is still in flight.
+    if (isSubmitting) return
+
     const parsed = inquirySchema.safeParse({
       description: form.description,
       body_part: form.body_part,
@@ -111,6 +121,7 @@ export function InquiryForm({
     }
 
     setErrors({})
+    setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/inquiries', {
@@ -143,8 +154,20 @@ export function InquiryForm({
       router.push(`/inquiries/${id}`)
     } catch (err) {
       setErrors({ _form: err instanceof Error ? err.message : 'Something went wrong' })
+    } finally {
+      setIsSubmitting(false)
     }
-  }, [form, referenceImages, onOpenChange, isLoggedIn, loginWithRedirect, artistId, artistSlug, router])
+  }, [
+    form,
+    referenceImages,
+    onOpenChange,
+    isLoggedIn,
+    isSubmitting,
+    loginWithRedirect,
+    artistId,
+    artistSlug,
+    router,
+  ])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -331,8 +354,9 @@ export function InquiryForm({
             type="submit"
             className="w-full bg-primary text-primary-foreground hover:bg-ink-accent-hover"
             size="lg"
+            disabled={isLoggedIn && isSubmitting}
           >
-            {isLoggedIn ? t('submit') : 'LINE 登入後詢價'}
+            {isLoggedIn ? t('submit') : t('loginToSubmit')}
           </Button>
         </form>
       </BottomDrawerContent>

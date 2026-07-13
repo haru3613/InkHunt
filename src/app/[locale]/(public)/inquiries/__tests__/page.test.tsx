@@ -5,8 +5,10 @@ import ConsumerInquiriesPage from '../page'
 import type { Inquiry } from '@/types/database'
 
 // useRouter: capture push() so we can assert navigation on row select.
+// HAR-667: mocked at `@/i18n/navigation` — the locale-aware router the page
+// now uses (bare next/navigation drops the locale segment on push).
 const push = vi.fn()
-vi.mock('next/navigation', () => ({
+vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push }),
 }))
 

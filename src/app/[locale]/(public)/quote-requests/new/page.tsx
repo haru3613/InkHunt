@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

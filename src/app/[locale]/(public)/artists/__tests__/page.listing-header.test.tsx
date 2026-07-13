@@ -23,7 +23,7 @@ const { getArtists, getAllStyles, getCurrentUser, getFavoritedArtistIds } =
       vi.fn<(lineUserId: string, ids: string[]) => Promise<Set<string>>>(),
   }))
 
-vi.mock('@/lib/supabase/queries/artists', () => ({ getArtists }))
+vi.mock('@/lib/supabase/queries/artists', () => ({ getArtists, DEFAULT_PAGE_SIZE: 12 }))
 vi.mock('@/lib/supabase/queries/styles', () => ({ getAllStyles }))
 vi.mock('@/lib/auth/helpers', () => ({ getCurrentUser }))
 vi.mock('@/lib/supabase/queries/favorites', () => ({ getFavoritedArtistIds }))
@@ -77,6 +77,30 @@ vi.mock('@/components/artists/ArtistListingHeader', () => ({
       data-testid="listing-header"
       data-total={total}
       data-active={String(hasActiveFilters)}
+    />
+  ),
+}))
+
+// Stub the pager (HAR-667) to echo its wiring props — its own rendering is
+// covered by ArtistPagination.test.tsx.
+vi.mock('@/components/artists/ArtistPagination', () => ({
+  ArtistPagination: ({
+    page,
+    pageSize,
+    total,
+    searchParams,
+  }: {
+    page: number
+    pageSize: number
+    total: number
+    searchParams: Record<string, string | undefined>
+  }) => (
+    <div
+      data-testid="pagination"
+      data-page={page}
+      data-page-size={pageSize}
+      data-total={total}
+      data-search-params={JSON.stringify(searchParams)}
     />
   ),
 }))
@@ -274,5 +298,37 @@ describe('ArtistsPage — reflects saved state on the grid (HAR-594)', () => {
     for (const card of screen.getAllByTestId('artist-card')) {
       expect(card).toHaveAttribute('data-initial-favorited', 'false')
     }
+  })
+})
+
+describe('ArtistsPage — pagination wiring (HAR-667)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('mounts <ArtistPagination> fed by the current page, DEFAULT page size and total', async () => {
+    await renderPage({ page: '2' }, ARTISTS, 30)
+    const pager = screen.getByTestId('pagination')
+    expect(pager).toHaveAttribute('data-page', '2')
+    expect(pager).toHaveAttribute('data-page-size', '12')
+    expect(pager).toHaveAttribute('data-total', '30')
+  })
+
+  it('defaults to page 1 when no ?page= is present', async () => {
+    await renderPage({}, ARTISTS, 30)
+    expect(screen.getByTestId('pagination')).toHaveAttribute('data-page', '1')
+  })
+
+  it('passes the current searchParams through to the pager (minus nothing — filters preserved)', async () => {
+    await renderPage({ style: 'traditional', page: '2' }, ARTISTS, 30)
+    const params = JSON.parse(
+      screen.getByTestId('pagination').getAttribute('data-search-params')!,
+    )
+    expect(params.style).toBe('traditional')
+  })
+
+  it('does NOT mount the pager when there are zero results', async () => {
+    await renderPage({}, [], 0)
+    expect(screen.queryByTestId('pagination')).not.toBeInTheDocument()
   })
 })
