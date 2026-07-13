@@ -140,4 +140,25 @@ describe('Consumer inquiries page — status filters', () => {
 
     expect(push).toHaveBeenCalledWith('/inquiries/inq-42')
   })
+
+  // HAR-667: the page heading was a hardcoded zh-TW literal ('我的詢價');
+  // it now renders via t('myInquiries') so it flips with /en.
+  it('renders the page heading via the myInquiries translation key (HAR-667)', async () => {
+    mockFetch(() => [makeInquiry()])
+    render(<ConsumerInquiriesPage />)
+
+    await waitFor(() => expect(screen.getByText('刺青師阿明')).toBeInTheDocument())
+    expect(screen.getByRole('heading', { name: 'myInquiries' })).toBeInTheDocument()
+  })
+
+  // HAR-667: the '刺青師' fallback for a missing artist_display_name was a
+  // hardcoded zh-TW literal; it now falls back to t('defaultArtistName').
+  it('falls back to the defaultArtistName translation key when artist_display_name is missing (HAR-667)', async () => {
+    mockFetch(() => [
+      { ...makeInquiry(), artist_display_name: undefined } as unknown as ConsumerInquiry,
+    ])
+    render(<ConsumerInquiriesPage />)
+
+    await waitFor(() => expect(screen.getByText('defaultArtistName')).toBeInTheDocument())
+  })
 })
