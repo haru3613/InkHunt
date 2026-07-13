@@ -19,6 +19,12 @@ function buildUserMetadata(profile: { userId: string; displayName: string; pictu
   }
 }
 
+// Identity lives in app_metadata (service-role-only writable); user_metadata
+// is client-editable and must never be the source of truth (HAR-661).
+function buildAppMetadata(lineUserId: string) {
+  return { line_user_id: lineUserId, provider: 'line' }
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
@@ -70,6 +76,7 @@ export async function GET(request: NextRequest) {
           password,
           email_confirm: true,
           user_metadata: metadata,
+          app_metadata: buildAppMetadata(profile.userId),
         })
 
         if (createErr) {
@@ -79,7 +86,7 @@ export async function GET(request: NextRequest) {
             // so we use the deterministic email to find the user via listUsers with
             // pagination limited to 1 page. This only runs once per user migration.
             await findUserIdByEmail(adminClient, email),
-            { password, user_metadata: metadata },
+            { password, user_metadata: metadata, app_metadata: buildAppMetadata(profile.userId) },
           )
         }
 

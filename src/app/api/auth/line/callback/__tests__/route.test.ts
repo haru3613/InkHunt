@@ -258,6 +258,10 @@ describe('GET /api/auth/line/callback', () => {
           name: PROFILE.displayName,
           provider: 'line',
         }),
+        // Identity must land in app_metadata (service-role-only) — HAR-661
+        app_metadata: expect.objectContaining({
+          line_user_id: PROFILE.userId,
+        }),
       }),
     )
   })
@@ -294,6 +298,9 @@ describe('GET /api/auth/line/callback', () => {
         user_metadata: expect.objectContaining({
           line_user_id: PROFILE.userId,
           provider: 'line',
+        }),
+        app_metadata: expect.objectContaining({
+          line_user_id: PROFILE.userId,
         }),
       }),
     )
