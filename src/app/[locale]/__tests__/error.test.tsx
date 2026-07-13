@@ -31,24 +31,49 @@ describe('LocaleError (src/app/[locale]/error.tsx)', () => {
 
   it('renders the branded title/description copy instead of the Next.js default screen', async () => {
     const { default: LocaleError } = await import('../error')
-    render(<LocaleError error={new Error('boom')} reset={vi.fn()} />)
+    render(
+      <LocaleError
+        error={new Error('boom')}
+        reset={vi.fn()}
+        unstable_retry={vi.fn()}
+      />
+    )
 
     expect(screen.getByText('title')).toBeInTheDocument()
     expect(screen.getByText('description')).toBeInTheDocument()
   })
 
-  it('calls reset() when the retry button is clicked', async () => {
+  it('calls unstable_retry() (re-fetches + resets, not a bare reset()) when the retry button is clicked', async () => {
+    // Next 16.2's `reset()` only clears the boundary's local error state — it
+    // does NOT re-fetch server data, so it silently no-ops when the failure
+    // was a Server Component data-fetch error (the common case). Next's own
+    // docs (node_modules/next/dist/docs/.../error.md) say to prefer
+    // `unstable_retry()`, which calls `router.refresh()` before `reset()`.
     const { default: LocaleError } = await import('../error')
     const reset = vi.fn()
-    render(<LocaleError error={new Error('boom')} reset={reset} />)
+    const unstableRetry = vi.fn()
+    render(
+      <LocaleError
+        error={new Error('boom')}
+        reset={reset}
+        unstable_retry={unstableRetry}
+      />
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'retry' }))
-    expect(reset).toHaveBeenCalledTimes(1)
+    expect(unstableRetry).toHaveBeenCalledTimes(1)
+    expect(reset).not.toHaveBeenCalled()
   })
 
   it('offers a link back home', async () => {
     const { default: LocaleError } = await import('../error')
-    render(<LocaleError error={new Error('boom')} reset={vi.fn()} />)
+    render(
+      <LocaleError
+        error={new Error('boom')}
+        reset={vi.fn()}
+        unstable_retry={vi.fn()}
+      />
+    )
 
     const homeLink = screen.getByRole('link', { name: 'goHome' })
     expect(homeLink).toHaveAttribute('href', '/')
@@ -58,7 +83,9 @@ describe('LocaleError (src/app/[locale]/error.tsx)', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { default: LocaleError } = await import('../error')
     const error = new Error('boom')
-    render(<LocaleError error={error} reset={vi.fn()} />)
+    render(
+      <LocaleError error={error} reset={vi.fn()} unstable_retry={vi.fn()} />
+    )
 
     expect(spy).toHaveBeenCalledWith('[error-boundary]', error)
   })

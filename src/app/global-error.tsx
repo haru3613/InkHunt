@@ -8,14 +8,18 @@ import { useEffect } from "react"
 // bilingual instead of translated, and styling is inline (globals.css may
 // not have loaded either).
 //
+// Retry uses `unstable_retry()` (Next 16.2+), not bare `reset()` — see the
+// rationale in src/app/[locale]/error.tsx.
+//
 // Hook point for the sibling error-tracking ticket: swap this console.error
 // for `Sentry.captureException(error)` (or similar) once that ticket lands.
 export default function GlobalError({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string }
   reset: () => void
+  unstable_retry: () => void
 }) {
   useEffect(() => {
     console.error("[global-error-boundary]", error)
@@ -48,7 +52,7 @@ export default function GlobalError({
           Sorry, something broke. Please try again.
         </p>
         <button
-          onClick={reset}
+          onClick={unstable_retry}
           style={{
             border: "1px solid #C8A97E",
             background: "transparent",
