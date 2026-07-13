@@ -43,10 +43,14 @@ Live policy `"Artist can update own profile"` has
 column restriction: an artist could set `status='active'` (skip admin review)
 or `featured=true` (self-promote) on their own row via the anon-key client.
 
-**Decision:** RLS cannot restrict columns, so use column-level privileges:
-`REVOKE UPDATE (status, featured) ON artists FROM anon, authenticated`.
-The policy itself stays (harmless for other columns; app still writes via
-service role, which is unaffected by the REVOKE).
+**Decision:** RLS cannot restrict columns, and a column-level
+`REVOKE UPDATE (status, featured)` would be a **no-op** — the Supabase default
+table-level UPDATE grant covers all columns and is stored separately from
+column ACLs (review finding). So the migration revokes the whole privilege:
+`REVOKE UPDATE ON artists FROM anon, authenticated`. Verified all artist
+writes go through the service-role admin client, so nothing legitimate loses
+access. If a client-side write path is ever added, follow the
+`011_reviews.sql` pattern (table-level REVOKE + column-level re-GRANT).
 
 ### 5. `messages` INSERT — permissive legacy policy — CONFIRMED, fixed
 
@@ -61,7 +65,7 @@ actually bind.
 
 ### 6. Identity spoofing via `user_metadata` — CONFIRMED (worse than reported), fixed
 
-Two spoofable layers, both rooted in `user_metadata` being **client-editable**
+Three spoofable layers, all rooted in `user_metadata` being **client-editable**
 (any logged-in user can call `supabase.auth.updateUser({ data: {...} })`):
 
 - RLS: `current_line_user_id()` read
@@ -70,6 +74,11 @@ Two spoofable layers, both rooted in `user_metadata` being **client-editable**
 - Server: `extractUserFromSession` read `user_metadata.sub` from
   `getSession()`, which only decodes the cookie without server-side JWT
   verification → the same spoof reached every `requireAuth()` route.
+- Middleware: the `/admin` route gate read
+  `user.user_metadata?.sub ?? user.user_metadata?.line_user_id` → forge an
+  admin LINE ID in your own user_metadata and the admin UI shell loads
+  (data routes were still blocked by `requireAdmin()`). Found by the
+  security review of this PR; now reads `app_metadata.line_user_id`.
 
 **Decision (three parts, one migration + code):**
 
@@ -83,11 +92,24 @@ Two spoofable layers, both rooted in `user_metadata` being **client-editable**
    `app_metadata` — no user_metadata fallback, by design. Display name /
    avatar still come from user_metadata (cosmetic, not identity).
 
-**Rollout note:** JWT claims (`auth.jwt()`) refresh on token renewal, so for
-existing sessions the RLS-side claim can be stale up to ~1h after deploy
-(affects realtime chat reads only). `getUser()` returns fresh app_metadata
-immediately, so server-side auth is correct from the first request. The
-backfill runs in the same migration, before the function swap.
+**Rollout note (deploy gate):** migration 018 MUST be applied (`supabase db
+push`) before — or immediately with — the code deploy. The new code trusts
+only `app_metadata.line_user_id`; until the backfill runs, every existing
+user resolves to logged-out. JWT claims (`auth.jwt()`) refresh on token
+renewal, so for existing sessions the RLS-side claim can be stale up to ~1h
+after deploy (affects realtime chat reads only). `getUser()` returns fresh
+app_metadata immediately, so server-side auth is correct from the first
+request once the backfill has run. The backfill runs in the same migration,
+before the function swap.
+
+**Backfill scope decision:** the backfill keys on
+`raw_user_meta_data ? 'line_user_id'` and deliberately does NOT coalesce from
+`sub`. Both write paths (LINE callback, dev-login) always populate
+`line_user_id`, so coverage is effectively complete; any straggler is treated
+as logged out and self-heals on next LINE login (which sets `app_metadata`
+from the verified LINE profile). Broadening the one-time trust of
+client-editable `user_metadata` to a second key would only widen the window
+for pre-planted spoofed values.
 
 ## Advisor findings fixed in the same migration
 

@@ -18,12 +18,21 @@ DROP POLICY IF EXISTS "Linked users can insert messages" ON messages;
 
 -- 3. Artists could UPDATE their own row with no column guard — including
 --    status (self-activate past admin review) and featured (self-feature).
---    RLS cannot restrict columns, so use column-level privileges.
-REVOKE UPDATE (status, featured) ON artists FROM anon, authenticated;
+--    A column-level REVOKE would be a no-op: the Supabase default table-level
+--    UPDATE grant covers all columns and is stored separately from column
+--    ACLs. Revoke the whole privilege instead — all artist writes go through
+--    the service-role admin client, so nothing legitimate loses access.
+--    (Same pattern as 011_reviews.sql; re-grant specific columns there if a
+--    client-side write path is ever added.)
+REVOKE UPDATE ON artists FROM anon, authenticated;
 
 -- 4. SECURITY DEFINER views bypass RLS on the underlying tables
 --    (Supabase advisor ERROR level). Make them run as the caller,
 --    and drop the default full write grants on the views.
+--    Note: all current reads of these views go through the service role
+--    (BYPASSRLS), so counts stay correct. If an anon-key read path is ever
+--    added, favorites/reviews RLS will hide rows and counts will read low —
+--    add a permissive SELECT policy for aggregation at that point.
 ALTER VIEW artist_rating_summary SET (security_invoker = true);
 ALTER VIEW artist_saved_count SET (security_invoker = true);
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER

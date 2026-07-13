@@ -29,10 +29,11 @@ describe('018_rls_hardening.sql', () => {
     )
   })
 
-  it('revokes column-level UPDATE on artists.status and artists.featured', () => {
+  it('revokes the whole UPDATE privilege on artists (column-level REVOKE is a no-op while the table-level grant remains)', () => {
     expect(normalized).toContain(
-      'revoke update (status, featured) on artists from anon, authenticated',
+      'revoke update on artists from anon, authenticated',
     )
+    expect(normalized).not.toContain('revoke update (status, featured)')
   })
 
   it('switches both views to security_invoker and revokes write grants', () => {
