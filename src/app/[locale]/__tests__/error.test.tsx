@@ -1,0 +1,65 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+
+// HAR-663: branded zh-TW/en error boundary replacing Next's default English
+// error screen. useTranslations mocked key->key per the repo's Footer.test.tsx
+// pattern (no NextIntlClientProvider needed for a unit render).
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => key,
+}))
+
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: React.ReactNode
+    href: string
+    [key: string]: unknown
+  }) => (
+    <a href={typeof href === 'string' ? href : '/'} {...props}>
+      {children}
+    </a>
+  ),
+}))
+
+describe('LocaleError (src/app/[locale]/error.tsx)', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('renders the branded title/description copy instead of the Next.js default screen', async () => {
+    const { default: LocaleError } = await import('../error')
+    render(<LocaleError error={new Error('boom')} reset={vi.fn()} />)
+
+    expect(screen.getByText('title')).toBeInTheDocument()
+    expect(screen.getByText('description')).toBeInTheDocument()
+  })
+
+  it('calls reset() when the retry button is clicked', async () => {
+    const { default: LocaleError } = await import('../error')
+    const reset = vi.fn()
+    render(<LocaleError error={new Error('boom')} reset={reset} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'retry' }))
+    expect(reset).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers a link back home', async () => {
+    const { default: LocaleError } = await import('../error')
+    render(<LocaleError error={new Error('boom')} reset={vi.fn()} />)
+
+    const homeLink = screen.getByRole('link', { name: 'goHome' })
+    expect(homeLink).toHaveAttribute('href', '/')
+  })
+
+  it('logs the error for the (future) error tracker hook point', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { default: LocaleError } = await import('../error')
+    const error = new Error('boom')
+    render(<LocaleError error={error} reset={vi.fn()} />)
+
+    expect(spy).toHaveBeenCalledWith('[error-boundary]', error)
+  })
+})

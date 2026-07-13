@@ -269,5 +269,16 @@
     "changeBody": "我們保留隨時修改本條款的權利。修改後繼續使用本服務即表示您同意新條款。",
     "contactTitle": "聯絡方式",
     "contactBody": "服務條款相關問題請來信：support@ink-hunt.com"
+  },
+  "errors": {
+    "title": "發生錯誤",
+    "description": "很抱歉，這個頁面出了點問題。請再試一次，或返回首頁。",
+    "retry": "重新整理",
+    "goHome": "返回首頁"
+  },
+  "notFound": {
+    "title": "找不到頁面",
+    "description": "你要找的頁面不存在，可能已經被移除或網址有誤。",
+    "goHome": "返回首頁"
   }
 }

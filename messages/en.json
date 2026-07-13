@@ -269,5 +269,16 @@
     "changeBody": "We reserve the right to modify these terms at any time. Continued use of the Service after changes constitutes acceptance of the new terms.",
     "contactTitle": "Contact",
     "contactBody": "For terms-related questions: support@ink-hunt.com"
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "description": "Sorry, this page ran into a problem. Try again, or head back home.",
+    "retry": "Try again",
+    "goHome": "Back to home"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist, or the link may be broken.",
+    "goHome": "Back to home"
   }
 }

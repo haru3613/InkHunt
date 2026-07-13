@@ -145,3 +145,11 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   extend `artists/__tests__/page.listing-header.test.tsx` to assert
   `getArtists.mock.calls[0][0].<field>`. Evidence: HAR-585 (`?new=1`; PR pending).
   Evidence: HAR-529 (5 pre-existing e2e/ errors, `npx eslint src/` exit 0).
+- **`src/components/ui/button.tsx` wraps `@base-ui/react/button`, which has NO
+  `asChild` prop** (that's a Radix pattern, not base-ui). Composing `Button`
+  with a `Link`/`<a>` (e.g. a "go home" CTA) MUST use base-ui's polymorphic
+  `render` prop instead: `<Button render={<Link href="/">label</Link>} />`.
+  `<Button asChild><Link>…</Link></Button>` fails `tsc --noEmit` with
+  `TS2322: Property 'asChild' does not exist on type '...ButtonProps...'`
+  (verified by adding a throwaway file and running tsc). Evidence: HAR-663
+  (`src/app/[locale]/error.tsx`, `not-found.tsx`; PR pending).
