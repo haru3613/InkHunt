@@ -2021,9 +2021,60 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   at Step 1b regardless — it proceeds to Step 2 and should pick up the next 3 mutually-independent
   P0/P1 slices (e.g. HAR-654, HAR-653, HAR-652).
 
+### Round 66 (2026-07-13) — worktree/PR cleanup + HAR-650/663/664 drained; HAR-650 re-scoped off needs-human
+
+- **Wake cause:** prior outcome was `drained-3` (productive), so Step 1b proceeded to Step 2
+  regardless of marker match.
+- **Worktree hygiene first.** The prior round left 5 stale harness-tracked worktrees with no PR
+  recorded (2 with directories already gone, 3 still on disk). Cross-checked each against
+  `gh pr list`: HAR-654/HAR-653/HAR-652 had ALL already been merged via **differently-named**
+  duplicate branches (PRs #164/#165/#166) while their original worktree branches (#167 closed,
+  #168/#169 still OPEN) duplicated the same fixes. Closed the two lingering open duplicate PRs
+  (#168, #169) with a pointer comment, then cleaned up all 5 registry entries (`wt end --merged`
+  / `--abandon`, hand-patched the 2 orphaned entries whose directories were already gone before
+  `wt prune`). HAR-649's worktree/PR #161 (closed, superseded by Espalier's PR #160 per Round 65)
+  cleaned up the same way.
+- **Scout / triage + one re-scope.** Remaining Todo set: HAR-667/666 (`ready-for-agent`),
+  HAR-665/662/661/566/550 (`needs-human`, unchanged, excluded). **HAR-650** (P0 quote-IDOR
+  security fix, tier S) was labeled `needs-human` but its own "Why needs-human" note cited "auth
+  surface" — a boundary this round's Hard-boundary text no longer applies (auth logic has been
+  auto-mergeable fleet-wide since the 2026-06-06 loosening; only money + irreversible-data still
+  gate). Verified the IDOR was still live on `origin/staging:src/lib/supabase/queries/quotes.ts`
+  (`respondToQuote` still `.eq('id', quoteId)` only), removed the `needs-human` label with an
+  explanatory comment, and picked it up. Also picked **HAR-663** (no error/404 boundaries) and
+  **HAR-664** (no revalidation) — both `ready-for-agent`, already-shipped guard confirmed both
+  gaps still present (`find` for `error.tsx`/`global-error.tsx`/`not-found.tsx` empty; `grep` for
+  `revalidate` on the artist page empty). All 3 mutually file-independent (`quotes.ts` vs new
+  `error.tsx`/`global-error.tsx`/`not-found.tsx` files vs `artists/[slug]/page.tsx` + mutating
+  endpoints). Deferred (not this round, no overlap issue, still pickable): HAR-667 (P2 UX/reliability
+  batch), HAR-666 (P2 test-coverage gaps).
+- **Drain: 3/3 merged, 0 deferred.**
+  - **HAR-650 merged — PR #170** (commit `ad2c205`). `respondToQuote` now scopes the update with
+    `.eq('inquiry_id', inquiryId)` (mirrors the already-correct `markQuoteViewed`) and
+    `.single()` → `.maybeSingle()` so a mismatched `quote_id`/`inquiry_id` pair 404s instead of
+    500ing. Reviewer independently confirmed via `gh pr diff`.
+  - **HAR-663 merged — PR #172** (squash). Added `src/app/[locale]/error.tsx`,
+    `src/app/global-error.tsx`, `src/app/[locale]/not-found.tsx` (branded dark-theme zh-TW/en
+    boundaries) + message namespaces both locales. Reviewer re-ran vitest/tsc/eslint/`next build`
+    independently, all clean.
+  - **HAR-664 merged — PR #171** (squash). Added `revalidateArtistPage(slug)` helper called from
+    the 4 mutating endpoints (admin status PATCH, artist self PATCH, portfolio POST/DELETE) +
+    bounded ISR `revalidate` as a safety net. Reviewer verified all 3 acceptance criteria against
+    real evidence (grep + reading the endpoints), not just the PR body's claim.
+  All 3 `promotion_review` (sales-facing UI; informational, not a block). 0 deferred (Product-QA),
+  0 tier-2 advisories.
+- **No ideation.** 2 auto-eligible Todos remain (HAR-667, HAR-666) — at the ~2-in-flight target,
+  no refill needed this round.
+- `origin/main` still **18** ahead of `staging` (SHA `79a007e`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `drained-3`; next markers `BL=2026-07-12T15:11:19.339Z` (HAR-667's `updatedAt`, newest
+  in the raw Todo set now HAR-650/663/664 are Done), `PICK=2` (665/662/661/566/550 still
+  `needs-human`), `MAIN=79a007e`. Productive outcome (not `noop`) → next fire does NOT early-exit
+  at Step 1b regardless — it proceeds to Step 2 and should pick up HAR-667 and/or HAR-666.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-bl: 2026-07-12T15:11:19.339Z
-mc-round-pick: 4
+mc-round-pick: 2
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
 mc-round-outcome: drained-3
