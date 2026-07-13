@@ -10,6 +10,14 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => authState,
 }))
 
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}))
+
 const MOCK_ITEMS = [
   {
     id: 'item-uuid-1',

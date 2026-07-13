@@ -34,12 +34,13 @@ export default async function FavoritesPage({ params }: FavoritesPageProps) {
           className="flex flex-col items-center gap-4 rounded-lg border border-border bg-card px-6 py-16 text-center"
         >
           <p className="text-muted-foreground">登入後即可查看你收藏的刺青師</p>
-          <Link
-            href="/login"
+          {/* HAR-684: /login doesn't exist — LINE OAuth entry is the only login */}
+          <a
+            href={`/api/auth/line?redirect=${encodeURIComponent('/favorites')}`}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
           >
             登入
-          </Link>
+          </a>
         </div>
       </div>
     )
