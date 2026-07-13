@@ -77,6 +77,7 @@ export function InquiryForm({
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [referenceImages, setReferenceImages] = useState<string[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleFieldChange = useCallback(
     (field: keyof FormState, value: string) => {
@@ -91,6 +92,11 @@ export function InquiryForm({
   )
 
   const handleSubmit = useCallback(async () => {
+    // Guard against duplicate submissions while a request is already in flight.
+    if (isSubmitting) {
+      return
+    }
+
     if (!isLoggedIn) {
       loginWithRedirect(window.location.pathname)
       return
@@ -111,6 +117,7 @@ export function InquiryForm({
     }
 
     setErrors({})
+    setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/inquiries', {
@@ -143,8 +150,11 @@ export function InquiryForm({
       router.push(`/inquiries/${id}`)
     } catch (err) {
       setErrors({ _form: err instanceof Error ? err.message : 'Something went wrong' })
+    } finally {
+      // Restore the ability to retry regardless of success/failure.
+      setIsSubmitting(false)
     }
-  }, [form, referenceImages, onOpenChange, isLoggedIn, loginWithRedirect, artistId, artistSlug, router])
+  }, [form, referenceImages, onOpenChange, isLoggedIn, loginWithRedirect, artistId, artistSlug, router, isSubmitting])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -331,6 +341,8 @@ export function InquiryForm({
             type="submit"
             className="w-full bg-primary text-primary-foreground hover:bg-ink-accent-hover"
             size="lg"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
           >
             {isLoggedIn ? t('submit') : 'LINE 登入後詢價'}
           </Button>

@@ -418,6 +418,99 @@ describe('InquiryForm', () => {
     })
   })
 
+  describe('duplicate submission guard (HAR-677)', () => {
+    beforeEach(() => {
+      makeAuthLoggedIn()
+    })
+
+    async function fillValidForm() {
+      await userEvent.type(
+        screen.getByRole('textbox', { name: /description/i }),
+        '希望刺一個極簡風格的玫瑰花，放在手腕內側',
+      )
+      await userEvent.type(screen.getByLabelText(/sizeEstimate/i), '5cm x 5cm')
+      fireEvent.change(screen.getByRole('combobox', { name: 'body-part-select' }), {
+        target: { value: '手腕' },
+      })
+    }
+
+    it('fires exactly one request when submitted repeatedly while pending', async () => {
+      // A fetch that never resolves keeps the first request in flight.
+      let resolveFetch: (value: unknown) => void = () => {}
+      const pending = new Promise((resolve) => {
+        resolveFetch = resolve
+      })
+      global.fetch = vi.fn().mockReturnValue(pending)
+
+      render(<InquiryForm {...defaultProps} />)
+      await fillValidForm()
+
+      const form = screen.getByTestId('drawer').querySelector('form')!
+      fireEvent.submit(form)
+      fireEvent.submit(form)
+      fireEvent.submit(form)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+
+      // Cleanup: resolve the in-flight promise so no unhandled rejection lingers.
+      resolveFetch({ ok: true, json: async () => ({ id: 'inquiry-uuid-guard' }) })
+    })
+
+    it('marks the submit control as busy/disabled while pending', async () => {
+      let resolveFetch: (value: unknown) => void = () => {}
+      const pending = new Promise((resolve) => {
+        resolveFetch = resolve
+      })
+      global.fetch = vi.fn().mockReturnValue(pending)
+
+      render(<InquiryForm {...defaultProps} />)
+      await fillValidForm()
+
+      const submitButton = screen.getByRole('button', { name: 'submit' })
+      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
+
+      await waitFor(() => {
+        expect(submitButton).toBeDisabled()
+        expect(submitButton).toHaveAttribute('aria-busy', 'true')
+      })
+
+      resolveFetch({ ok: true, json: async () => ({ id: 'inquiry-uuid-guard' }) })
+    })
+
+    it('restores the ability to retry after a failed request', async () => {
+      global.fetch = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('Network failure'))
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'inquiry-uuid-retry' }) })
+
+      render(<InquiryForm {...defaultProps} />)
+      await fillValidForm()
+
+      const form = screen.getByTestId('drawer').querySelector('form')!
+      fireEvent.submit(form)
+
+      await waitFor(() => {
+        expect(screen.getByText('Network failure')).toBeInTheDocument()
+      })
+
+      // Button is re-enabled after the failure so the user can retry.
+      const submitButton = screen.getByRole('button', { name: 'submit' })
+      await waitFor(() => {
+        expect(submitButton).not.toBeDisabled()
+        expect(submitButton).toHaveAttribute('aria-busy', 'false')
+      })
+
+      // Retry: a second submit now issues a fresh request.
+      fireEvent.submit(form)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(2)
+      })
+    })
+  })
+
   describe('API error handling', () => {
     beforeEach(() => {
       makeAuthLoggedIn()
