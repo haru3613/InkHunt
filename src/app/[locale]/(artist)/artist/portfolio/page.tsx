@@ -15,11 +15,7 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     async function load() {
-      // HAR-684: non-artists never fetched, so isLoading stayed true forever
-      if (!artist?.slug) {
-        if (!authLoading) setIsLoading(false)
-        return
-      }
+      if (!artist?.slug) return
       try {
         const res = await fetch(`/api/artists/${artist.slug}/portfolio`)
         if (res.ok) {
@@ -33,7 +29,7 @@ export default function PortfolioPage() {
       }
     }
     load()
-  }, [artist?.slug, authLoading])
+  }, [artist?.slug])
 
   const handleUpload = useCallback(async (urls: string[]) => {
     if (!artist) return
@@ -74,6 +70,8 @@ export default function PortfolioPage() {
     // TODO: Open edit dialog (Batch 2)
   }, [])
 
+  // HAR-684: non-artists never fetch, so their isLoading never resolves —
+  // gate the spinner on having an artist at all
   if (authLoading || (isLoading && artist)) {
     return (
       <div className="flex h-screen items-center justify-center text-[#F5F0EB]/40">

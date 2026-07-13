@@ -68,9 +68,10 @@ export default function ConsumerChatPage() {
   }
 
   return (
-    // HAR-684: h-screen overflowed the viewport under the sticky header (h-14
-    // = 56px) and fixed MobileNav (main pb-16 = 64px), pushing the chat input
-    // off-screen on mobile. Mirror the artist inquiries page height math.
+    // HAR-684: h-screen overflowed the viewport under the public layout's
+    // sticky header (h-14 = 56px) and fixed MobileNav (main pb-16 = 64px),
+    // pushing the chat input off-screen on mobile. Same approach as the
+    // artist inquiries page, offsets per this layout's chrome.
     <div className="flex flex-col h-[calc(100dvh-56px-64px)] lg:h-[calc(100dvh-56px)] bg-[#0A0A0A]">
       <div className="flex items-center gap-3 p-4 border-b border-[#1F1F1F]">
         <button

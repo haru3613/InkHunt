@@ -1,6 +1,7 @@
 import { setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getCurrentUser } from '@/lib/auth/helpers'
+import { lineLoginUrl } from '@/lib/auth/login-url'
 import { getFavoriteArtists } from '@/lib/supabase/queries/favorites'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 
@@ -38,7 +39,7 @@ export default async function FavoritesPage({ params }: FavoritesPageProps) {
               Keep the locale prefix so the post-login redirect stays in the
               visitor's language. */}
           <a
-            href={`/api/auth/line?redirect=${encodeURIComponent(`/${locale}/favorites`)}`}
+            href={lineLoginUrl(`/${locale}/favorites`)}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
           >
             登入

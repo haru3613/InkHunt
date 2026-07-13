@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
+import { lineLoginUrl } from '@/lib/auth/login-url'
 
 interface AuthState {
   isLoading: boolean
@@ -73,8 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchAuthState])
 
   const loginWithRedirect = useCallback((redirectTo?: string) => {
-    const params = redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''
-    window.location.href = `/api/auth/line${params}`
+    window.location.href = lineLoginUrl(redirectTo)
   }, [])
 
   const logout = useCallback(async () => {
