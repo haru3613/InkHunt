@@ -167,3 +167,15 @@ SUBORDINATE to the HARD RULES and every deterministic gate.
   real offenders — `artist/page.tsx`, `artist/onboarding/page.tsx`,
   `inquiries/page.tsx`, `inquiries/[id]/page.tsx`, `quote-requests/new/page.tsx`,
   `AuthSection.tsx`, `OnboardingComplete.tsx`; PR pending).
+- **`vitest.config.ts` `coverage.thresholds` is INERT under CI's actual gate
+  unless `coverage.enabled: true` is also set.** `.github/workflows/ci.yml`
+  runs the bare `npx vitest run --reporter=verbose` (no `--coverage` flag), so
+  a `thresholds` block alone silently never triggers — coverage is only
+  collected (and thus only enforced) when `--coverage` is passed OR
+  `test.coverage.enabled: true` is in the config. Also: `@vitest/coverage-v8`
+  is NOT a pre-installed dep — `vitest run --coverage` fails with `MISSING
+  DEPENDENCY` until you `npm install --save-dev @vitest/coverage-v8@<vitest's
+  own version>`. Verified by deliberately bumping `lines` above the real total
+  (exit 1) then reverting (exit 0) with `CI=true npx vitest run
+  --reporter=verbose` — the exact CI invocation. Evidence: HAR-666
+  (`vitest.config.ts` `coverage.enabled: true` + `thresholds`; PR pending).
