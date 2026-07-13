@@ -13,6 +13,7 @@ vi.mock('@/i18n/navigation', () => ({
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => 'zh-TW',
 }))
 
 const authState = vi.hoisted(() => ({
@@ -51,7 +52,7 @@ describe('ConsumerChatPage auth gate + mobile layout (HAR-684)', () => {
   it('redirects a logged-out user to LINE login with the chat URL preserved', async () => {
     render(<ConsumerChatPage />)
     await waitFor(() =>
-      expect(authState.loginWithRedirect).toHaveBeenCalledWith('/inquiries/inq_1'),
+      expect(authState.loginWithRedirect).toHaveBeenCalledWith('/zh-TW/inquiries/inq_1'),
     )
   })
 

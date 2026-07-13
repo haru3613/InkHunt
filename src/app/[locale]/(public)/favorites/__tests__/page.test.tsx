@@ -134,9 +134,10 @@ describe('FavoritesPage — favorites read path', () => {
     getCurrentUser.mockResolvedValue(null)
     await renderPage()
     const cta = screen.getByRole('link', { name: '登入' })
+    // Locale prefix preserved so the post-login redirect keeps the language
     expect(cta).toHaveAttribute(
       'href',
-      '/api/auth/line?redirect=%2Ffavorites',
+      '/api/auth/line?redirect=%2Fzh-TW%2Ffavorites',
     )
   })
 

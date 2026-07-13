@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 // HAR-667: locale-aware router — bare next/navigation drops the locale segment.
 import { useRouter } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { ArrowLeft } from 'lucide-react'
@@ -14,19 +14,21 @@ export default function ConsumerChatPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const t = useTranslations('inquiry')
+  const locale = useLocale()
   const { user, isLoggedIn, isLoading: authLoading, loginWithRedirect } = useAuth()
   const [artistName, setArtistName] = useState('')
   const [status, setStatus] = useState<Inquiry['status'] | null>(null)
 
   // HAR-684: logged-out visitors used to get a blank page (`return null`) —
-  // send them through LINE login and back to this chat.
+  // send them through LINE login and back to this chat, locale preserved.
   useEffect(() => {
     if (authLoading || isLoggedIn) return
-    loginWithRedirect(`/inquiries/${id}`)
-  }, [authLoading, isLoggedIn, loginWithRedirect, id])
+    loginWithRedirect(`/${locale}/inquiries/${id}`)
+  }, [authLoading, isLoggedIn, loginWithRedirect, locale, id])
 
   useEffect(() => {
-    if (!id) return
+    // Skip the guaranteed-401 fetch while logged out / redirecting to login
+    if (!id || !isLoggedIn) return
     async function loadInquiry() {
       try {
         const res = await fetch(`/api/inquiries/${id}`)
@@ -44,7 +46,7 @@ export default function ConsumerChatPage() {
       }
     }
     loadInquiry()
-  }, [id, t])
+  }, [id, isLoggedIn, t])
 
   const handleQuoteAction = useCallback(
     async (quoteId: string, action: 'accepted' | 'rejected') => {
