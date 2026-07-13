@@ -16,13 +16,13 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/__tests__/**'],
-      // Realistic floor at the measured baseline (HAR-666, 2026-07-13); ratchet
+      // Realistic floor at the measured baseline (HAR-666, 2026-07-14); ratchet
       // up as page/RLS/integration coverage grows. Below these, CI fails.
       thresholds: {
-        lines: 75,
-        statements: 74,
-        functions: 60,
-        branches: 70,
+        lines: 77,
+        statements: 77,
+        functions: 65,
+        branches: 73,
       },
     },
   },
