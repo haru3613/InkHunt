@@ -26,12 +26,15 @@ export class ArtistsListPage extends BasePage {
   }
 
   /**
-   * The total-count paragraph, e.g. "共 10 位刺青師".
+   * The total-count paragraph, e.g. "找到 10 位刺青師".
    * We match by partial text so the test is count-agnostic.
+   *
+   * HAR-665: ArtistListingHeader renders `t('resultCount')` = "找到 {count}
+   * 位刺青師" (zh-TW.json), not "共 {count} 位刺青師".
    */
   totalCount(): Locator {
     return this.page.locator('p').filter({
-      hasText: /共 \d+ 位刺青師/,
+      hasText: /找到 \d+ 位刺青師/,
     })
   }
 
@@ -86,6 +89,11 @@ export class ArtistsListPage extends BasePage {
    * Click an artist card that contains the given display name.
    * Navigates to the artist's profile page.
    *
+   * HAR-665: waits for the URL to actually change to a profile path rather
+   * than just `domcontentloaded` — client-side Next.js navigation doesn't
+   * refire `domcontentloaded`, so that alone resolves immediately and races
+   * ahead of the dev-server's on-demand route compilation for `/artists/[slug]`.
+   *
    * @param displayName - The artist's display name as rendered in the card
    */
   async clickArtist(displayName: string): Promise<void> {
@@ -94,6 +102,6 @@ export class ArtistsListPage extends BasePage {
       .filter({ hasText: displayName })
       .first()
       .click()
-    await this.page.waitForLoadState('domcontentloaded')
+    await this.page.waitForURL(/\/artists\/[^/?]+$/)
   }
 }

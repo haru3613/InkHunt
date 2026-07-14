@@ -76,10 +76,14 @@ export class ChatPage extends BasePage {
   /**
    * A single message bubble whose text content matches the given string.
    *
+   * HAR-665: MessageBubble renders text content as `<p class="text-[15px]
+   * ...">`, not `text-sm` — scope to the bubble container instead of a
+   * brittle font-size class.
+   *
    * @param text - The message text to match (exact or partial)
    */
   messageByText(text: string): Locator {
-    return this.page.locator('p.text-sm').filter({ hasText: text })
+    return this.messages().locator('p').filter({ hasText: text })
   }
 
   // --- Chat input locators ---

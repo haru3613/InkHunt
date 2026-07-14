@@ -16,24 +16,17 @@ export class ArtistEntryPage extends BasePage {
     await super.goto('/artist')
   }
 
-  /** h1 shown when the visitor is not logged in: "刺青師後台" */
+  /**
+   * h1 shown when the visitor is not logged in (LandingScreen in
+   * src/app/[locale]/(artist)/artist/page.tsx): "在 InkHunt 展示你的作品"
+   */
   pageTitle(): Locator {
-    return this.page.getByRole('heading', { name: '刺青師後台', level: 1 })
+    return this.page.getByRole('heading', { name: '在 InkHunt 展示你的作品', level: 1 })
   }
 
   /** LINE login button shown to unauthenticated visitors */
   loginButton(): Locator {
-    return this.page.getByRole('button', { name: 'LINE 登入' })
-  }
-
-  /** h1 shown to a logged-in user who has no artist profile yet: "成為 InkHunt 刺青師" */
-  newUserTitle(): Locator {
-    return this.page.getByRole('heading', { name: '成為 InkHunt 刺青師', level: 1 })
-  }
-
-  /** "開始申請" CTA shown to logged-in users with no artist profile */
-  startApplicationButton(): Locator {
-    return this.page.getByRole('button', { name: '開始申請' })
+    return this.page.getByRole('button', { name: 'LINE 登入開始建立' })
   }
 
   /** h1 shown when the artist application is pending review: "申請審核中" */

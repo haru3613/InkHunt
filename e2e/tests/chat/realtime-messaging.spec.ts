@@ -26,7 +26,6 @@ import { ChatPage } from '../../pages/chat.page'
 // ---------------------------------------------------------------------------
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
-const LOCALE = 'zh-TW'
 
 /** The inquiry both users will open.  Set via env var so CI can inject a
  *  stable fixture row without hardcoding a UUID in source. */
@@ -106,11 +105,11 @@ test.describe('Realtime messaging — dual browser context', () => {
       // ------------------------------------------------------------------
       test.skip(
         missingSupabaseUrl,
-        'NEXT_PUBLIC_SUPABASE_URL not set — realtime test requires a real Supabase connection.',
+        'HAR-550: NEXT_PUBLIC_SUPABASE_URL not set — real-stack realtime E2E is not wired up yet (tracked in HAR-550).',
       )
       test.skip(
         missingInquiryId,
-        'REALTIME_INQUIRY_ID not set — provide the UUID of an existing inquiry fixture row.',
+        'HAR-550: REALTIME_INQUIRY_ID not set — no real seeded inquiry fixture row available yet (tracked in HAR-550).',
       )
 
       // ------------------------------------------------------------------
@@ -176,8 +175,8 @@ test.describe('Realtime messaging — dual browser context', () => {
   test(
     'artist message appears on consumer screen without page reload',
     async () => {
-      test.skip(missingSupabaseUrl, 'NEXT_PUBLIC_SUPABASE_URL not set.')
-      test.skip(missingInquiryId, 'REALTIME_INQUIRY_ID not set.')
+      test.skip(missingSupabaseUrl, 'HAR-550: NEXT_PUBLIC_SUPABASE_URL not set (tracked in HAR-550).')
+      test.skip(missingInquiryId, 'HAR-550: REALTIME_INQUIRY_ID not set (tracked in HAR-550).')
 
       // ------------------------------------------------------------------
       // Given: both users are already logged in (re-uses session from
