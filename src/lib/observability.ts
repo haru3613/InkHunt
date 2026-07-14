@@ -1,5 +1,21 @@
 import * as Sentry from '@sentry/nextjs'
 
+const OAUTH_PARAMS = /\b(code|state)=[^&#]*/g
+
+/**
+ * Sentry `beforeSend` hook shared by instrumentation.ts and
+ * instrumentation-client.ts: strips OAuth code/state (LINE callback)
+ * from captured request URLs.
+ */
+export function scrubAuthParams<E extends Sentry.ErrorEvent>(event: E): E {
+  const req = event.request
+  if (req?.url) req.url = req.url.replace(OAUTH_PARAMS, '$1=[redacted]')
+  if (typeof req?.query_string === 'string') {
+    req.query_string = req.query_string.replace(OAUTH_PARAMS, '$1=[redacted]')
+  }
+  return event
+}
+
 /**
  * Single funnel for errors we deliberately do not propagate (HAR-662).
  * Logs to console (Vercel function logs) and forwards to Sentry tagged

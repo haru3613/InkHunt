@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
+import { reportError } from "@/lib/observability"
 
 // HAR-663: branded zh-TW/en boundary for uncaught errors within a locale
 // segment, replacing Next's default English error screen.
@@ -13,9 +14,6 @@ import { Button } from "@/components/ui/button"
 // clears the boundary's local error state and does NOT re-fetch server data,
 // so it silently no-ops on the common case (a Server Component data-fetch
 // error) — unstable_retry() calls router.refresh() first, then reset().
-//
-// Hook point for the sibling error-tracking ticket: swap this console.error
-// for `Sentry.captureException(error)` (or similar) once that ticket lands.
 export default function LocaleError({
   error,
   unstable_retry,
@@ -27,7 +25,7 @@ export default function LocaleError({
   const t = useTranslations("errors")
 
   useEffect(() => {
-    console.error("[error-boundary]", error)
+    reportError("error-boundary", error)
   }, [error])
 
   return (
