@@ -2157,9 +2157,53 @@ The two slices below were drained in parallel in Round 10 and are now **Done**:
   unless: Espalier's in-flight PRs merge and free up new backlog, a new auto-eligible Todo appears,
   HAR-665/662/661/566/550 are un-gated, or `origin/main` moves.
 
+### Round 69 (2026-07-14) — v0.15 budget-aware inbox triage: HAR-711 anchor comparator shipped
+
+- **Wake cause:** `BL` moved (`2026-07-12T15:10:50.747Z → 2026-07-14T02:53:19.969Z`, HAR-662's
+  `updatedAt`) and `PICK` moved (`0 → 2`) — two NEW auto-eligible Todos, **HAR-711** and **HAR-712**
+  (both `auto-claude`), appeared since Round 68: the autonomous-PM pass self-picked a new v0.15
+  **budget-aware inquiry inbox triage** milestone (sort the artist's `/artist/inquiries` list by
+  `budget_range` + show a per-row budget badge) and opened a two-slice Wave 1 — HAR-711 the pure
+  `compareByBudgetDesc` comparator (anchor), HAR-712 the UI wiring that consumes it. Step 1b
+  correctly did NOT early-exit.
+  - Of the prior needs-human tail (HAR-665/662/661/566/550), only HAR-662 and HAR-566 remain in
+    the raw Todo set this round — HAR-665/661/550 have left it (resolved or absorbed elsewhere,
+    not re-verified here since they were already excluded/labelled and untouched).
+- **Worktree hygiene.** `harness status` showed 0 active/stale bot worktrees (clean from Round 68's
+  prune). Left all Espalier (`InkHunt-espalier-worktrees/*`) and human (`.claude/worktrees/*`,
+  `InkHunt-worktrees/*`) trees untouched.
+- **Scout / triage.** HAR-711 and HAR-712 are explicitly sequenced by the ticket text itself
+  ("Sequence after [HAR-711] lands on `staging`" — HAR-712 depends on HAR-711's exported
+  `compareByBudgetDesc` and shares no files with it, but the dependency is real, not just a file
+  overlap). Per the independence rule, dispatched **only HAR-711** this round; HAR-712 unlocks next
+  round once HAR-711 is on `staging`. Already-shipped guard: grepped `origin/staging` — no
+  `src/lib/inquiries/budget-triage.ts`, no `budget` reference in `ChatList.tsx` → genuinely
+  actionable, matches the ticket's own grounding claims. HAR-662 (`needs-human`, production error-
+  visibility/Sentry — needs Harvey to create the tracker project + DSN secret) and HAR-566
+  (`needs-human`, primary-checkout drift reconciliation — dispatcher HARD-FORBIDDEN from mutating
+  the primary checkout) both already labelled → idempotent no-op (no re-label, no re-comment).
+  No open PRs from this dispatcher or Espalier touch the same files (checked `gh pr list` +
+  `git worktree list` — only a human PR #145, unrelated `vercel.json`).
+- **Drain: 1/1 merged, 0 deferred.** **HAR-711 merged — PR #183** (squash `fa87db5`). Pure
+  `compareByBudgetDesc(a, b)` comparator in `src/lib/inquiries/budget-triage.ts`, ranking by
+  `BUDGET_RANGES` index order with `'unsure'`/`null` sorted last; reviewer independently re-ran
+  tests (7/7), eslint, and `tsc --noEmit`, approved. Product-QA Tier-1: `pass` (no UI files in the
+  diff — backend/infra-only; tier2 skipped). All required checks green. Worktree ended, remote
+  branch deleted, Linear → Done with merge comment.
+- **No ideation this round (deliberate).** HAR-712 is already queued and now unblocked (its sole
+  dependency, HAR-711, just landed) — ideating a 3rd ticket this round would risk a file collision
+  with HAR-712's edits to `InquiriesPage`/`ChatList.tsx`/i18n files before it drains. The ~2-in-
+  flight target is judgment, not a hard floor; HAR-712 alone is the correct next pick.
+- `origin/main` still **18** ahead of `staging` (SHA `79a007e2`, unchanged) —
+  `mc-sync-flagged-main` already records this SHA, debounce holds, not re-emailed.
+- Outcome `drained-1`; next markers `BL=2026-07-14T02:53:19.969Z` (HAR-662's `updatedAt`, newest in
+  the raw Todo set now HAR-711 is Done), `PICK=1` (HAR-712; HAR-662/HAR-566 still `needs-human`),
+  `MAIN=79a007e2`. Productive outcome (not `noop`) → next fire does NOT early-exit at Step 1b
+  regardless — it proceeds to Step 2 and should pick up HAR-712.
+
 <!-- machine-greppable round markers — dispatcher parses these; keep exact -->
 mc-sync-flagged-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-bl: 2026-07-12T15:10:50.747Z
-mc-round-pick: 0
+mc-round-bl: 2026-07-14T02:53:19.969Z
+mc-round-pick: 1
 mc-round-main: 79a007e231697f83470e8589ff2289d47511ce4e
-mc-round-outcome: noop
+mc-round-outcome: drained-1
