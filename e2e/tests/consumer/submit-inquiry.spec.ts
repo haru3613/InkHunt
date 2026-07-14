@@ -57,17 +57,44 @@ test.describe('Consumer: submit inquiry', () => {
       await formPage.open()
     })
 
-    await test.step('When: the consumer fills all required fields', async () => {
-      await formPage.fillAndSubmit({
-        description: '想刺一個寫實風格的狼頭，參考了很多作品，希望有層次感',
-        bodyPart: '手臂（上臂）',
-        size: '15x10 cm',
-        budgetMin: '8000',
-        budgetMax: '15000',
-      })
+    // HAR-665 / qa-workflow.md Step 5: Full-Submit test — fill via the real
+    // UI, intercept the actual outgoing POST, and assert on its payload
+    // (not just that validation passed).
+    let inquiryRequest: import('@playwright/test').Request
+    await test.step('When: the consumer fills all required fields and submits', async () => {
+      ;[inquiryRequest] = await Promise.all([
+        consumerPage.waitForRequest(
+          (r) => r.url().includes('/api/inquiries') && r.method() === 'POST',
+        ),
+        formPage.fillAndSubmit({
+          description: '想刺一個寫實風格的狼頭，參考了很多作品，希望有層次感',
+          bodyPart: '手臂（上臂）',
+          size: '15x10 cm',
+          budgetMin: '8000',
+          budgetMax: '15000',
+        }),
+      ])
     })
 
-    await test.step('Then: the form is submitted successfully (no validation errors)', async () => {
+    await test.step('Then: the POST payload contains the fields InquiryForm assembles', async () => {
+      const body = inquiryRequest.postDataJSON()
+      expect(body).toMatchObject({
+        description: '想刺一個寫實風格的狼頭，參考了很多作品，希望有層次感',
+        body_part: '手臂（上臂）',
+        size_estimate: '15x10 cm',
+        budget_min: 8000,
+        budget_max: 15000,
+      })
+      expect(body).toHaveProperty('artist_id')
+      expect(body).toHaveProperty('reference_images')
+    })
+
+    await test.step('And: the API responded successfully', async () => {
+      const response = await inquiryRequest.response()
+      expect(response!.status()).toBeLessThan(400)
+    })
+
+    await test.step('And: the form is submitted successfully (no validation errors)', async () => {
       const errors = formPage.validationErrors()
       await expect(errors).toHaveCount(0)
     })

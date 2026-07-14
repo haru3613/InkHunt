@@ -31,26 +31,17 @@ export const TEST_PENDING_ARTIST_PROFILE = {
   status: 'pending' as const,
 } as const
 
-// --- Known artists from mock data (for public page assertions) ---
+// --- Known artists from real seed data (for public page assertions) ---
+// HAR-665: these are consumed by server-rendered public pages (SSG/ISR from
+// Supabase), which page.route() cannot mock — the slug/name/city/styles must
+// match a real row in supabase/seed.sql, not invented data.
 
 export const KNOWN_ARTISTS = {
   alex: {
-    slug: 'inkmaster-alex',
-    displayName: 'Alex Chen 阿克',
+    slug: 'inked-wolf',
+    displayName: 'InkedWolf 刺青',
     city: '台北市',
     styles: ['寫實', '肖像', '暗黑'],
-  },
-  sakura: {
-    slug: 'sakura-ink',
-    displayName: '小櫻 Sakura',
-    city: '新北市',
-    styles: ['日式傳統', '花卉', '水彩'],
-  },
-  darkline: {
-    slug: 'darkline-studio',
-    displayName: 'DarkLine 暗線刺青',
-    city: '台北市',
-    styles: ['暗黑', '幾何', '點描'],
   },
 } as const
 
@@ -71,11 +62,26 @@ export const TEST_INQUIRY = {
   created_at: '2026-03-20T10:00:00Z',
 } as const
 
+export const TEST_QUOTE = {
+  id: 'quote-001',
+  inquiry_id: 'inquiry-001',
+  artist_id: 'artist-001',
+  price: 12000,
+  note: '含設計費，15x10cm 寫實風格',
+  available_dates: ['4/5', '4/12 下午'],
+  status: 'sent',
+  created_at: '2026-03-20T11:00:00Z',
+} as const
+
 export const TEST_MESSAGES = [
   {
     id: 'msg-001',
     inquiry_id: 'inquiry-001',
-    sender_line_id: TEST_CONSUMER.lineUserId,
+    // HAR-665: the real `messages` table column is `sender_id` (see
+    // src/lib/supabase/queries/messages.ts / types/database.ts), not
+    // `sender_line_id` — was silently mismatched, so isOwn checks
+    // (`msg.sender_id === currentUserId`) always failed.
+    sender_id: TEST_CONSUMER.lineUserId,
     sender_type: 'consumer',
     content: '你好，想詢問這個圖案',
     message_type: 'text',
@@ -85,25 +91,34 @@ export const TEST_MESSAGES = [
   {
     id: 'msg-002',
     inquiry_id: 'inquiry-001',
-    sender_line_id: TEST_ARTIST_USER.lineUserId,
+    sender_id: TEST_ARTIST_USER.lineUserId,
     sender_type: 'artist',
     content: '你好！這個圖案可以做，大概需要 2-3 小時',
     message_type: 'text',
     metadata: null,
     created_at: '2026-03-20T10:30:00Z',
   },
+  {
+    // HAR-665: ChatWindow only renders quote cards from a message with
+    // message_type "quote" (see src/lib/supabase/queries/quotes.ts
+    // createQuote, which always inserts one alongside the quote row) — the
+    // fixture never had one, so the quote card was never actually rendered.
+    id: 'msg-003',
+    inquiry_id: 'inquiry-001',
+    sender_id: TEST_ARTIST_USER.lineUserId,
+    sender_type: 'artist',
+    content: `報價 NT$${TEST_QUOTE.price.toLocaleString()}`,
+    message_type: 'quote',
+    metadata: {
+      quote_id: TEST_QUOTE.id,
+      price: TEST_QUOTE.price,
+      note: TEST_QUOTE.note,
+      available_dates: TEST_QUOTE.available_dates,
+      status: TEST_QUOTE.status,
+    },
+    created_at: TEST_QUOTE.created_at,
+  },
 ] as const
-
-export const TEST_QUOTE = {
-  id: 'quote-001',
-  inquiry_id: 'inquiry-001',
-  artist_id: 'artist-001',
-  price: 12000,
-  note: '含設計費，15x10cm 寫實風格',
-  available_dates: '4/5, 4/12 下午可',
-  status: 'sent',
-  created_at: '2026-03-20T11:00:00Z',
-} as const
 
 // --- API Response shapes ---
 

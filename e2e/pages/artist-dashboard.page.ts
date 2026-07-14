@@ -2,10 +2,11 @@ import { type Page, type Locator } from '@playwright/test'
 import { BasePage } from './base.page'
 
 /**
- * POM for /artist/dashboard.
+ * POM for /artist/inquiries.
  *
- * The dashboard is a split-pane chat view: a ChatList on the left and a
- * ChatWindow on the right.  All text is hardcoded Chinese.
+ * HAR-665: the split-pane chat view (ChatList + ChatWindow) lives at
+ * /artist/inquiries, not /artist/dashboard — /artist/dashboard is a
+ * separate overview page with no chat UI. All text is hardcoded Chinese.
  */
 export class ArtistDashboardPage extends BasePage {
   constructor(page: Page) {
@@ -13,7 +14,7 @@ export class ArtistDashboardPage extends BasePage {
   }
 
   async goto() {
-    await super.goto('/artist/dashboard')
+    await super.goto('/artist/inquiries')
   }
 
   // ---------------------------------------------------------------------------
@@ -68,9 +69,9 @@ export class ArtistDashboardPage extends BasePage {
   // ---------------------------------------------------------------------------
 
   /**
-   * A nav link in ArtistDashboardNav.
+   * A nav link in ArtistTopBar (see src/components/artists/ArtistTopBar.tsx).
    * Works for both the desktop sidebar and the mobile bottom tab bar.
-   * @param label — one of: '詢價', '個人檔案', '作品集', '設定'
+   * @param label — one of: '總覽', '詢價', '作品集', '檔案' (no settings item exists)
    */
   navLink(label: string): Locator {
     return this.page.getByRole('link', { name: label })
@@ -97,7 +98,7 @@ export class ArtistDashboardPage extends BasePage {
 
   /**
    * Navigate to another section of the artist dashboard.
-   * @param navLabel — one of: '詢價', '個人檔案', '作品集', '設定'
+   * @param navLabel — one of: '總覽', '詢價', '作品集', '檔案'
    */
   async navigateTo(navLabel: string) {
     await this.navLink(navLabel).first().click()

@@ -83,8 +83,10 @@ test.describe('Consumer Journey: Browse & Discover', () => {
     })
 
     await test.step('And: the profile shows at least one style badge', async () => {
+      // exact: true — the bio paragraph also contains this style name as a
+      // substring (e.g. "專精寫實風格..."), which makes a loose match ambiguous.
       await expect(
-        publicPage.getByText(artist.styles[0]),
+        publicPage.getByText(artist.styles[0], { exact: true }),
       ).toBeVisible()
     })
 

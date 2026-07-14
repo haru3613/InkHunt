@@ -9,7 +9,7 @@ test.describe('Artist Journey: Onboarding', () => {
       await page.goto()
     })
 
-    await test.step('Then: the page title is "刺青師後台"', async () => {
+    await test.step('Then: the page title is "在 InkHunt 展示你的作品"', async () => {
       await expect(page.pageTitle()).toBeVisible()
     })
 
@@ -23,23 +23,30 @@ test.describe('Artist Journey: Onboarding', () => {
     })
   })
 
-  test('shows application form for new users', async ({ newUserPage }) => {
+  test('redirects new users to the onboarding wizard', async ({ newUserPage }) => {
+    // HAR-665: /artist has no inline "application form" for new users — its
+    // useEffect (src/app/[locale]/(artist)/artist/page.tsx) redirects a
+    // logged-in user with no artist profile to /artist/onboarding, which
+    // renders <OnboardingWizard> starting at step 1 (StepBasicInfo).
     const page = new ArtistEntryPage(newUserPage)
 
     await test.step('Given: a logged-in user with no artist profile navigates to /artist', async () => {
       await page.goto()
     })
 
-    await test.step('Then: the heading "成為 InkHunt 刺青師" is visible', async () => {
-      await expect(page.newUserTitle()).toBeVisible()
+    await test.step('Then: they are redirected to /artist/onboarding', async () => {
+      await newUserPage.waitForURL(/\/artist\/onboarding$/)
     })
 
-    await test.step('And: the "開始申請" button is visible', async () => {
-      await expect(page.startApplicationButton()).toBeVisible()
+    await test.step('And: the onboarding page heading is visible', async () => {
+      await expect(
+        newUserPage.getByRole('heading', { name: '建立你的刺青師檔案', level: 1 }),
+      ).toBeVisible()
     })
 
-    await test.step('And: the LINE login button is not shown', async () => {
-      await expect(page.loginButton()).not.toBeVisible()
+    await test.step('And: step 1 of the wizard (基本資料) is rendered', async () => {
+      await expect(newUserPage.getByRole('heading', { name: '基本資料', level: 2 })).toBeVisible()
+      await expect(newUserPage.getByText('藝名 / 名字')).toBeVisible()
     })
   })
 
