@@ -254,7 +254,7 @@ describe('Admin route protection', () => {
   it('redirects to / when authenticated user is not an admin', async () => {
     vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin1,Uadmin2')
 
-    const nonAdminUser = { id: 'u-not-admin', user_metadata: { sub: 'Unot_admin' } }
+    const nonAdminUser = { id: 'u-not-admin', app_metadata: { line_user_id: 'Unot_admin' } }
     mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: nonAdminUser as never })
 
     const result = await middleware(createMockRequest('/admin'))
@@ -265,10 +265,10 @@ describe('Admin route protection', () => {
     expect(new URL(location!).pathname).toBe('/')
   })
 
-  it('allows admin user with matching sub to access /admin', async () => {
+  it('allows admin user with matching app_metadata line_user_id to access /admin', async () => {
     vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin1,Uadmin2')
 
-    const adminUser = { id: 'u-admin', user_metadata: { sub: 'Uadmin1' } }
+    const adminUser = { id: 'u-admin', app_metadata: { line_user_id: 'Uadmin1' }, user_metadata: {} }
     mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: adminUser as never })
 
     const result = await middleware(createMockRequest('/admin'))
@@ -283,27 +283,27 @@ describe('Admin route protection', () => {
     // If no location, it passed through — also acceptable
   })
 
-  it('allows admin user identified by line_user_id metadata field', async () => {
-    vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin3')
+  it('rejects admin ids forged in client-editable user_metadata (HAR-661)', async () => {
+    vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin1')
 
-    const adminUser = { id: 'u-admin', user_metadata: { line_user_id: 'Uadmin3' } }
-    mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: adminUser as never })
+    // user_metadata is writable via auth.updateUser() — must never grant admin
+    const spoofedUser = {
+      id: 'u-spoof',
+      app_metadata: {},
+      user_metadata: { sub: 'Uadmin1', line_user_id: 'Uadmin1' },
+    }
+    mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: spoofedUser as never })
 
     const result = await middleware(createMockRequest('/admin'))
 
-    const location = result.headers.get('location')
-    if (location !== null) {
-      const loc = new URL(location)
-      // Must NOT redirect to home or LINE login
-      expect(loc.pathname).not.toBe('/')
-      expect(loc.pathname).not.toContain('/api/auth/line')
-    }
+    expect([301, 302, 307, 308]).toContain(result.status)
+    expect(new URL(result.headers.get('location')!).pathname).toBe('/')
   })
 
-  it('redirects to / when authenticated user has no LINE id in metadata', async () => {
+  it('redirects to / when authenticated user has no LINE id in app_metadata', async () => {
     vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin1')
 
-    const userNoId = { id: 'u-no-line', user_metadata: {} }
+    const userNoId = { id: 'u-no-line', app_metadata: {}, user_metadata: {} }
     mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: userNoId as never })
 
     const result = await middleware(createMockRequest('/admin'))

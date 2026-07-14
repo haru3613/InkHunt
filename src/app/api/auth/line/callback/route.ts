@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createHmac } from 'crypto'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, getLineProfile } from '@/lib/line/auth'
+import { buildAppMetadata } from '@/lib/auth/helpers'
 
 function derivePassword(lineUserId: string): string {
   const secret = process.env.AUTH_PASSWORD_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest) {
           password,
           email_confirm: true,
           user_metadata: metadata,
+          app_metadata: buildAppMetadata(profile.userId),
         })
 
         if (createErr) {
@@ -79,7 +81,7 @@ export async function GET(request: NextRequest) {
             // so we use the deterministic email to find the user via listUsers with
             // pagination limited to 1 page. This only runs once per user migration.
             await findUserIdByEmail(adminClient, email),
-            { password, user_metadata: metadata },
+            { password, user_metadata: metadata, app_metadata: buildAppMetadata(profile.userId) },
           )
         }
 

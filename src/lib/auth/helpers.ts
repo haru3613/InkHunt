@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import type { Session } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
 import type { Artist, Inquiry } from '@/types/database'
 
@@ -10,15 +10,25 @@ export interface AuthUser {
   avatarUrl: string | null
 }
 
-export function extractUserFromSession(
-  session: Session | null,
-): AuthUser | null {
-  if (!session?.user) return null
+// Identity lives in app_metadata (service-role-only writable); user_metadata
+// is client-editable and must never be the source of truth (HAR-661).
+export function buildAppMetadata(lineUserId: string) {
+  return { line_user_id: lineUserId, provider: 'line' }
+}
 
-  const meta = session.user.user_metadata
+export function extractAuthUser(user: User | null): AuthUser | null {
+  if (!user) return null
+
+  // Identity MUST come from app_metadata: only the service role can write it.
+  // user_metadata is editable by any logged-in user via auth.updateUser(),
+  // so trusting it for line_user_id allows account takeover (HAR-661).
+  const lineUserId = user.app_metadata?.line_user_id
+  if (typeof lineUserId !== 'string' || lineUserId === '') return null
+
+  const meta = user.user_metadata ?? {}
   return {
-    supabaseId: session.user.id,
-    lineUserId: meta.sub ?? meta.provider_id ?? '',
+    supabaseId: user.id,
+    lineUserId,
     displayName: meta.name ?? meta.full_name ?? '',
     avatarUrl: meta.picture ?? meta.avatar_url ?? null,
   }
@@ -26,10 +36,12 @@ export function extractUserFromSession(
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const supabase = await createServerClient()
+  // getUser() revalidates the token with the Auth server; getSession() only
+  // decodes the cookie client-side and can be forged (HAR-661).
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  return extractUserFromSession(session)
+    data: { user },
+  } = await supabase.auth.getUser()
+  return extractAuthUser(user)
 }
 
 export async function requireAuth(): Promise<AuthUser> {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { buildAppMetadata } from '@/lib/auth/helpers'
 
 /**
  * Dev-only login endpoint. Creates or signs in a test user without LINE OAuth.
@@ -40,6 +41,8 @@ export async function POST(request: NextRequest) {
         sub: lineUserId,
         provider: 'line',
       },
+      // Identity lives in app_metadata (service-role-only writable) — HAR-661
+      app_metadata: buildAppMetadata(lineUserId),
     })
 
     if (createErr) {
@@ -47,7 +50,10 @@ export async function POST(request: NextRequest) {
       const { data: { users } } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 50 })
       const existing = users.find((u) => u.email === email)
       if (existing) {
-        await adminClient.auth.admin.updateUserById(existing.id, { password })
+        await adminClient.auth.admin.updateUserById(existing.id, {
+          password,
+          app_metadata: buildAppMetadata(lineUserId),
+        })
       }
     }
 
