@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 import { z } from 'zod'
 
 const createPortfolioSchema = z.object({
@@ -86,6 +87,11 @@ export async function POST(
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+    // HAR-664: the public slug page is statically cached — revalidate it so
+    // a new portfolio item is visible without waiting for the next deploy.
+    revalidateArtistPage(slug)
+
     return NextResponse.json(data, { status: 201 })
   } catch (err) {
     return handleApiError(err)

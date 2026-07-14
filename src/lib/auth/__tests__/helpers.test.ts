@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockFrom = vi.fn()
-const mockGetSession = vi.fn()
+const mockGetUser = vi.fn()
 const mockClient = {
-  auth: { getSession: mockGetSession },
+  auth: { getUser: mockGetUser },
   from: mockFrom,
 }
 vi.mock('@/lib/supabase/server', () => ({
@@ -11,7 +11,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 import {
-  extractUserFromSession,
+  extractAuthUser,
   isAdmin,
   getCurrentUser,
   requireAuth,
@@ -31,29 +31,22 @@ function makeThenable<T>(result: T) {
   return chain
 }
 
-describe('extractUserFromSession', () => {
-  it('returns null when no session', () => {
-    const result = extractUserFromSession(null)
+describe('extractAuthUser', () => {
+  it('returns null when no user', () => {
+    const result = extractAuthUser(null)
     expect(result).toBeNull()
   })
 
-  it('returns null when session has no user', () => {
-    const result = extractUserFromSession({ user: null } as never)
-    expect(result).toBeNull()
-  })
-
-  it('extracts user info from valid session', () => {
-    const mockSession = {
-      user: {
-        id: 'supabase-uuid',
-        user_metadata: {
-          sub: 'U1234567890',
-          name: 'Test User',
-          picture: 'https://example.com/pic.jpg',
-        },
+  it('extracts identity from app_metadata and profile from user_metadata', () => {
+    const mockUser = {
+      id: 'supabase-uuid',
+      app_metadata: { line_user_id: 'U1234567890' },
+      user_metadata: {
+        name: 'Test User',
+        picture: 'https://example.com/pic.jpg',
       },
     }
-    const result = extractUserFromSession(mockSession as never)
+    const result = extractAuthUser(mockUser as never)
     expect(result).toEqual({
       supabaseId: 'supabase-uuid',
       lineUserId: 'U1234567890',
@@ -62,41 +55,52 @@ describe('extractUserFromSession', () => {
     })
   })
 
-  it('falls back to provider_id when sub is missing', () => {
-    const mockSession = {
-      user: {
-        id: 'supabase-uuid',
-        user_metadata: {
-          provider_id: 'U9999999999',
-          full_name: 'Fallback Name',
-          avatar_url: 'https://example.com/avatar.jpg',
-        },
+  it('NEVER trusts user_metadata for identity — user-editable (HAR-661)', () => {
+    // A logged-in attacker can set arbitrary user_metadata via
+    // supabase.auth.updateUser(); line_user_id there must be ignored.
+    const spoofed = {
+      id: 'supabase-uuid',
+      app_metadata: {},
+      user_metadata: {
+        line_user_id: 'U_victim',
+        sub: 'U_victim',
+        provider_id: 'U_victim',
+        name: 'Attacker',
       },
     }
-    const result = extractUserFromSession(mockSession as never)
-    expect(result).toEqual({
-      supabaseId: 'supabase-uuid',
-      lineUserId: 'U9999999999',
-      displayName: 'Fallback Name',
-      avatarUrl: 'https://example.com/avatar.jpg',
-    })
+    expect(extractAuthUser(spoofed as never)).toBeNull()
   })
 
-  it('handles missing optional fields gracefully', () => {
-    const mockSession = {
-      user: {
-        id: 'supabase-uuid',
-        user_metadata: {
-          sub: 'U0000000000',
-        },
-      },
+  it('handles missing optional profile fields gracefully', () => {
+    const mockUser = {
+      id: 'supabase-uuid',
+      app_metadata: { line_user_id: 'U0000000000' },
+      user_metadata: {},
     }
-    const result = extractUserFromSession(mockSession as never)
+    const result = extractAuthUser(mockUser as never)
     expect(result).toEqual({
       supabaseId: 'supabase-uuid',
       lineUserId: 'U0000000000',
       displayName: '',
       avatarUrl: null,
+    })
+  })
+
+  it('falls back to full_name / avatar_url for profile fields', () => {
+    const mockUser = {
+      id: 'supabase-uuid',
+      app_metadata: { line_user_id: 'U9999999999' },
+      user_metadata: {
+        full_name: 'Fallback Name',
+        avatar_url: 'https://example.com/avatar.jpg',
+      },
+    }
+    const result = extractAuthUser(mockUser as never)
+    expect(result).toEqual({
+      supabaseId: 'supabase-uuid',
+      lineUserId: 'U9999999999',
+      displayName: 'Fallback Name',
+      avatarUrl: 'https://example.com/avatar.jpg',
     })
   })
 })
@@ -130,14 +134,12 @@ describe('isAdmin', () => {
   })
 })
 
-const mockSession = {
-  user: {
-    id: 'supabase-uuid',
-    user_metadata: {
-      sub: 'U1234567890',
-      name: 'Test Artist',
-      picture: 'https://example.com/pic.jpg',
-    },
+const mockSupabaseUser = {
+  id: 'supabase-uuid',
+  app_metadata: { line_user_id: 'U1234567890' },
+  user_metadata: {
+    name: 'Test Artist',
+    picture: 'https://example.com/pic.jpg',
   },
 }
 
@@ -162,16 +164,33 @@ describe('getCurrentUser', () => {
     vi.unstubAllEnvs()
   })
 
-  it('returns user when session exists', async () => {
-    mockGetSession.mockResolvedValue({ data: { session: mockSession } })
+  it('returns user when authenticated', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
 
     const result = await getCurrentUser()
 
     expect(result).toEqual(mockAuthUser)
   })
 
-  it('returns null when there is no session', async () => {
-    mockGetSession.mockResolvedValue({ data: { session: null } })
+  it('returns null when there is no authenticated user', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: { message: 'no session' } })
+
+    const result = await getCurrentUser()
+
+    expect(result).toBeNull()
+  })
+
+  it('returns null when user lacks app_metadata.line_user_id (spoof guard)', async () => {
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'supabase-uuid',
+          app_metadata: {},
+          user_metadata: { sub: 'U_spoofed', name: 'Attacker' },
+        },
+      },
+      error: null,
+    })
 
     const result = await getCurrentUser()
 
@@ -186,7 +205,7 @@ describe('requireAuth', () => {
   })
 
   it('returns user when authenticated', async () => {
-    mockGetSession.mockResolvedValue({ data: { session: mockSession } })
+    mockGetUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
 
     const result = await requireAuth()
 
@@ -194,7 +213,7 @@ describe('requireAuth', () => {
   })
 
   it('throws UNAUTHORIZED when not authenticated', async () => {
-    mockGetSession.mockResolvedValue({ data: { session: null } })
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
 
     await expect(requireAuth()).rejects.toThrow('UNAUTHORIZED')
   })
@@ -234,7 +253,7 @@ describe('requireAdmin', () => {
 
   it('returns user when authenticated and is admin', async () => {
     vi.stubEnv('ADMIN_LINE_USER_IDS', 'U1234567890')
-    mockGetSession.mockResolvedValue({ data: { session: mockSession } })
+    mockGetUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
 
     const result = await requireAdmin()
 
@@ -243,14 +262,14 @@ describe('requireAdmin', () => {
 
   it('throws FORBIDDEN when authenticated but not admin', async () => {
     vi.stubEnv('ADMIN_LINE_USER_IDS', 'U_other_admin')
-    mockGetSession.mockResolvedValue({ data: { session: mockSession } })
+    mockGetUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
 
     await expect(requireAdmin()).rejects.toThrow('FORBIDDEN')
   })
 
   it('throws UNAUTHORIZED when not authenticated', async () => {
     vi.stubEnv('ADMIN_LINE_USER_IDS', 'U1234567890')
-    mockGetSession.mockResolvedValue({ data: { session: null } })
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
 
     await expect(requireAdmin()).rejects.toThrow('UNAUTHORIZED')
   })

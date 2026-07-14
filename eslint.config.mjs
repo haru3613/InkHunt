@@ -13,6 +13,15 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // Playwright fixture files declare `async (fixtureName, { use }) => ...`
+    // functions; react-hooks/rules-of-hooks false-positives on the `use()`
+    // call because the enclosing function isn't named `useXxx`. Not React.
+    files: ["e2e/fixtures/**/*.ts"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

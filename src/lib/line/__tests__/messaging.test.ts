@@ -103,7 +103,7 @@ function makeArtist(overrides: Partial<Artist> = {}): Artist {
 // Environment stubs
 // ---------------------------------------------------------------------------
 
-vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://inkhunt.tw')
+vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://ink-hunt.com')
 vi.stubEnv('LINE_MESSAGING_CHANNEL_ACCESS_TOKEN', 'test-token')
 
 beforeEach(() => {
@@ -206,6 +206,64 @@ describe('buildInquiryNotificationMessage', () => {
     )
     const textBody = JSON.stringify(msg)
     expect(textBody).toContain('NT$10,000 以內')
+  })
+
+  it('renders the categorical budget_range label when no integer min/max', () => {
+    const msg = buildInquiryNotificationMessage(
+      makeInquiry({ budget_range: 'under_3k' }),
+      'http://localhost:3000',
+    )
+    const textBody = JSON.stringify(msg)
+    expect(textBody).toContain('預算')
+    expect(textBody).toContain('NT$3,000 以下')
+  })
+
+  it('maps every budget_range bucket to its zh-TW NT$ label', () => {
+    const cases: Record<string, string> = {
+      under_3k: 'NT$3,000 以下',
+      '3k_8k': 'NT$3,000 ~ NT$8,000',
+      '8k_20k': 'NT$8,000 ~ NT$20,000',
+      '20k_50k': 'NT$20,000 ~ NT$50,000',
+      over_50k: 'NT$50,000 以上',
+      unsure: '不確定 / 想先問',
+    }
+    for (const [code, label] of Object.entries(cases)) {
+      const textBody = JSON.stringify(
+        buildInquiryNotificationMessage(
+          makeInquiry({ budget_range: code }),
+          'http://localhost:3000',
+        ),
+      )
+      expect(textBody).toContain(label)
+    }
+  })
+
+  it('prefers the integer range over budget_range when both are present', () => {
+    const msg = buildInquiryNotificationMessage(
+      makeInquiry({ budget_min: 3000, budget_max: 8000, budget_range: 'over_50k' }),
+      'http://localhost:3000',
+    )
+    const textBody = JSON.stringify(msg)
+    expect(textBody).toContain('NT$3,000 ~ NT$8,000')
+    expect(textBody).not.toContain('以上')
+  })
+
+  it('renders no budget row when neither integer nor categorical budget is set', () => {
+    const msg = buildInquiryNotificationMessage(
+      makeInquiry(),
+      'http://localhost:3000',
+    )
+    const textBody = JSON.stringify(msg)
+    expect(textBody).not.toContain('預算')
+  })
+
+  it('renders no budget row for an unknown budget_range code', () => {
+    const msg = buildInquiryNotificationMessage(
+      makeInquiry({ budget_range: 'bogus_code' }),
+      'http://localhost:3000',
+    )
+    const textBody = JSON.stringify(msg)
+    expect(textBody).not.toContain('預算')
   })
 
   it('uses brass gold accent color', () => {
@@ -473,19 +531,19 @@ describe('pushNewMessageNotification', () => {
 
 describe('buildReviewOutcomeMessage', () => {
   it('returns a flex message with type flex', () => {
-    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://inkhunt.tw')
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://ink-hunt.com')
     expect(msg.type).toBe('flex')
   })
 
   it('approved copy contains 恭喜 and a /artist/dashboard deep link', () => {
-    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://inkhunt.tw')
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'approved', 'https://ink-hunt.com')
     const body = JSON.stringify(msg)
     expect(body).toContain('恭喜')
     expect(body).toContain('/artist/dashboard')
   })
 
   it('rejected copy contains 未通過 and no dashboard link', () => {
-    const msg = buildReviewOutcomeMessage(makeArtist(), 'rejected', 'https://inkhunt.tw')
+    const msg = buildReviewOutcomeMessage(makeArtist(), 'rejected', 'https://ink-hunt.com')
     const body = JSON.stringify(msg)
     expect(body).toContain('未通過')
     expect(body).not.toContain('/artist/dashboard')
@@ -493,7 +551,7 @@ describe('buildReviewOutcomeMessage', () => {
 
   it('uses dark theme background and brass accent for both outcomes', () => {
     for (const outcome of ['approved', 'rejected'] as const) {
-      const body = JSON.stringify(buildReviewOutcomeMessage(makeArtist(), outcome, 'https://inkhunt.tw'))
+      const body = JSON.stringify(buildReviewOutcomeMessage(makeArtist(), outcome, 'https://ink-hunt.com'))
       expect(body).toContain('#1A1A1A')
       expect(body).toContain('#C8A97E')
     }

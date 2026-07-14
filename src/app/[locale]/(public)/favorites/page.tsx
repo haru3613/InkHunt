@@ -1,6 +1,7 @@
 import { setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { getCurrentUser } from '@/lib/auth/helpers'
+import { lineLoginUrl } from '@/lib/auth/login-url'
 import { getFavoriteArtists } from '@/lib/supabase/queries/favorites'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 
@@ -34,12 +35,15 @@ export default async function FavoritesPage({ params }: FavoritesPageProps) {
           className="flex flex-col items-center gap-4 rounded-lg border border-border bg-card px-6 py-16 text-center"
         >
           <p className="text-muted-foreground">登入後即可查看你收藏的刺青師</p>
-          <Link
-            href="/login"
+          {/* HAR-684: /login doesn't exist — LINE OAuth entry is the only login.
+              Keep the locale prefix so the post-login redirect stays in the
+              visitor's language. */}
+          <a
+            href={lineLoginUrl(`/${locale}/favorites`)}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
           >
             登入
-          </Link>
+          </a>
         </div>
       </div>
     )
@@ -56,7 +60,10 @@ export default async function FavoritesPage({ params }: FavoritesPageProps) {
       {favorites.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {favorites.map((artist) => (
-            <ArtistCard key={artist.id} artist={artist} />
+            // Every artist here IS the consumer's saved favorite by
+            // definition of this read path — the heart must render filled,
+            // not the default unfavorited state (HAR-667).
+            <ArtistCard key={artist.id} artist={artist} initialFavorited />
           ))}
         </div>
       ) : (

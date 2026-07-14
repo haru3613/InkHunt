@@ -84,8 +84,21 @@ export async function PATCH(
       return NextResponse.json(quote ?? { status: 'already_viewed' })
     }
 
-    const quote = await respondToQuote(quote_id, id, status)
-    return NextResponse.json(quote)
+    try {
+      const quote = await respondToQuote(quote_id, id, status, inquiry.status)
+      if (!quote) {
+        return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
+      }
+      return NextResponse.json(quote)
+    } catch (err) {
+      if (err instanceof Error && err.message === 'Inquiry is already accepted') {
+        return NextResponse.json(
+          { error: 'Inquiry is already accepted' },
+          { status: 409 },
+        )
+      }
+      throw err
+    }
   } catch (err) {
     return handleApiError(err)
   }

@@ -85,5 +85,22 @@ test.describe('Consumer: manage inquiries', () => {
     await test.step('And: the chat input is available for sending messages', async () => {
       await expect(chatPage.chatInput()).toBeVisible()
     })
+
+    await test.step('And: clicking 接受 PATCHes the quote as accepted', async () => {
+      // HAR-665: the UI does not locally reflect the new status (no realtime
+      // subscription on the quotes table — see src/hooks/useRealtimeMessages.ts,
+      // which only listens for INSERTs on messages), so the only genuinely
+      // observable behavior here is the outgoing request itself.
+      const [request] = await Promise.all([
+        consumerPage.waitForRequest(
+          (r) => r.url().includes('/quotes') && r.method() === 'PATCH',
+        ),
+        chatPage.acceptQuote(),
+      ])
+      const body = request.postDataJSON()
+      expect(body).toMatchObject({ quote_id: TEST_QUOTE.id, status: 'accepted' })
+      const response = await request.response()
+      expect(response!.status()).toBeLessThan(400)
+    })
   })
 })

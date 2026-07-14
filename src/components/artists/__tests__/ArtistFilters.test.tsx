@@ -469,3 +469,64 @@ describe('ArtistFilters — healed-work filter (HAR-481)', () => {
     expect(url).not.toContain('healed=')
   })
 })
+
+describe('ArtistFilters — new-artist freshness filter (HAR-585)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    for (const key of [...mockSearchParams.keys()]) mockSearchParams.delete(key)
+  })
+
+  /** The new-artist toggle, located by its (mocked-to-key) label. */
+  function newToggle(): HTMLButtonElement {
+    return screen.getByRole('button', { name: 'filterNew' }) as HTMLButtonElement
+  }
+
+  it('renders the new-artist filter control', () => {
+    render(<ArtistFilters styles={[]} />)
+    expect(newToggle()).toBeInTheDocument()
+  })
+
+  it('writes ?new=1 to the URL when toggled ON', () => {
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(newToggle())
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('new=1')
+  })
+
+  it('writes ?new=1 and resets page when toggled ON', () => {
+    mockSearchParams.set('page', '3')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(newToggle())
+
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).toContain('new=1')
+    expect(url).not.toContain('page=3')
+  })
+
+  it('reflects an already-new=1 URL in its active (pressed) state', () => {
+    mockSearchParams.set('new', '1')
+    render(<ArtistFilters styles={[]} />)
+
+    expect(newToggle()).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('is not pressed when no new param is present', () => {
+    render(<ArtistFilters styles={[]} />)
+    expect(newToggle()).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('drops the new param when toggled OFF (from new=1)', () => {
+    mockSearchParams.set('new', '1')
+    render(<ArtistFilters styles={[]} />)
+
+    fireEvent.click(newToggle())
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+    const url = mockPush.mock.calls[0][0] as string
+    expect(url).not.toContain('new=')
+  })
+})

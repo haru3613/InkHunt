@@ -21,6 +21,7 @@ const FILTER_KEYS = [
   'service',
   'minRating',
   'healed',
+  'new',
   'q',
 ] as const
 
@@ -89,6 +90,7 @@ export function ActiveFilterChips({ styles }: ActiveFilterChipsProps) {
   const service = searchParams.get('service')
   const minRating = searchParams.get('minRating')
   const healed = searchParams.get('healed')
+  const isNew = searchParams.get('new')
   const q = searchParams.get('q')?.trim()
 
   const chips: ActiveChip[] = []
@@ -118,6 +120,10 @@ export function ActiveFilterChips({ styles }: ActiveFilterChipsProps) {
   // Boolean facet: only the literal '1' is active (mirrors parseHealed).
   if (healed === '1') {
     chips.push({ key: 'healed', label: t('filterHealed') })
+  }
+  // Boolean facet: only the literal '1' is active (mirrors parseNew, HAR-585).
+  if (isNew === '1') {
+    chips.push({ key: 'new', label: t('filterNew') })
   }
 
   if (chips.length === 0) return null

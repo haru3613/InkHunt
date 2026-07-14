@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { uploadFile } from '@/lib/upload/client'
 
 interface ChatInputProps {
-  readonly onSendMessage: (type: 'text' | 'image', content: string) => void
+  readonly onSendMessage: (type: 'text' | 'image', content: string) => Promise<void> | void
   readonly onSendQuote?: () => void
   readonly isArtist: boolean
   readonly disabled?: boolean
@@ -15,13 +15,22 @@ interface ChatInputProps {
 
 export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: ChatInputProps) {
   const [text, setText] = useState('')
+  // HAR-653: failed sends must be visible, not silent
+  const [sendFailed, setSendFailed] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const trimmed = text.trim()
     if (!trimmed) return
-    onSendMessage('text', trimmed)
-    setText('')
+    try {
+      await onSendMessage('text', trimmed)
+      // Only clear the input after successful send
+      setText('')
+      setSendFailed(false)
+    } catch {
+      // Input remains for user to retry
+      setSendFailed(true)
+    }
   }, [text, onSendMessage])
 
   const handleKeyDown = useCallback(
@@ -41,9 +50,11 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
 
       try {
         const publicUrl = await uploadFile('inquiries', file)
-        onSendMessage('image', publicUrl)
+        await onSendMessage('image', publicUrl)
+        setSendFailed(false)
       } catch {
-        // Image upload failed; user can retry
+        // Upload or message send failed; user can retry
+        setSendFailed(true)
       }
 
       if (fileInputRef.current) {
@@ -55,6 +66,11 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
 
   return (
     <div className="border-t border-[#2A2A2A] bg-[#0A0A0A] px-4 py-3">
+    {sendFailed && (
+      <p role="alert" className="mx-auto max-w-2xl pb-2 text-[12px] text-[#E25C5C]">
+        訊息傳送失敗，請重試
+      </p>
+    )}
     <div className="mx-auto flex max-w-2xl items-center gap-2">
       <input
         ref={fileInputRef}

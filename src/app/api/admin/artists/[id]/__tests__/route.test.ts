@@ -32,15 +32,21 @@ vi.mock('@/lib/line/messaging', () => ({
   pushReviewOutcomeNotification: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('@/lib/cache/revalidate-artist', () => ({
+  revalidateArtistPage: vi.fn(),
+}))
+
 import { PATCH } from '../route'
 import { requireAdmin, handleApiError } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { pushReviewOutcomeNotification } from '@/lib/line/messaging'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 
 const mockRequireAdmin = vi.mocked(requireAdmin)
 const mockHandleApiError = vi.mocked(handleApiError)
 const mockCreateAdminClient = vi.mocked(createAdminClient)
 const mockPushReviewOutcome = vi.mocked(pushReviewOutcomeNotification)
+const mockRevalidateArtistPage = vi.mocked(revalidateArtistPage)
 
 const VALID_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
 const INVALID_UUID = 'not-a-uuid'
@@ -192,6 +198,53 @@ describe('PATCH /api/admin/artists/[id]', () => {
     expect(body.id).toBe(VALID_UUID)
     expect(body.status).toBe('suspended')
     expect(body.admin_note).toBe('違反服務條款')
+  })
+
+  // HAR-664: a suspend/approve must revalidate the public slug page so the
+  // status flip is visible immediately, not only after the next deploy.
+  it('revalidates the public artist page for the updated artist slug', async () => {
+    mockRequireAdmin.mockResolvedValue(mockAdmin)
+
+    const updatedArtist = {
+      id: VALID_UUID,
+      slug: 'test-artist',
+      status: 'suspended',
+      admin_note: null,
+    }
+
+    const mockChain = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: updatedArtist, error: null }),
+    }
+    mockCreateAdminClient.mockReturnValue({ from: vi.fn().mockReturnValue(mockChain) } as never)
+
+    const request = makeRequest('PATCH', `/api/admin/artists/${VALID_UUID}`, {
+      status: 'suspended',
+    })
+    const response = await PATCH(request, { params: Promise.resolve({ id: VALID_UUID }) })
+
+    expect(response.status).toBe(200)
+    expect(mockRevalidateArtistPage).toHaveBeenCalledWith('test-artist')
+  })
+
+  it('does not revalidate when the artist is not found', async () => {
+    mockRequireAdmin.mockResolvedValue(mockAdmin)
+
+    const mockChain = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Row not found' } }),
+    }
+    mockCreateAdminClient.mockReturnValue({ from: vi.fn().mockReturnValue(mockChain) } as never)
+
+    const request = makeRequest('PATCH', `/api/admin/artists/${VALID_UUID}`, { status: 'active' })
+    const response = await PATCH(request, { params: Promise.resolve({ id: VALID_UUID }) })
+
+    expect(response.status).toBe(404)
+    expect(mockRevalidateArtistPage).not.toHaveBeenCalled()
   })
 
   it('returns 200 with null admin_note when not provided', async () => {

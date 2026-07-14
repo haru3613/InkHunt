@@ -5,8 +5,10 @@ import { Link } from "@/i18n/navigation"
 
 export function Footer() {
   const t = useTranslations("footer")
+  const tNav = useTranslations("nav")
 
   const footerLinks = [
+    { href: "/artist" as const, label: tNav("becomeArtist") },
     { href: "/about" as const, label: t("about") },
     { href: "/privacy" as const, label: t("privacy") },
     { href: "/terms" as const, label: t("terms") },

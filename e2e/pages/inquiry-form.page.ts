@@ -59,9 +59,13 @@ export class InquiryFormPage extends BasePage {
   /**
    * The Select trigger button for the body part field.
    * Shadcn <SelectTrigger> renders as a <button role="combobox">.
+   *
+   * HAR-665: the form also has a second combobox (categorical budget range,
+   * HAR-530) rendered after this one, so `getByRole('combobox')` alone is
+   * ambiguous. Body part is always first in DOM order.
    */
   bodyPartSelect(): Locator {
-    return this.page.getByRole('combobox')
+    return this.page.getByRole('combobox').first()
   }
 
   /** The text input for the size estimate */

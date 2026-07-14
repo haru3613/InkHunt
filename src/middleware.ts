@@ -63,8 +63,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
     const adminIds = process.env.ADMIN_LINE_USER_IDS?.split(',') ?? []
-    const lineUserId =
-      user.user_metadata?.sub ?? user.user_metadata?.line_user_id
+    // Identity MUST come from app_metadata: user_metadata is client-editable
+    // via auth.updateUser() and would allow admin spoofing (HAR-661).
+    const lineUserId = user.app_metadata?.line_user_id
     if (!lineUserId || !adminIds.includes(lineUserId)) {
       return NextResponse.redirect(new URL('/', request.url))
     }

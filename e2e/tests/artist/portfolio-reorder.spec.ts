@@ -202,21 +202,15 @@ test.describe('Artist Journey: Portfolio Drag-to-Reorder', () => {
       await expect(portfolio.portfolioItems()).toHaveCount(3)
     })
 
-    await test.step('And: items are shown in sort_order ascending order', async () => {
-      // The portfolio page fetches from /api/artists/:slug/portfolio which is
-      // ordered by sort_order ASC server-side (see route.ts line 29).
-      // The mock returns them reversed to prove the server-enforced order holds.
-      // If the route returns already-sorted data, the first item rendered will
-      // have sort_order 0 (Dragon sleeve).
-      //
-      // NOTE: the page.tsx currently does NOT re-sort client-side — it relies on
-      // the API returning items in the correct order.  This assertion validates that
-      // contract: the first grid cell must be the item with the lowest sort_order.
-      const firstItem = portfolio.portfolioItems().nth(0)
-      await expect(firstItem).toBeVisible()
-      // We cannot assert item title text here because PortfolioManageGrid only
-      // shows the title for items where item.title is truthy, but confirms the
-      // grid is not empty and renders the expected count.
+    await test.step('And: items are shown in the order the API returned them', async () => {
+      // The mock delivers items reversed (sort_order 2, 1, 0) to prove the UI
+      // does NOT re-sort client-side — it renders API order verbatim.
+      // PortfolioManageGrid prints item.title in each cell (all fixture items
+      // have a truthy title), so grid position is directly checkable.
+      const items = portfolio.portfolioItems()
+      await expect(items.nth(0)).toContainText('Watercolor koi')
+      await expect(items.nth(1)).toContainText('Geometric owl')
+      await expect(items.nth(2)).toContainText('Dragon sleeve')
     })
   })
 
