@@ -88,10 +88,12 @@ async function setupApiMocks(page: Page) {
     // Quotes endpoint
     if (url.includes('/quotes')) {
       if (route.request().method() === 'POST') {
+        // Real route returns a { quote, message } envelope (quotes/route.ts);
+        // TEST_MESSAGES[2] is the quote-type message createQuote inserts.
         return route.fulfill({
           status: 201,
           contentType: 'application/json',
-          body: JSON.stringify(TEST_QUOTE),
+          body: JSON.stringify({ quote: TEST_QUOTE, message: TEST_MESSAGES[2] }),
         })
       }
       // PATCH — accept/reject quote

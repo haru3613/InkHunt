@@ -62,13 +62,18 @@ export const TEST_INQUIRY = {
   created_at: '2026-03-20T10:00:00Z',
 } as const
 
+// Quote message metadata carries dates as string[] (types/chat.ts), but the
+// quotes table row stores them joined as a single string (createQuote does
+// `.join(', ')` — types/database.ts `available_dates: string | null`).
+export const TEST_QUOTE_DATES = ['4/5', '4/12 下午'] as const
+
 export const TEST_QUOTE = {
   id: 'quote-001',
   inquiry_id: 'inquiry-001',
   artist_id: 'artist-001',
   price: 12000,
   note: '含設計費，15x10cm 寫實風格',
-  available_dates: ['4/5', '4/12 下午'],
+  available_dates: TEST_QUOTE_DATES.join(', '),
   status: 'sent',
   created_at: '2026-03-20T11:00:00Z',
 } as const
@@ -113,7 +118,7 @@ export const TEST_MESSAGES = [
       quote_id: TEST_QUOTE.id,
       price: TEST_QUOTE.price,
       note: TEST_QUOTE.note,
-      available_dates: TEST_QUOTE.available_dates,
+      available_dates: TEST_QUOTE_DATES,
       status: TEST_QUOTE.status,
     },
     created_at: TEST_QUOTE.created_at,
