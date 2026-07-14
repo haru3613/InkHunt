@@ -8,6 +8,11 @@ vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: vi.fn(() => mockClient),
 }))
 
+const mockReportError = vi.fn()
+vi.mock('@/lib/observability', () => ({
+  reportError: (...args: unknown[]) => mockReportError(...args),
+}))
+
 import { createAdminClient } from '@/lib/supabase/server'
 import { transformArtistRow, getArtistBySlug, getFeaturedArtists, getNewArtists, getArtists, getAllArtistSlugs } from '../artists'
 
@@ -153,12 +158,14 @@ describe('getArtistBySlug', () => {
     expect(result).toBeNull()
   })
 
-  it('returns null when Supabase not configured', async () => {
-    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+  it('returns null when Supabase not configured, and reports the error', async () => {
+    const configError = new Error('not configured')
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw configError })
 
     const result = await getArtistBySlug('test-artist')
 
     expect(result).toBeNull()
+    expect(mockReportError).toHaveBeenCalledWith('supabase-admin', configError)
   })
 })
 

@@ -4,6 +4,7 @@ import { createHmac } from 'crypto'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, getLineProfile } from '@/lib/line/auth'
 import { buildAppMetadata } from '@/lib/auth/helpers'
+import { reportError } from '@/lib/observability'
 
 function derivePassword(lineUserId: string): string {
   const secret = process.env.AUTH_PASSWORD_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -97,7 +98,8 @@ export async function GET(request: NextRequest) {
     cookieStore.delete('line_auth_redirect')
 
     return NextResponse.redirect(`${baseUrl}${redirectTo}`)
-  } catch {
+  } catch (err) {
+    reportError('line-callback', err)
     return NextResponse.redirect(`${baseUrl}?auth_error=callback_failed`)
   }
 }

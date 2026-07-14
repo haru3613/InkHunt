@@ -3,11 +3,13 @@ import { createAdminClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { computeReviewSummary } from '@/lib/reviews'
 import { NEW_ARTIST_WINDOW_DAYS } from '@/lib/artists/new-artist'
+import { reportError } from '@/lib/observability'
 
 function safeAdminClient(): SupabaseClient<Database> | null {
   try {
     return createAdminClient()
-  } catch {
+  } catch (err) {
+    reportError('supabase-admin', err)
     return null
   }
 }

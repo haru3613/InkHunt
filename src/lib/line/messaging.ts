@@ -1,6 +1,7 @@
 import { messagingApi } from '@line/bot-sdk'
 import type { Artist, Inquiry, Quote, Message } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/server'
+import { reportError } from '@/lib/observability'
 import { formatPrice, truncate } from '@/lib/utils'
 
 // Categorical budget buckets (inquiries.budget_range, migration 014) → zh-TW NT$
@@ -280,8 +281,9 @@ export async function pushNewInquiryNotification(
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
     const message = buildInquiryNotificationMessage(inquiry, baseUrl)
     await client.pushMessage({ to: lineUserId, messages: [message] })
-  } catch {
+  } catch (err) {
     // LINE notification failure is non-fatal — do not propagate to API handler
+    reportError('line-messaging', err, { fn: 'pushNewInquiryNotification' })
   }
 }
 
@@ -297,8 +299,9 @@ export async function pushReviewOutcomeNotification(
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
     const message = buildReviewOutcomeMessage(artist, outcome, baseUrl)
     await client.pushMessage({ to: lineUserId, messages: [message] })
-  } catch {
+  } catch (err) {
     // LINE notification failure is non-fatal — do not propagate to API handler
+    reportError('line-messaging', err, { fn: 'pushReviewOutcomeNotification' })
   }
 }
 
@@ -320,8 +323,9 @@ export async function pushQuoteNotification(
       to: inquiry.consumer_line_id,
       messages: [message],
     })
-  } catch {
+  } catch (err) {
     // LINE notification failure is non-fatal — do not propagate to API handler
+    reportError('line-messaging', err, { fn: 'pushQuoteNotification' })
   }
 }
 
@@ -351,7 +355,8 @@ export async function pushNewMessageNotification(
       to: recipientLineId,
       messages: [{ type: 'text', text: `${senderName}：${contentPreview}` }],
     })
-  } catch {
+  } catch (err) {
     // LINE notification failure is non-fatal — do not propagate to API handler
+    reportError('line-messaging', err, { fn: 'pushNewMessageNotification' })
   }
 }
