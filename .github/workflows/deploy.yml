@@ -42,7 +42,13 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Push migrations
-        run: supabase db push
+        # --include-all applies migrations that sort BEFORE the last one already
+        # on the remote DB. The migration scheme uses numeric prefixes (009, 010,
+        # 011) rather than timestamps, so a lower-numbered migration added after a
+        # higher one was pushed (here: 009_avatars_bucket, with 010/011 already
+        # remote) is otherwise rejected and the deploy fails. All such migrations
+        # are additive/idempotent; applying them out of order is safe.
+        run: supabase db push --include-all
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
@@ -59,3 +65,20 @@ jobs:
           echo "No schema drift — remote DB matches local migrations."
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      # Gate-2 (data-mutating-cron-safety): a failed db-mutating run must alert
+      # loudly — a red Actions badge is monitored by nobody. Uses the fleet's
+      # Resend alert channel (same one mission-control's digest emails use).
+      - name: Alert on failure
+        if: failure()
+        run: |
+          curl -sS -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg from "${{ secrets.AUTONOMY_ALERT_FROM }}" \
+              --arg to "${{ secrets.AUTONOMY_ALERT_TO }}" \
+              --arg subject "[${{ github.repository }}] ${{ github.workflow }} FAILED" \
+              --arg text "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+              '{from: $from, to: [$to], subject: $subject, text: $text}')" \
+            || echo "::warning::failure alert could not be sent"
