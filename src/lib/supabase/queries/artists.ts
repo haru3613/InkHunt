@@ -1,16 +1,8 @@
 import type { Database } from '@/types/database'
-import { createAdminClient } from '@/lib/supabase/server'
+import { safeAdminClient } from '@/lib/supabase/admin'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { computeReviewSummary } from '@/lib/reviews'
 import { NEW_ARTIST_WINDOW_DAYS } from '@/lib/artists/new-artist'
-
-function safeAdminClient(): SupabaseClient<Database> | null {
-  try {
-    return createAdminClient()
-  } catch {
-    return null
-  }
-}
 
 type ArtistRow = Database['public']['Tables']['artists']['Row']
 type StyleRow = Database['public']['Tables']['styles']['Row']

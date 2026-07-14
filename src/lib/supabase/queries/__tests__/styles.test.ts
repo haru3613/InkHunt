@@ -7,6 +7,10 @@ vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: vi.fn(() => mockClient),
 }))
 
+vi.mock('@/lib/observability', () => ({
+  reportError: vi.fn(),
+}))
+
 import { createAdminClient } from '@/lib/supabase/server'
 import {
   getAllStyles,

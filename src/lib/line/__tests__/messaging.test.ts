@@ -17,6 +17,11 @@ vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => ({ from: mockAdminFrom }),
 }))
 
+const mockReportError = vi.fn()
+vi.mock('@/lib/observability', () => ({
+  reportError: (...args: unknown[]) => mockReportError(...args),
+}))
+
 import {
   buildInquiryNotificationMessage,
   buildQuoteNotificationMessage,
@@ -109,6 +114,7 @@ vi.stubEnv('LINE_MESSAGING_CHANNEL_ACCESS_TOKEN', 'test-token')
 beforeEach(() => {
   mockPushMessage.mockReset()
   mockAdminFrom.mockReset()
+  mockReportError.mockReset()
 })
 
 // ---------------------------------------------------------------------------
@@ -386,13 +392,19 @@ describe('pushNewInquiryNotification', () => {
     expect(mockPushMessage).not.toHaveBeenCalled()
   })
 
-  it('does not throw when pushMessage rejects', async () => {
+  it('does not throw when pushMessage rejects, but reports the error', async () => {
     mockAdminFrom.mockReturnValue(
       makeThenable({ line_user_id: 'Uartist123' }),
     )
-    mockPushMessage.mockRejectedValue(new Error('LINE API error'))
+    const lineError = new Error('LINE API error')
+    mockPushMessage.mockRejectedValue(lineError)
 
     await expect(pushNewInquiryNotification(makeInquiry())).resolves.toBeUndefined()
+    expect(mockReportError).toHaveBeenCalledWith(
+      'line-messaging',
+      lineError,
+      expect.objectContaining({ fn: 'pushNewInquiryNotification' }),
+    )
   })
 })
 
@@ -417,12 +429,18 @@ describe('pushQuoteNotification', () => {
     expect(JSON.stringify(call.messages[0])).toContain('NT$12,000')
   })
 
-  it('does not throw when pushMessage rejects', async () => {
-    mockPushMessage.mockRejectedValue(new Error('LINE API error'))
+  it('does not throw when pushMessage rejects, but reports the error', async () => {
+    const lineError = new Error('LINE API error')
+    mockPushMessage.mockRejectedValue(lineError)
 
     await expect(
       pushQuoteNotification(makeInquiry(), makeQuote(), '刺青師小王'),
     ).resolves.toBeUndefined()
+    expect(mockReportError).toHaveBeenCalledWith(
+      'line-messaging',
+      lineError,
+      expect.objectContaining({ fn: 'pushQuoteNotification' }),
+    )
   })
 })
 
@@ -513,15 +531,21 @@ describe('pushNewMessageNotification', () => {
     expect(mockPushMessage).not.toHaveBeenCalled()
   })
 
-  it('does not throw when pushMessage rejects', async () => {
+  it('does not throw when pushMessage rejects, but reports the error', async () => {
     mockAdminFrom.mockReturnValue(
       makeThenable({ line_user_id: 'Uartist999' }),
     )
-    mockPushMessage.mockRejectedValue(new Error('LINE API error'))
+    const lineError = new Error('LINE API error')
+    mockPushMessage.mockRejectedValue(lineError)
 
     await expect(
       pushNewMessageNotification(makeInquiry(), makeMessage(), 'consumer', '消費者小明'),
     ).resolves.toBeUndefined()
+    expect(mockReportError).toHaveBeenCalledWith(
+      'line-messaging',
+      lineError,
+      expect.objectContaining({ fn: 'pushNewMessageNotification' }),
+    )
   })
 })
 
@@ -581,11 +605,17 @@ describe('pushReviewOutcomeNotification', () => {
     expect(mockPushMessage).not.toHaveBeenCalled()
   })
 
-  it('does not throw when pushMessage rejects', async () => {
-    mockPushMessage.mockRejectedValue(new Error('LINE API error'))
+  it('does not throw when pushMessage rejects, but reports the error', async () => {
+    const lineError = new Error('LINE API error')
+    mockPushMessage.mockRejectedValue(lineError)
 
     await expect(
       pushReviewOutcomeNotification(makeArtist({ line_user_id: 'Uapplicant' }), 'approved'),
     ).resolves.toBeUndefined()
+    expect(mockReportError).toHaveBeenCalledWith(
+      'line-messaging',
+      lineError,
+      expect.objectContaining({ fn: 'pushReviewOutcomeNotification' }),
+    )
   })
 })

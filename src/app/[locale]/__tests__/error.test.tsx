@@ -8,6 +8,11 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }))
 
+const mockReportError = vi.fn()
+vi.mock('@/lib/observability', () => ({
+  reportError: (...args: unknown[]) => mockReportError(...args),
+}))
+
 vi.mock('@/i18n/navigation', () => ({
   Link: ({
     children,
@@ -79,14 +84,13 @@ describe('LocaleError (src/app/[locale]/error.tsx)', () => {
     expect(homeLink).toHaveAttribute('href', '/')
   })
 
-  it('logs the error for the (future) error tracker hook point', async () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  it('reports the error to the error tracker (HAR-662)', async () => {
     const { default: LocaleError } = await import('../error')
     const error = new Error('boom')
     render(
       <LocaleError error={error} reset={vi.fn()} unstable_retry={vi.fn()} />
     )
 
-    expect(spy).toHaveBeenCalledWith('[error-boundary]', error)
+    expect(mockReportError).toHaveBeenCalledWith('error-boundary', error)
   })
 })

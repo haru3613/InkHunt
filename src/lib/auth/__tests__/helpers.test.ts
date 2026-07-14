@@ -10,6 +10,11 @@ vi.mock('@/lib/supabase/server', () => ({
   createServerClient: vi.fn(async () => mockClient),
 }))
 
+const mockReportError = vi.fn()
+vi.mock('@/lib/observability', () => ({
+  reportError: (...args: unknown[]) => mockReportError(...args),
+}))
+
 import {
   extractAuthUser,
   isAdmin,
@@ -276,36 +281,45 @@ describe('requireAdmin', () => {
 })
 
 describe('handleApiError', () => {
-  it('returns 401 for UNAUTHORIZED error', async () => {
+  beforeEach(() => {
+    mockReportError.mockReset()
+  })
+
+  it('returns 401 for UNAUTHORIZED error without reporting', async () => {
     const response = handleApiError(new Error('UNAUTHORIZED'))
 
     expect(response.status).toBe(401)
     const body = await response.json()
     expect(body).toEqual({ error: 'Unauthorized' })
+    expect(mockReportError).not.toHaveBeenCalled()
   })
 
-  it('returns 403 for FORBIDDEN error', async () => {
+  it('returns 403 for FORBIDDEN error without reporting', async () => {
     const response = handleApiError(new Error('FORBIDDEN'))
 
     expect(response.status).toBe(403)
     const body = await response.json()
     expect(body).toEqual({ error: 'Forbidden' })
+    expect(mockReportError).not.toHaveBeenCalled()
   })
 
-  it('returns 500 for unknown Error', async () => {
-    const response = handleApiError(new Error('Something went wrong'))
+  it('returns 500 for unknown Error and reports it', async () => {
+    const err = new Error('Something went wrong')
+    const response = handleApiError(err)
 
     expect(response.status).toBe(500)
     const body = await response.json()
     expect(body).toEqual({ error: 'Internal server error' })
+    expect(mockReportError).toHaveBeenCalledWith('api', err)
   })
 
-  it('returns 500 for non-Error objects', async () => {
+  it('returns 500 for non-Error objects and reports them', async () => {
     const response = handleApiError('a plain string error')
 
     expect(response.status).toBe(500)
     const body = await response.json()
     expect(body).toEqual({ error: 'Internal server error' })
+    expect(mockReportError).toHaveBeenCalledWith('api', 'a plain string error')
   })
 })
 

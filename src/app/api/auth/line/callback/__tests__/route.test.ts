@@ -24,6 +24,11 @@ vi.mock('@/lib/line/auth', () => ({
   getLineProfile: vi.fn(),
 }))
 
+const mockReportError = vi.fn()
+vi.mock('@/lib/observability', () => ({
+  reportError: (...args: unknown[]) => mockReportError(...args),
+}))
+
 import { GET } from '../route'
 import { cookies } from 'next/headers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
@@ -343,8 +348,9 @@ describe('GET /api/auth/line/callback', () => {
 
   // ---------- exception handling ---------------------------------------------
 
-  it('redirects with callback_failed when exchangeCodeForTokens throws', async () => {
-    mockExchangeCodeForTokens.mockRejectedValue(new Error('Network timeout'))
+  it('redirects with callback_failed when exchangeCodeForTokens throws, and reports the error', async () => {
+    const netError = new Error('Network timeout')
+    mockExchangeCodeForTokens.mockRejectedValue(netError)
 
     const request = makeRequest({ code: 'auth-code-abc', state: 'valid-state-123' })
 
@@ -354,6 +360,7 @@ describe('GET /api/auth/line/callback', () => {
     expect(response.headers.get('location')).toBe(
       `${BASE_URL}/?auth_error=callback_failed`,
     )
+    expect(mockReportError).toHaveBeenCalledWith('line-callback', netError)
   })
 
   it('redirects with callback_failed when getLineProfile throws', async () => {

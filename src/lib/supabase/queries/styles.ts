@@ -1,14 +1,5 @@
 import type { Database } from '@/types/database'
-import { createAdminClient } from '@/lib/supabase/server'
-import type { SupabaseClient } from '@supabase/supabase-js'
-
-function safeAdminClient(): SupabaseClient<Database> | null {
-  try {
-    return createAdminClient()
-  } catch {
-    return null
-  }
-}
+import { safeAdminClient } from '@/lib/supabase/admin'
 
 type StyleRow = Database['public']['Tables']['styles']['Row']
 

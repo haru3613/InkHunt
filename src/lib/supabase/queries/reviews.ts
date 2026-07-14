@@ -1,22 +1,8 @@
 import type { Database, Review } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/server'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { safeAdminClient } from '@/lib/supabase/admin'
 import type { ReviewListItem } from '@/components/artist/ReviewList'
 import type { ReviewInput } from '@/lib/validations/review'
-
-/**
- * Build an admin Supabase client, returning `null` instead of throwing when the
- * service-role env is absent (mirrors the guard in `./artists.ts`). Keeping the
- * read path null-tolerant lets a misconfigured/build-time environment degrade to
- * an empty result instead of crashing the (public, server-rendered) artist page.
- */
-function safeAdminClient(): SupabaseClient<Database> | null {
-  try {
-    return createAdminClient()
-  } catch {
-    return null
-  }
-}
 
 type ReviewRow = Database['public']['Tables']['reviews']['Row']
 

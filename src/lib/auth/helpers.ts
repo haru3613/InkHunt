@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { User } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
+import { reportError } from '@/lib/observability'
 import type { Artist, Inquiry } from '@/types/database'
 
 export interface AuthUser {
@@ -80,6 +81,7 @@ export function handleApiError(err: unknown): NextResponse {
   if (err instanceof Error && err.message === 'FORBIDDEN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+  reportError('api', err)
   return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 
