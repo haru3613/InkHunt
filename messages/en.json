@@ -10,7 +10,8 @@
     "favorites": "Saved",
     "artist": "Artist",
     "openMenu": "Open menu",
-    "login": "Sign in"
+    "login": "Sign in",
+    "becomeArtist": "Become an Artist"
   },
   "home": {
     "heroTitle": "Find Your Tattoo Artist",
@@ -20,8 +21,10 @@
     "startSearch": "Find Artists",
     "iAmArtist": "I'm an Artist",
     "recommended": "Featured Artists",
+    "newArtists": "New artists",
     "browseByStyle": "Browse by Style",
     "sectionLabelFeatured": "FEATURED",
+    "sectionLabelNew": "NEW ARRIVALS",
     "sectionLabelStyles": "BROWSE BY STYLE"
   },
   "artists": {
@@ -34,6 +37,10 @@
     "clearFilters": "Clear filters",
     "activeFiltersLabel": "Active filters",
     "removeFilter": "Remove filter",
+    "paginationLabel": "Pagination",
+    "paginationPrev": "Previous",
+    "paginationNext": "Next",
+    "paginationStatus": "Page {page} of {totalPages}",
     "clearAll": "Clear all",
     "searchChipLabel": "“{q}”",
     "searchPlaceholder": "Search by name or bio",
@@ -60,10 +67,12 @@
     "rating4Plus": "4★+",
     "rating45Plus": "4.5★+",
     "filterHealed": "Healed work",
+    "filterNew": "New artists",
     "badgeCoverup": "Cover-up",
     "badgeFlash": "Flash",
     "allStyles": "All",
     "recommended": "Featured",
+    "newBadge": "New",
     "savedCount": "{count} saved",
     "priceFrom": "From {price}",
     "cityTaipei": "Taipei",
@@ -118,6 +127,7 @@
       }
     },
     "submit": "Submit Inquiry",
+    "loginToSubmit": "Log in with LINE to Inquire",
     "required": "*",
     "comingSoon": "Coming soon",
     "uploadImage": "Upload",
@@ -126,6 +136,8 @@
     "invalidImageType": "Only JPG, PNG, and WebP files are supported",
     "imageTooLarge": "Image must be under 5MB",
     "uploadFailed": "Upload failed, please try again",
+    "myInquiries": "My Inquiries",
+    "defaultArtistName": "the artist",
     "filters": {
       "all": "All",
       "pending": "Awaiting reply",
@@ -264,5 +276,16 @@
     "changeBody": "We reserve the right to modify these terms at any time. Continued use of the Service after changes constitutes acceptance of the new terms.",
     "contactTitle": "Contact",
     "contactBody": "For terms-related questions: support@ink-hunt.com"
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "description": "Sorry, this page ran into a problem. Try again, or head back home.",
+    "retry": "Try again",
+    "goHome": "Back to home"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you're looking for doesn't exist, or the link may be broken.",
+    "goHome": "Back to home"
   }
 }

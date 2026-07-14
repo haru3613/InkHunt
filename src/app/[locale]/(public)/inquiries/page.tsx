@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatList } from '@/components/chat/ChatList'
@@ -49,7 +50,7 @@ export default function ConsumerInquiriesPage() {
       setInquiries(
         (data.data ?? []).map((inq: Record<string, unknown>) => ({
           inquiry: inq,
-          artist_display_name: (inq.artist_display_name as string) ?? '刺青師',
+          artist_display_name: (inq.artist_display_name as string) ?? t('defaultArtistName'),
           artist_avatar_url: (inq.artist_avatar_url as string | null) ?? null,
           consumer_name: null,
           last_message: null,
@@ -62,7 +63,7 @@ export default function ConsumerInquiriesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [statusFilter])
+  }, [statusFilter, t])
 
   useEffect(() => {
     if (authLoading) return
@@ -89,7 +90,7 @@ export default function ConsumerInquiriesPage() {
       <div className="max-w-lg mx-auto">
         <div className="p-4 border-b border-[#1F1F1F]">
           <div className="flex items-baseline justify-between gap-2">
-            <h1 className="text-lg font-semibold text-[#F5F0EB]">我的詢價</h1>
+            <h1 className="text-lg font-semibold text-[#F5F0EB]">{t('myInquiries')}</h1>
             <span className="text-[12px] text-[#F5F0EB]/40 shrink-0">
               {t(activeFilter.labelKey)} · {inquiries.length}
             </span>

@@ -71,6 +71,45 @@ export async function getFavoriteArtists(
 }
 
 /**
+ * Return the subset of `artistIds` the consumer has favorited, as a Set — one
+ * bounded query (`.in('artist_id', …)`, no N+1) so a discovery listing can
+ * reflect real saved state in a single round-trip. Always resolves: short-
+ * circuits to an empty Set when `artistIds` is empty (no query issued), and
+ * degrades to an empty Set on a missing admin client or a query error rather
+ * than throwing — the grid still renders (unfilled hearts) if favorites are
+ * momentarily unreadable. Mirrors the degrade pattern of
+ * `getSavedCountsByArtistIds` / `getReviewSummariesByArtistIds` (artists.ts).
+ */
+export async function getFavoritedArtistIds(
+  consumerLineId: string,
+  artistIds: string[],
+): Promise<Set<string>> {
+  const favorited = new Set<string>()
+  if (artistIds.length === 0) return favorited
+
+  let admin: ReturnType<typeof createAdminClient>
+  try {
+    admin = createAdminClient()
+  } catch {
+    return favorited
+  }
+
+  const { data, error } = await admin
+    .from('favorites')
+    .select('artist_id')
+    .eq('consumer_line_id', consumerLineId)
+    .in('artist_id', artistIds)
+
+  if (error || !data) return favorited
+
+  for (const row of data as { artist_id: string }[]) {
+    favorited.add(row.artist_id)
+  }
+
+  return favorited
+}
+
+/**
  * Whether the consumer has favorited the given artist.
  */
 export async function isFavorited(

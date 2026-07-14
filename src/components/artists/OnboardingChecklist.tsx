@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from '@/i18n/navigation'
 
 interface OnboardingChecklistProps {
@@ -5,6 +6,7 @@ interface OnboardingChecklistProps {
   readonly portfolioCount: number
   readonly hasPricing: boolean
   readonly artistSlug?: string | null
+  readonly statusBanner?: ReactNode
 }
 
 const PORTFOLIO_MINIMUM = 5
@@ -55,11 +57,13 @@ export function OnboardingChecklist({
   portfolioCount,
   hasPricing,
   artistSlug,
+  statusBanner,
 }: OnboardingChecklistProps) {
   const hasEnoughPortfolio = portfolioCount >= PORTFOLIO_MINIMUM
 
   return (
     <div className="mx-auto max-w-lg px-4 pt-12">
+      {statusBanner}
       <h1 className="font-display text-[24px] font-bold text-[#F5F0EB]">
         歡迎來到 InkHunt
       </h1>

@@ -1,7 +1,7 @@
 import { formatPriceRange, formatIgUrl } from '@/lib/utils'
 import type { ReviewSummary } from '@/lib/reviews'
 
-const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://inkhunt.tw'
+const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
 
 /**
  * The slice of {@link ReviewSummary} the artist JSON-LD needs. Accepting a

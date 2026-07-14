@@ -47,6 +47,9 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   // HAR-481: healed-work facet is boolean — `?healed=1` is the only on-value
   // (matches `parseHealed`, HAR-479); absence means off.
   const activeHealed = searchParams.get('healed') === '1'
+  // HAR-585: new-artist freshness facet is boolean — `?new=1` is the only
+  // on-value (matches `parseNew`); absence means off.
+  const activeNew = searchParams.get('new') === '1'
 
   const updateParams = useCallback(
     (key: string, value: string | null) => {
@@ -137,6 +140,12 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
     // (mirrors `service=all` → param dropped). Toggle off the current state.
     updateParams('healed', activeHealed ? null : '1')
   }, [activeHealed, updateParams])
+
+  const handleNewToggle = useCallback(() => {
+    // Boolean facet (HAR-585): on → `new=1`, off → drop the param entirely.
+    // Mirrors the healed toggle.
+    updateParams('new', activeNew ? null : '1')
+  }, [activeNew, updateParams])
 
   return (
     <div className="flex flex-col gap-3">
@@ -239,6 +248,20 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
           }`}
         >
           {t('filterHealed')}
+        </button>
+
+        {/* HAR-585: boolean new-artist freshness facet — a toggle, mirrors healed. */}
+        <button
+          type="button"
+          onClick={handleNewToggle}
+          aria-pressed={activeNew}
+          className={`inline-flex h-9 w-auto min-w-[120px] items-center justify-center rounded-md border px-3 text-sm whitespace-nowrap transition-colors ${
+            activeNew
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-input bg-background text-foreground hover:bg-accent'
+          }`}
+        >
+          {t('filterNew')}
         </button>
       </div>
 

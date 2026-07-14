@@ -118,8 +118,13 @@ test.describe('Auth cookie security attributes', () => {
           c.name.startsWith('sb-') && c.name.includes('auth-token'),
         )
 
-        // Skip assertion if no cookies found — that is caught by the sibling test.
-        if (supabaseCookies.length === 0) return
+        // HAR-665: this must fail on its own if cookies are missing, not
+        // silently no-op and rely on the sibling test to catch it.
+        expect(
+          supabaseCookies.length,
+          'Expected at least one sb-*-auth-token* cookie but found none. ' +
+            `All cookies: ${cookies.map((c) => c.name).join(', ')}`,
+        ).toBeGreaterThan(0)
 
         for (const cookie of supabaseCookies) {
           expect(

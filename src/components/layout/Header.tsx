@@ -13,7 +13,21 @@ export async function Header() {
             InkHunt
           </span>
         </Link>
-        <AuthSection loginLabel={t('login')} />
+        <div className="flex items-center gap-4">
+          <Link
+            href="/favorites"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t('favorites')}
+          </Link>
+          <Link
+            href="/artist"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t('becomeArtist')}
+          </Link>
+          <AuthSection loginLabel={t('login')} />
+        </div>
       </div>
     </header>
   )

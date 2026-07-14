@@ -3,20 +3,7 @@ import { requireAuth, handleApiError } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getArtists } from '@/lib/supabase/queries/artists'
 import { z } from 'zod'
-
-const createArtistSchema = z.object({
-  display_name: z.string().min(1).max(100),
-  bio: z.string().max(1000).nullable().optional(),
-  city: z.string().min(1),
-  district: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  price_min: z.number().int().min(0).nullable().optional(),
-  price_max: z.number().int().min(0).nullable().optional(),
-  ig_handle: z.string().nullable().optional(),
-  pricing_note: z.string().nullable().optional(),
-  booking_notice: z.string().nullable().optional(),
-  style_ids: z.array(z.number()).default([]),
-})
+import { createArtistSchema } from './schema'
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +19,16 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient()
-    const { style_ids, ...artistData } = validation.data
+    const { style_ids, style_slugs, can_cover, accept_custom, has_flash_designs, ...artistData } =
+      validation.data
+
+    // Resolve wizard-sent style_slugs to ids so they land in artist_styles
+    // alongside any caller-supplied style_ids (deduped).
+    const resolvedStyleIds = new Set(style_ids)
+    if (style_slugs.length > 0) {
+      const { data: styleRows } = await admin.from('styles').select('id').in('slug', style_slugs)
+      for (const row of styleRows ?? []) resolvedStyleIds.add(row.id)
+    }
 
     const slug =
       artistData.display_name
@@ -46,6 +42,9 @@ export async function POST(request: NextRequest) {
       .from('artists')
       .insert({
         ...artistData,
+        ...(can_cover !== undefined ? { offers_coverup: can_cover } : {}),
+        ...(accept_custom !== undefined ? { offers_custom_design: accept_custom } : {}),
+        ...(has_flash_designs !== undefined ? { has_flash_designs } : {}),
         slug,
         line_user_id: user.lineUserId,
         status: 'pending',
@@ -55,10 +54,10 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-    if (style_ids.length > 0) {
+    if (resolvedStyleIds.size > 0) {
       await admin
         .from('artist_styles')
-        .insert(style_ids.map((style_id) => ({ artist_id: artist.id, style_id })))
+        .insert([...resolvedStyleIds].map((style_id) => ({ artist_id: artist.id, style_id })))
     }
 
     return NextResponse.json(artist, { status: 201 })

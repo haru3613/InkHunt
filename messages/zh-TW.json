@@ -10,7 +10,8 @@
     "favorites": "收藏",
     "artist": "設計師",
     "openMenu": "開啟選單",
-    "login": "登入"
+    "login": "登入",
+    "becomeArtist": "成為刺青師"
   },
   "home": {
     "heroTitle": "找到你的刺青師",
@@ -20,8 +21,10 @@
     "startSearch": "開始找刺青師",
     "iAmArtist": "我是刺青師",
     "recommended": "推薦刺青師",
+    "newArtists": "新進刺青師",
     "browseByStyle": "按風格找刺青師",
     "sectionLabelFeatured": "精選推薦",
+    "sectionLabelNew": "新進駐",
     "sectionLabelStyles": "風格探索"
   },
   "artists": {
@@ -34,6 +37,10 @@
     "clearFilters": "清除篩選",
     "activeFiltersLabel": "已套用篩選",
     "removeFilter": "移除篩選",
+    "paginationLabel": "分頁",
+    "paginationPrev": "上一頁",
+    "paginationNext": "下一頁",
+    "paginationStatus": "第 {page} / {totalPages} 頁",
     "clearAll": "清除全部",
     "searchChipLabel": "「{q}」",
     "searchPlaceholder": "搜尋刺青師名稱或簡介",
@@ -60,10 +67,12 @@
     "rating4Plus": "4★+",
     "rating45Plus": "4.5★+",
     "filterHealed": "恢復對比作品",
+    "filterNew": "新進刺青師",
     "badgeCoverup": "遮蓋",
     "badgeFlash": "Flash 圖",
     "allStyles": "全部",
     "recommended": "推薦",
+    "newBadge": "新加入",
     "savedCount": "{count} 人收藏",
     "priceFrom": "{price} 起",
     "cityTaipei": "台北市",
@@ -118,6 +127,7 @@
       }
     },
     "submit": "送出詢價",
+    "loginToSubmit": "LINE 登入後詢價",
     "required": "*",
     "comingSoon": "即將開放",
     "uploadImage": "上傳",
@@ -126,6 +136,8 @@
     "invalidImageType": "只支援 JPG、PNG、WebP 格式",
     "imageTooLarge": "圖片大小不能超過 5MB",
     "uploadFailed": "上傳失敗，請重試",
+    "myInquiries": "我的詢價",
+    "defaultArtistName": "刺青師",
     "filters": {
       "all": "全部",
       "pending": "待回覆",
@@ -264,5 +276,16 @@
     "changeBody": "我們保留隨時修改本條款的權利。修改後繼續使用本服務即表示您同意新條款。",
     "contactTitle": "聯絡方式",
     "contactBody": "服務條款相關問題請來信：support@ink-hunt.com"
+  },
+  "errors": {
+    "title": "發生錯誤",
+    "description": "很抱歉，這個頁面出了點問題。請再試一次，或返回首頁。",
+    "retry": "重新整理",
+    "goHome": "返回首頁"
+  },
+  "notFound": {
+    "title": "找不到頁面",
+    "description": "你要找的頁面不存在，可能已經被移除或網址有誤。",
+    "goHome": "返回首頁"
   }
 }

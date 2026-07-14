@@ -67,7 +67,7 @@ describe('generateArtistJsonLd', () => {
 
   it('builds url using default base URL and slug', () => {
     const result = generateArtistJsonLd(fullArtist)
-    expect(result.url).toBe('https://inkhunt.tw/artists/lin-tattoo')
+    expect(result.url).toBe('https://ink-hunt.com/artists/lin-tattoo')
   })
 
   it('includes sameAs with Instagram URL when ig_handle is provided', () => {
@@ -149,15 +149,15 @@ describe('generateArtistJsonLd', () => {
     expect(result.address.addressLocality).toBe('高雄市')
     expect(result.address.addressRegion).toBeUndefined()
     expect(result.priceRange).toBeUndefined()
-    expect(result.url).toBe('https://inkhunt.tw/artists/minimal-artist')
+    expect(result.url).toBe('https://ink-hunt.com/artists/minimal-artist')
     expect(result.sameAs).toBeUndefined()
   })
 
   it('respects NEXT_PUBLIC_BASE_URL env var for artist URL', async () => {
-    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://staging.inkhunt.tw')
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://staging.ink-hunt.com')
     const { generateArtistJsonLd: gen } = await import('@/lib/seo')
     const result = gen(fullArtist)
-    expect(result.url).toBe('https://staging.inkhunt.tw/artists/lin-tattoo')
+    expect(result.url).toBe('https://staging.ink-hunt.com/artists/lin-tattoo')
   })
 
   // --- aggregateRating (HAR-380) ---
@@ -235,7 +235,7 @@ describe('generateStyleCollectionJsonLd', () => {
 
   it('builds url using default base URL and slug', () => {
     const result = generateStyleCollectionJsonLd(style)
-    expect(result.url).toBe('https://inkhunt.tw/styles/fine-line')
+    expect(result.url).toBe('https://ink-hunt.com/styles/fine-line')
   })
 
   it('sets numberOfItems from artistCount', () => {
@@ -249,10 +249,10 @@ describe('generateStyleCollectionJsonLd', () => {
   })
 
   it('respects NEXT_PUBLIC_BASE_URL env var for style URL', async () => {
-    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://staging.inkhunt.tw')
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://staging.ink-hunt.com')
     const { generateStyleCollectionJsonLd: gen } = await import('@/lib/seo')
     const result = gen(style)
-    expect(result.url).toBe('https://staging.inkhunt.tw/styles/fine-line')
+    expect(result.url).toBe('https://staging.ink-hunt.com/styles/fine-line')
   })
 })
 
@@ -279,7 +279,7 @@ describe('generateWebsiteJsonLd', () => {
 
   it('uses default base URL when NEXT_PUBLIC_BASE_URL is not set', () => {
     const result = generateWebsiteJsonLd()
-    expect(result.url).toBe('https://inkhunt.tw')
+    expect(result.url).toBe('https://ink-hunt.com')
   })
 
   it('returns the correct description', () => {
@@ -295,9 +295,9 @@ describe('generateWebsiteJsonLd', () => {
   })
 
   it('respects NEXT_PUBLIC_BASE_URL env var', async () => {
-    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://staging.inkhunt.tw')
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://staging.ink-hunt.com')
     const { generateWebsiteJsonLd: gen } = await import('@/lib/seo')
     const result = gen()
-    expect(result.url).toBe('https://staging.inkhunt.tw')
+    expect(result.url).toBe('https://staging.ink-hunt.com')
   })
 })

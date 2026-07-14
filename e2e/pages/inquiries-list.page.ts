@@ -43,11 +43,14 @@ export class InquiriesListPage extends BasePage {
   /**
    * All inquiry item buttons rendered by <ChatList>.
    * Each button contains an artist name span and a message preview paragraph.
+   *
+   * HAR-665: ChatList renders the name span as `text-[14px] font-medium`
+   * (not `text-sm`); `font-medium` alone is the stable, shared class.
    */
   inquiryItems(): Locator {
     return this.page
       .locator('button')
-      .filter({ has: this.page.locator('span.text-sm.font-medium') })
+      .filter({ has: this.page.locator('span.font-medium') })
   }
 
   /**

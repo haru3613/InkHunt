@@ -16,7 +16,7 @@ import { KNOWN_ARTISTS } from '../../fixtures/test-data'
 test.describe('Consumer Journey: View Portfolio', () => {
   test('can view a portfolio item in the lightbox', async ({ publicPage }) => {
     const profile = new ArtistProfilePage(publicPage)
-    const { slug } = KNOWN_ARTISTS.alex
+    const { slug } = KNOWN_ARTISTS.inkedWolf
 
     await test.step('Given: the artist profile page is loaded', async () => {
       await profile.open(slug)
@@ -48,7 +48,7 @@ test.describe('Consumer Journey: View Portfolio', () => {
     publicPage,
   }) => {
     const profile = new ArtistProfilePage(publicPage)
-    const { slug } = KNOWN_ARTISTS.alex
+    const { slug } = KNOWN_ARTISTS.inkedWolf
 
     await test.step('Given: the lightbox is open on the first image', async () => {
       await profile.open(slug)

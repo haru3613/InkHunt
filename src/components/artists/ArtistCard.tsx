@@ -11,10 +11,17 @@ import { ArtistCompareAction } from './ArtistCompareAction'
 import { FavoriteButton } from './FavoriteButton'
 import { StarRating } from '@/components/shared/StarRating'
 import { formatPrice } from '@/lib/utils'
+import { isNewArtist } from '@/lib/artists/new-artist'
 
 interface ArtistCardProps {
   readonly artist: ArtistWithDetails
   readonly variant?: 'default' | 'compact'
+  /**
+   * Whether the current consumer has already saved this artist (HAR-594).
+   * Defaults to `false` so surfaces that don't resolve a session (e.g. the
+   * homepage rails, `/favorites`) stay unaffected.
+   */
+  readonly initialFavorited?: boolean
 }
 
 const MAX_VISIBLE_STYLES = 3
@@ -75,6 +82,34 @@ function SavedCountBadge({
 }
 
 /**
+ * Freshness badge for newly-approved artists (HAR-583): a positive「新加入」/
+ * 「New」signal so a fresh artist with 0 reviews + 0 saves still surfaces
+ * something good on the discovery card — the two-sided-marketplace supply
+ * cold-start the rate-aware ranking otherwise buries. Gated on
+ * `isNewArtist(created_at)` (30-day window); renders nothing once the artist ages
+ * out. Mirrors the `featured` badge placement; `t` is the resolved `artists`
+ * namespace translator.
+ */
+function NewArtistBadge({
+  createdAt,
+  t,
+}: {
+  readonly createdAt: ArtistWithDetails['created_at']
+  readonly t: (key: string) => string
+}) {
+  if (!isNewArtist(createdAt)) return null
+
+  return (
+    <Badge
+      variant="secondary"
+      className="shrink-0 rounded-sm bg-ink-accent-dim text-accent-foreground hover:bg-muted"
+    >
+      {t('newBadge')}
+    </Badge>
+  )
+}
+
+/**
  * Service-type badges for the discovery card (HAR-447): renders a 遮蓋
  * (cover-up) badge when `offers_coverup` is true and a Flash 圖 badge when
  * `has_flash_designs` is true, so a consumer who filtered by service sees
@@ -114,7 +149,11 @@ function ServiceBadges({
   )
 }
 
-export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProps) {
+export async function ArtistCard({
+  artist,
+  variant = 'default',
+  initialFavorited = false,
+}: ArtistCardProps) {
   if (variant === 'compact') {
     // Await the (async) compact card so the resolved tree is returned directly;
     // this keeps a single top-level `await ArtistCard(...)` enough to render the
@@ -149,6 +188,7 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
                       {t('recommended')}
                     </Badge>
                   )}
+                  <NewArtistBadge createdAt={artist.created_at} t={t} />
                 </div>
                 <p className="text-sm text-muted-foreground">{artist.city}</p>
               </div>
@@ -198,12 +238,12 @@ export async function ArtistCard({ artist, variant = 'default' }: ArtistCardProp
       {/*
        * Save-from-discovery (HAR-472): the favorite toggle sits OUTSIDE the
        * Link (top-right overlay) so a tap saves the artist instead of
-       * navigating to the profile. Every card starts unfilled —
-       * `initialFavorited` defaults to false; reflecting the user's actual
-       * saved state on the grid is a deferred follow-up slice.
+       * navigating to the profile. `initialFavorited` reflects the consumer's
+       * real saved state (HAR-594) — resolved by the caller (e.g. /artists) and
+       * defaulting to false where no session is resolved.
        */}
       <div className="absolute right-3 top-3">
-        <FavoriteButton artistId={artist.id} initialFavorited={false} />
+        <FavoriteButton artistId={artist.id} initialFavorited={initialFavorited} />
       </div>
 
       {/* Compare button sits outside the Link so clicks do not trigger navigation */}
@@ -236,9 +276,12 @@ async function CompactCard({ artist }: { readonly artist: ArtistWithDetails }) {
           size="sm"
         />
         <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">
-            {artist.display_name}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="truncate font-medium text-foreground">
+              {artist.display_name}
+            </p>
+            <NewArtistBadge createdAt={artist.created_at} t={t} />
+          </div>
           <p className="text-xs text-muted-foreground">
             {artist.city}
             {artist.district ? ` ${artist.district}` : ''}

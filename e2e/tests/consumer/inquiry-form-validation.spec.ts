@@ -27,7 +27,7 @@ import { KNOWN_ARTISTS } from '../../fixtures/test-data'
 async function openInquiryDrawer(page: import('@playwright/test').Page) {
   const profilePage = new ArtistProfilePage(page)
   const formPage = new InquiryFormPage(page)
-  await profilePage.open(KNOWN_ARTISTS.alex.slug)
+  await profilePage.open(KNOWN_ARTISTS.inkedWolf.slug)
   await formPage.open()
   return { profilePage, formPage }
 }

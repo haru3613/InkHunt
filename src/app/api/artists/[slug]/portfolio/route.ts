@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 import { z } from 'zod'
 
 const createPortfolioSchema = z.object({
@@ -21,7 +22,14 @@ export async function GET(
   const { slug } = await params
   const supabase = await createServerClient()
 
-  const { data: artist } = await supabase.from('artists').select('id').eq('slug', slug).single()
+  // HAR-540: gate status=active so a pending/rejected artist's portfolio is not
+  // exposed on this public GET. Owner uploads use POST (owner-scoped), not this.
+  const { data: artist } = await supabase
+    .from('artists')
+    .select('id')
+    .eq('slug', slug)
+    .eq('status', 'active')
+    .single()
   if (!artist) return NextResponse.json({ error: 'Artist not found' }, { status: 404 })
 
   const { data, error } = await supabase
@@ -79,6 +87,11 @@ export async function POST(
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+    // HAR-664: the public slug page is statically cached — revalidate it so
+    // a new portfolio item is visible without waiting for the next deploy.
+    revalidateArtistPage(slug)
+
     return NextResponse.json(data, { status: 201 })
   } catch (err) {
     return handleApiError(err)

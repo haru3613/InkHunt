@@ -59,10 +59,13 @@ interface StyleCardProps {
   readonly style: StyleRow
   readonly artistCount: number
   readonly artistsLabel: string
+  readonly sampleImage?: string
 }
 
-function StyleCard({ style, artistCount, artistsLabel }: StyleCardProps) {
-  const imageUrl = STYLE_IMAGES[style.slug] ?? DEFAULT_IMAGE
+function StyleCard({ style, artistCount, artistsLabel, sampleImage }: StyleCardProps) {
+  // Real approved-artist work wins; the hardcoded STYLE_IMAGES / Unsplash map is
+  // only an empty-state fallback for styles that have no portfolio work yet.
+  const imageUrl = sampleImage ?? STYLE_IMAGES[style.slug] ?? DEFAULT_IMAGE
 
   return (
     <Link
@@ -92,9 +95,10 @@ function StyleCard({ style, artistCount, artistsLabel }: StyleCardProps) {
 interface StyleGridProps {
   readonly styles: readonly StyleRow[]
   readonly artistCounts: ReadonlyMap<string, number>
+  readonly sampleImages?: ReadonlyMap<string, string>
 }
 
-export async function StyleGrid({ styles, artistCounts }: StyleGridProps) {
+export async function StyleGrid({ styles, artistCounts, sampleImages }: StyleGridProps) {
   const t = await getTranslations('common')
 
   return (
@@ -105,6 +109,7 @@ export async function StyleGrid({ styles, artistCounts }: StyleGridProps) {
           style={style}
           artistCount={artistCounts.get(style.slug) ?? 0}
           artistsLabel={t('artists')}
+          sampleImage={sampleImages?.get(style.slug)}
         />
       ))}
     </div>

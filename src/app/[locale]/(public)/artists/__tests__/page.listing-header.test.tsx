@@ -12,15 +12,21 @@ import { render, screen } from '@testing-library/react'
  * own rendering is covered by ArtistListingHeader.test.tsx.
  */
 
-const { getArtists, getAllStyles } = vi.hoisted(() => ({
-  getArtists: vi.fn<
-    (filters: unknown) => Promise<{ data: unknown[]; total: number }>
-  >(),
-  getAllStyles: vi.fn<() => Promise<unknown[]>>(),
-}))
+const { getArtists, getAllStyles, getCurrentUser, getFavoritedArtistIds } =
+  vi.hoisted(() => ({
+    getArtists: vi.fn<
+      (filters: unknown) => Promise<{ data: unknown[]; total: number }>
+    >(),
+    getAllStyles: vi.fn<() => Promise<unknown[]>>(),
+    getCurrentUser: vi.fn<() => Promise<{ lineUserId: string } | null>>(),
+    getFavoritedArtistIds:
+      vi.fn<(lineUserId: string, ids: string[]) => Promise<Set<string>>>(),
+  }))
 
-vi.mock('@/lib/supabase/queries/artists', () => ({ getArtists }))
+vi.mock('@/lib/supabase/queries/artists', () => ({ getArtists, DEFAULT_PAGE_SIZE: 12 }))
 vi.mock('@/lib/supabase/queries/styles', () => ({ getAllStyles }))
+vi.mock('@/lib/auth/helpers', () => ({ getCurrentUser }))
+vi.mock('@/lib/supabase/queries/favorites', () => ({ getFavoritedArtistIds }))
 
 vi.mock('next-intl/server', () => ({
   setRequestLocale: vi.fn(),
@@ -39,10 +45,21 @@ vi.mock('@/components/artists/ActiveFilterChips', () => ({
   ActiveFilterChips: () => <div data-testid="active-filter-chips" />,
 }))
 
-// ArtistCard is sync but stub it to a marker so we can count grid items cheaply.
+// ArtistCard is sync but stub it to a marker so we can count grid items cheaply
+// and assert the saved-state (`initialFavorited`) the page threads in (HAR-594).
 vi.mock('@/components/artists/ArtistCard', () => ({
-  ArtistCard: ({ artist }: { artist: { id: string } }) => (
-    <div data-testid="artist-card" data-artist-id={artist.id} />
+  ArtistCard: ({
+    artist,
+    initialFavorited,
+  }: {
+    artist: { id: string }
+    initialFavorited?: boolean
+  }) => (
+    <div
+      data-testid="artist-card"
+      data-artist-id={artist.id}
+      data-initial-favorited={String(initialFavorited ?? false)}
+    />
   ),
 }))
 
@@ -64,6 +81,30 @@ vi.mock('@/components/artists/ArtistListingHeader', () => ({
   ),
 }))
 
+// Stub the pager (HAR-667) to echo its wiring props — its own rendering is
+// covered by ArtistPagination.test.tsx.
+vi.mock('@/components/artists/ArtistPagination', () => ({
+  ArtistPagination: ({
+    page,
+    pageSize,
+    total,
+    searchParams,
+  }: {
+    page: number
+    pageSize: number
+    total: number
+    searchParams: Record<string, string | undefined>
+  }) => (
+    <div
+      data-testid="pagination"
+      data-page={page}
+      data-page-size={pageSize}
+      data-total={total}
+      data-search-params={JSON.stringify(searchParams)}
+    />
+  ),
+}))
+
 import ArtistsPage from '../page'
 
 const ARTISTS = [
@@ -76,9 +117,14 @@ async function renderPage(
   searchParams: Record<string, string> = {},
   data: unknown[] = ARTISTS,
   total = 12,
+  opts: { user?: { lineUserId: string } | null; savedIds?: Set<string> } = {},
 ) {
   getArtists.mockResolvedValue({ data, total })
   getAllStyles.mockResolvedValue([])
+  // Default: logged-out — the page skips the favorites lookup, so pre-HAR-594
+  // tests keep their byte-identical behaviour.
+  getCurrentUser.mockResolvedValue(opts.user ?? null)
+  getFavoritedArtistIds.mockResolvedValue(opts.savedIds ?? new Set())
   const ui = await ArtistsPage({
     params: Promise.resolve({ locale: 'zh-TW' }),
     searchParams: Promise.resolve(searchParams),
@@ -188,5 +234,101 @@ describe('ArtistsPage — minRating wiring (HAR-477)', () => {
   it('does NOT signal active filters for a minRating outside the allowlist', async () => {
     await renderPage({ minRating: '3' }, [], 0)
     expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'false')
+  })
+})
+
+describe('ArtistsPage — new-artist freshness wiring (HAR-585)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('passes isNew:true into the getArtists filters when ?new=1', async () => {
+    await renderPage({ new: '1' }, ARTISTS, 3)
+    expect(getArtists).toHaveBeenCalledTimes(1)
+    const filters = getArtists.mock.calls[0][0] as { isNew?: boolean }
+    expect(filters.isNew).toBe(true)
+  })
+
+  it('leaves isNew false when no ?new= is present (no freshness predicate)', async () => {
+    await renderPage({}, ARTISTS, 3)
+    const filters = getArtists.mock.calls[0][0] as { isNew?: boolean }
+    expect(filters.isNew).toBe(false)
+  })
+
+  it('leaves isNew false for a non-canonical ?new= value', async () => {
+    await renderPage({ new: 'true' }, ARTISTS, 3)
+    const filters = getArtists.mock.calls[0][0] as { isNew?: boolean }
+    expect(filters.isNew).toBe(false)
+  })
+
+  it('signals active filters to the header when new=1 is present', async () => {
+    await renderPage({ new: '1' }, ARTISTS, 3)
+    expect(screen.getByTestId('listing-header')).toHaveAttribute('data-active', 'true')
+  })
+})
+
+describe('ArtistsPage — reflects saved state on the grid (HAR-594)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('resolves the session and fills ONLY the logged-in user\'s saved artist heart', async () => {
+    await renderPage({}, ARTISTS, 3, {
+      user: { lineUserId: 'U-1' },
+      savedIds: new Set(['a2']),
+    })
+
+    // ONE bounded favorites lookup over the page's artist ids (no N+1).
+    expect(getFavoritedArtistIds).toHaveBeenCalledTimes(1)
+    expect(getFavoritedArtistIds).toHaveBeenCalledWith('U-1', ['a1', 'a2', 'a3'])
+
+    const cards = screen.getAllByTestId('artist-card')
+    const byId = Object.fromEntries(
+      cards.map((c) => [c.getAttribute('data-artist-id'), c]),
+    )
+    expect(byId['a2']).toHaveAttribute('data-initial-favorited', 'true')
+    expect(byId['a1']).toHaveAttribute('data-initial-favorited', 'false')
+    expect(byId['a3']).toHaveAttribute('data-initial-favorited', 'false')
+  })
+
+  it('does NOT query favorites for a logged-out visit (every heart empty)', async () => {
+    await renderPage({}, ARTISTS, 3, { user: null })
+
+    expect(getFavoritedArtistIds).not.toHaveBeenCalled()
+    for (const card of screen.getAllByTestId('artist-card')) {
+      expect(card).toHaveAttribute('data-initial-favorited', 'false')
+    }
+  })
+})
+
+describe('ArtistsPage — pagination wiring (HAR-667)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('mounts <ArtistPagination> fed by the current page, DEFAULT page size and total', async () => {
+    await renderPage({ page: '2' }, ARTISTS, 30)
+    const pager = screen.getByTestId('pagination')
+    expect(pager).toHaveAttribute('data-page', '2')
+    expect(pager).toHaveAttribute('data-page-size', '12')
+    expect(pager).toHaveAttribute('data-total', '30')
+  })
+
+  it('defaults to page 1 when no ?page= is present', async () => {
+    await renderPage({}, ARTISTS, 30)
+    expect(screen.getByTestId('pagination')).toHaveAttribute('data-page', '1')
+  })
+
+  it('passes the current searchParams through to the pager (minus nothing — filters preserved)', async () => {
+    await renderPage({ style: 'traditional', page: '2' }, ARTISTS, 30)
+    const params = JSON.parse(
+      screen.getByTestId('pagination').getAttribute('data-search-params')!,
+    )
+    expect(params.style).toBe('traditional')
+  })
+
+  it('does NOT mount the pager when there are zero results', async () => {
+    await renderPage({}, [], 0)
+    expect(screen.queryByTestId('pagination')).not.toBeInTheDocument()
   })
 })

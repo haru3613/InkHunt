@@ -1,12 +1,15 @@
 import type { Metadata } from 'next'
 import { setRequestLocale, getTranslations } from 'next-intl/server'
-import { getArtists } from '@/lib/supabase/queries/artists'
+import { getArtists, DEFAULT_PAGE_SIZE } from '@/lib/supabase/queries/artists'
 import { getAllStyles } from '@/lib/supabase/queries/styles'
+import { getFavoritedArtistIds } from '@/lib/supabase/queries/favorites'
+import { getCurrentUser } from '@/lib/auth/helpers'
 import { parseListingSearchParams, hasActiveListingFilters } from '@/lib/validations/listing'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { ArtistFilters } from '@/components/artists/ArtistFilters'
 import { ActiveFilterChips } from '@/components/artists/ActiveFilterChips'
 import { ArtistListingHeader } from '@/components/artists/ArtistListingHeader'
+import { ArtistPagination } from '@/components/artists/ArtistPagination'
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
 
@@ -60,7 +63,9 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
   const t = await getTranslations('artists')
   const sp = await searchParams
 
-  const { sort, budget, service, q, minRating, healed } = parseListingSearchParams(sp)
+  // `new` is a reserved word — rename the destructured facet flag to `isNew`
+  // (HAR-585). It maps to the query layer's `isNew` filter.
+  const { sort, budget, service, q, minRating, healed, new: isNew } = parseListingSearchParams(sp)
 
   const filters = {
     style: sp.style ?? null,
@@ -72,12 +77,21 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     q,
     minRating,
     healed,
+    isNew,
   }
 
-  const [{ data: artists, total }, styles] = await Promise.all([
+  const [{ data: artists, total }, styles, user] = await Promise.all([
     getArtists(filters),
     getAllStyles(),
+    getCurrentUser(),
   ])
+
+  // Reflect the consumer's real saved state on the grid (HAR-594): one bounded
+  // favorites lookup over this page's artist ids. Logged-out → skip it entirely,
+  // so every heart stays empty exactly as before.
+  const savedArtistIds = user
+    ? await getFavoritedArtistIds(user.lineUserId, artists.map((a) => a.id))
+    : new Set<string>()
 
   const hasActiveFilters = hasActiveListingFilters({
     style: filters.style,
@@ -88,6 +102,7 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
     q,
     minRating,
     healed,
+    new: isNew,
   })
 
   return (
@@ -104,11 +119,27 @@ export default async function ArtistsPage({ params, searchParams }: ArtistsPageP
         <ArtistListingHeader total={total} hasActiveFilters={hasActiveFilters} />
 
         {total > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {artists.map((artist) => (
-              <ArtistCard key={artist.id} artist={artist} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {artists.map((artist) => (
+                <ArtistCard
+                  key={artist.id}
+                  artist={artist}
+                  initialFavorited={savedArtistIds.has(artist.id)}
+                />
+              ))}
+            </div>
+
+            {/* Pagination UI (HAR-667) — artists beyond the first page were
+                previously unreachable even though getArtists already supports
+                page/pageSize. */}
+            <ArtistPagination
+              page={filters.page}
+              pageSize={DEFAULT_PAGE_SIZE}
+              total={total}
+              searchParams={sp}
+            />
+          </>
         ) : null}
       </div>
     </div>

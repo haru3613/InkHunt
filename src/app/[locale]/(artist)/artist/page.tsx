@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
+import { useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
+import { RejectedScreen } from '@/components/onboarding/RejectedScreen'
 
 function ValueCard({
   icon,
@@ -122,6 +124,10 @@ export default function ArtistEntryPage() {
 
   if (artist?.status === 'pending') {
     return <PendingScreen />
+  }
+
+  if (artist?.status === 'suspended') {
+    return <RejectedScreen />
   }
 
   // Redirecting (active or no artist record) — show minimal loading

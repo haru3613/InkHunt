@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { NEW_ARTIST_WINDOW_DAYS } from '@/lib/artists/new-artist'
 
 const mockFrom = vi.fn()
 const mockClient = { from: mockFrom }
@@ -8,7 +9,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 import { createAdminClient } from '@/lib/supabase/server'
-import { transformArtistRow, getArtistBySlug, getFeaturedArtists, getArtists, getAllArtistSlugs } from '../artists'
+import { transformArtistRow, getArtistBySlug, getFeaturedArtists, getNewArtists, getArtists, getAllArtistSlugs } from '../artists'
 
 const BASE_ARTIST = {
   id: 'a1',
@@ -187,6 +188,50 @@ describe('getFeaturedArtists', () => {
     vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
 
     const result = await getFeaturedArtists()
+
+    expect(result).toEqual([])
+  })
+})
+
+describe('getNewArtists (HAR-584)', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('reads active artists ordered by created_at desc, bounded by limit', async () => {
+    const raw = [{ ...BASE_ARTIST, slug: 'new-1', artist_styles: [], portfolio_items: [] }]
+    const chain = makeThenable({ data: raw, error: null })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getNewArtists(8)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].slug).toBe('new-1')
+    // active-only: a `status:'pending'` artist is excluded at the DB layer.
+    expect(chain.eq).toHaveBeenCalledWith('status', 'active')
+    expect(chain.order).toHaveBeenCalledWith('created_at', { ascending: false })
+    expect(chain.limit).toHaveBeenCalledWith(8)
+  })
+
+  it('defaults the limit to 8 when unspecified', async () => {
+    const chain = makeThenable({ data: [], error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await getNewArtists()
+
+    expect(chain.limit).toHaveBeenCalledWith(8)
+  })
+
+  it('returns empty array on error', async () => {
+    mockFrom.mockReturnValue(makeThenable({ data: null, error: { message: 'fail' } }))
+
+    const result = await getNewArtists()
+
+    expect(result).toEqual([])
+  })
+
+  it('returns [] when Supabase not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+
+    const result = await getNewArtists()
 
     expect(result).toEqual([])
   })
@@ -969,6 +1014,124 @@ describe('getArtists', () => {
     })
   })
 
+  describe('new-artist freshness facet (HAR-585)', () => {
+    // Pin the clock so the computed `now − NEW_ARTIST_WINDOW_DAYS` cutoff is
+    // deterministic and the exact `.gte('created_at', cutoff)` arg is assertable.
+    const FIXED_NOW = '2025-06-01T00:00:00.000Z'
+    const CUTOFF = new Date(
+      Date.parse(FIXED_NOW) - NEW_ARTIST_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString()
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date(FIXED_NOW))
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    /**
+     * Wire the count chain (1st `from()`) + data chain (2nd) so the test can
+     * assert the SAME `created_at` cutoff predicate lands on both — the filter
+     * must carry on the count query or `total` drifts from the rows returned.
+     */
+    function wireCountAndData() {
+      const artistRows = [
+        { ...BASE_ARTIST, id: 'a1', slug: 'artist-1', artist_styles: [], portfolio_items: [] },
+      ]
+      const countChain = makeThenable({ count: 1, error: null })
+      const dataChain = makeThenable({ data: artistRows, error: null })
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return countChain
+        if (callNum === 2) return dataChain
+        return makeThenable({ data: [], error: null })
+      })
+      return { countChain, dataChain }
+    }
+
+    // A `.gte('created_at', cutoff)` predicate keeps a recently-created artist
+    // (created_at ≥ cutoff) and EXCLUDES an old one; it must land on BOTH the
+    // count and data queries so `total` matches the eligible rows.
+    it("applies .gte('created_at', cutoff) to BOTH queries when isNew=true", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, isNew: true })
+
+      expect(dataChain.gte).toHaveBeenCalledWith('created_at', CUTOFF)
+      expect(countChain.gte).toHaveBeenCalledWith('created_at', CUTOFF)
+    })
+
+    // Active-only is preserved alongside the freshness predicate.
+    it("keeps the status='active' predicate on BOTH queries when isNew=true", async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, isNew: true })
+
+      expect(dataChain.eq).toHaveBeenCalledWith('status', 'active')
+      expect(countChain.eq).toHaveBeenCalledWith('status', 'active')
+    })
+
+    it('applies NO created_at cutoff when isNew is absent ({})', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12 })
+
+      expect(dataChain.gte).not.toHaveBeenCalledWith('created_at', expect.anything())
+      expect(countChain.gte).not.toHaveBeenCalledWith('created_at', expect.anything())
+    })
+
+    it('applies NO created_at cutoff when isNew is false', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({ page: 1, pageSize: 12, isNew: false })
+
+      expect(dataChain.gte).not.toHaveBeenCalledWith('created_at', expect.anything())
+      expect(countChain.gte).not.toHaveBeenCalledWith('created_at', expect.anything())
+    })
+
+    // Sparse-safe — when count is 0 (no artist inside the window), return empty
+    // without a data query.
+    it('returns { data: [], total: 0 } sparse-safe when no artist matches isNew (count=0)', async () => {
+      let callNum = 0
+      mockFrom.mockImplementation(() => {
+        callNum++
+        if (callNum === 1) return makeThenable({ count: 0, error: null })
+        return makeThenable({ data: [], error: null })
+      })
+
+      const result = await getArtists({ page: 1, pageSize: 12, isNew: true })
+
+      expect(result).toEqual({ data: [], total: 0 })
+    })
+
+    // Composes with the other facets — the freshness cutoff lands on both
+    // queries while the other predicates still apply.
+    it('composes isNew with city + budget + service + q on BOTH queries', async () => {
+      const { countChain, dataChain } = wireCountAndData()
+
+      await getArtists({
+        city: '台北市',
+        page: 1,
+        pageSize: 12,
+        isNew: true,
+        budget: 'le6000',
+        service: 'coverup',
+        q: 'bob',
+      })
+
+      // freshness cutoff on both queries
+      expect(dataChain.gte).toHaveBeenCalledWith('created_at', CUTOFF)
+      expect(countChain.gte).toHaveBeenCalledWith('created_at', CUTOFF)
+      // other facets still applied to the data query
+      expect(dataChain.eq).toHaveBeenCalledWith('city', '台北市')
+      expect(dataChain.eq).toHaveBeenCalledWith('offers_coverup', true)
+      expect(dataChain.lte).toHaveBeenCalledWith('price_min', 6000)
+      expect(dataChain.or).toHaveBeenCalledWith('display_name.ilike."%bob%",bio.ilike."%bob%"')
+    })
+  })
+
   describe('review summary (HAR-417)', () => {
     /**
      * Wire the three `from()` calls `getArtists` makes (no filters):
@@ -1203,5 +1366,54 @@ describe('getAllArtistSlugs', () => {
     const result = await getAllArtistSlugs()
 
     expect(result).toEqual([])
+  })
+})
+
+// HAR-540 — approval gate: an unapproved (non-active) artist must NEVER surface
+// on a consumer query. These pin the `.eq('status', 'active')` predicate on each
+// consumer fn so a future refactor that drops the filter FAILS a test (the mock
+// is a spy, so the lock IS the asserted predicate, matching this file's HAR-458/
+// 475/480 convention). Verified red by deleting each filter in turn.
+describe('approval gate — pending artists never appear (HAR-540)', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('getArtists filters BOTH the count and data queries by status=active', async () => {
+    const artistRows = [{ ...BASE_ARTIST, slug: 'artist-1', artist_styles: [], portfolio_items: [] }]
+    const countChain = makeThenable({ count: 1, error: null })
+    const dataChain = makeThenable({ data: artistRows, error: null })
+    let callNum = 0
+    mockFrom.mockImplementation(() => {
+      callNum++
+      if (callNum === 1) return countChain
+      if (callNum === 2) return dataChain
+      return makeThenable({ data: [], error: null }) // reviews / saved-count
+    })
+
+    await getArtists({ page: 1, pageSize: 12 })
+
+    // count query drives `total`; data query drives the rows — both must gate.
+    expect(countChain.eq).toHaveBeenCalledWith('status', 'active')
+    expect(dataChain.eq).toHaveBeenCalledWith('status', 'active')
+  })
+
+  it('getArtistBySlug scopes the lookup to status=active (returns null for a filtered-out row)', async () => {
+    // A pending row is filtered out at the DB → single() resolves null → null.
+    const chain = makeThenable({ data: null, error: { code: 'PGRST116' } })
+    mockFrom.mockReturnValue(chain)
+
+    const result = await getArtistBySlug('pending-artist')
+
+    expect(result).toBeNull()
+    expect(chain.eq).toHaveBeenCalledWith('slug', 'pending-artist')
+    expect(chain.eq).toHaveBeenCalledWith('status', 'active')
+  })
+
+  it('getFeaturedArtists filters by status=active', async () => {
+    const chain = makeThenable({ data: [], error: null })
+    mockFrom.mockReturnValue(chain)
+
+    await getFeaturedArtists()
+
+    expect(chain.eq).toHaveBeenCalledWith('status', 'active')
   })
 })

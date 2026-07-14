@@ -8,7 +8,13 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 import { createAdminClient } from '@/lib/supabase/server'
-import { getAllStyles, getStyleBySlug, getArtistCountByStyle, getAllArtistCounts } from '../styles'
+import {
+  getAllStyles,
+  getStyleBySlug,
+  getArtistCountByStyle,
+  getAllArtistCounts,
+  getStyleSampleImages,
+} from '../styles'
 
 function chainQuery(data: unknown, error: unknown = null) {
   const chain: Record<string, unknown> = {}
@@ -227,6 +233,109 @@ describe('getAllArtistCounts', () => {
     vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
 
     const result = await getAllArtistCounts()
+
+    expect(result).toBeInstanceOf(Map)
+    expect(result.size).toBe(0)
+  })
+})
+
+describe('getStyleSampleImages', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Builds the portfolio_items chain: .select().eq().order().order() where the
+  // FIRST .order() returns the chain and the SECOND resolves to the rows.
+  function portfolioChain(rows: unknown[], error: unknown = null) {
+    const chain: Record<string, unknown> = {}
+    chain.select = vi.fn().mockReturnValue(chain)
+    chain.eq = vi.fn().mockReturnValue(chain)
+    chain.order = vi
+      .fn()
+      .mockReturnValueOnce(chain)
+      .mockResolvedValueOnce({ data: error ? null : rows, error })
+    return chain
+  }
+
+  function stylesTable(styles: unknown[]) {
+    return { select: vi.fn().mockResolvedValue({ data: styles, error: null }) }
+  }
+
+  it('returns the real image_url for a style with an active-artist portfolio item and omits styles with none', async () => {
+    const portfolio = portfolioChain([
+      { style_id: 1, image_url: 'https://real/fine-line.jpg' },
+    ])
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'styles') {
+        return stylesTable([
+          { id: 1, slug: 'fine-line' },
+          { id: 2, slug: 'micro' },
+        ])
+      }
+      return portfolio
+    })
+
+    const result = await getStyleSampleImages()
+
+    expect(result.get('fine-line')).toBe('https://real/fine-line.jpg')
+    // micro has no portfolio item → omitted, so StyleGrid falls back to placeholder.
+    expect(result.has('micro')).toBe(false)
+    // active-gated: pending-artist work can never surface.
+    expect(portfolio.eq).toHaveBeenCalledWith('artists.status', 'active')
+    // joins the active-artist relation.
+    expect(portfolio.select).toHaveBeenCalledWith(
+      expect.stringContaining('artists!inner(status)'),
+    )
+  })
+
+  it('picks ONE image per style_id — lowest sort_order, tie-break most recent (first ordered row wins)', async () => {
+    const portfolio = portfolioChain([
+      { style_id: 1, image_url: 'https://real/winner.jpg' },
+      { style_id: 1, image_url: 'https://real/loser.jpg' },
+    ])
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'styles') return stylesTable([{ id: 1, slug: 'fine-line' }])
+      return portfolio
+    })
+
+    const result = await getStyleSampleImages()
+
+    expect(result.get('fine-line')).toBe('https://real/winner.jpg')
+    expect(portfolio.order).toHaveBeenCalledWith('sort_order', { ascending: true })
+    expect(portfolio.order).toHaveBeenCalledWith('created_at', { ascending: false })
+  })
+
+  it('omits a style whose only work belongs to pending artists (DB active-gate returns no rows)', async () => {
+    const portfolio = portfolioChain([])
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'styles') return stylesTable([{ id: 1, slug: 'fine-line' }])
+      return portfolio
+    })
+
+    const result = await getStyleSampleImages()
+
+    expect(result.size).toBe(0)
+    expect(portfolio.eq).toHaveBeenCalledWith('artists.status', 'active')
+  })
+
+  it('returns an empty Map on portfolio_items error', async () => {
+    const portfolio = portfolioChain([], { message: 'failed' })
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'styles') return stylesTable([{ id: 1, slug: 'fine-line' }])
+      return portfolio
+    })
+
+    const result = await getStyleSampleImages()
+
+    expect(result.size).toBe(0)
+  })
+
+  it('returns an empty Map when Supabase is not configured', async () => {
+    vi.mocked(createAdminClient).mockImplementationOnce(() => {
+      throw new Error('not configured')
+    })
+
+    const result = await getStyleSampleImages()
 
     expect(result).toBeInstanceOf(Map)
     expect(result.size).toBe(0)

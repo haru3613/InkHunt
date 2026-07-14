@@ -41,15 +41,13 @@ test.describe('Artist Journey: Manage Portfolio', () => {
       await expect(portfolio.itemCountLabel()).toBeVisible()
     })
 
-    await test.step('And: the grid or empty-state is rendered', async () => {
-      // When there are no items, the grid is replaced by the empty-state message
-      const gridVisible = await portfolio.portfolioGrid().isVisible().catch(() => false)
-      const emptyVisible = await portfolio.emptyState().isVisible().catch(() => false)
-
-      expect(
-        gridVisible || emptyVisible,
-        'Either the portfolio grid or the empty-state message must be visible',
-      ).toBe(true)
+    await test.step('And: the grid renders the mocked portfolio item', async () => {
+      // HAR-665: GET /api/artists/*/portfolio is now mocked with one fixture
+      // item (see e2e/fixtures/api-mocks.fixture.ts), so the grid — not the
+      // empty-state — is the deterministic outcome here.
+      await expect(portfolio.portfolioGrid()).toBeVisible()
+      await expect(portfolio.portfolioItems()).toHaveCount(1)
+      await expect(portfolio.emptyState()).toBeHidden()
     })
   })
 })

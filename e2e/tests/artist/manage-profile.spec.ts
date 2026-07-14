@@ -12,8 +12,8 @@ test.describe('Artist Journey: Manage Profile', () => {
       await expect(dashboard.dashboardTitle()).toBeVisible()
     })
 
-    await test.step('When: they click the "個人檔案" nav link', async () => {
-      await dashboard.navigateTo('個人檔案')
+    await test.step('When: they click the "檔案" nav link', async () => {
+      await dashboard.navigateTo('檔案')
     })
 
     await test.step('Then: the profile form page loads', async () => {

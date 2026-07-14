@@ -34,7 +34,7 @@ test.describe('Consumer Journey: Browse & Discover', () => {
   test('can filter artists by style', async ({ publicPage }) => {
     const list = new ArtistsListPage(publicPage)
     // Use a style we know exists in the mock data
-    const targetStyle = KNOWN_ARTISTS.alex.styles[0] // '寫實'
+    const targetStyle = KNOWN_ARTISTS.inkedWolf.styles[0] // '寫實'
 
     await test.step('Given: the artist list page is loaded', async () => {
       await list.open()
@@ -55,7 +55,7 @@ test.describe('Consumer Journey: Browse & Discover', () => {
 
     await test.step('And: the filtered list includes the known artist for that style', async () => {
       await expect(
-        publicPage.getByText(KNOWN_ARTISTS.alex.displayName),
+        publicPage.getByText(KNOWN_ARTISTS.inkedWolf.displayName),
       ).toBeVisible()
     })
   })
@@ -63,7 +63,7 @@ test.describe('Consumer Journey: Browse & Discover', () => {
   test('can browse an artist profile from the list', async ({ publicPage }) => {
     const list = new ArtistsListPage(publicPage)
     const profile = new ArtistProfilePage(publicPage)
-    const artist = KNOWN_ARTISTS.alex
+    const artist = KNOWN_ARTISTS.inkedWolf
 
     await test.step('Given: the artist list page is loaded', async () => {
       await list.open()
@@ -83,8 +83,10 @@ test.describe('Consumer Journey: Browse & Discover', () => {
     })
 
     await test.step('And: the profile shows at least one style badge', async () => {
+      // exact: true — the bio paragraph also contains this style name as a
+      // substring (e.g. "專精寫實風格..."), which makes a loose match ambiguous.
       await expect(
-        publicPage.getByText(artist.styles[0]),
+        publicPage.getByText(artist.styles[0], { exact: true }),
       ).toBeVisible()
     })
 

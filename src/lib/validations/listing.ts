@@ -129,6 +129,18 @@ export function parseHealed(raw: unknown): boolean {
   return raw === '1'
 }
 
+/**
+ * Parse a raw `new` search param into a boolean freshness-facet flag (HAR-585).
+ * Mirrors `parseHealed`'s untrusted-string contract — the page reads the value
+ * straight off `searchParams` so this never throws. Returns `true` ONLY for the
+ * single canonical truthy URL value `'1'` (matching the `?new=1` the control
+ * writes); every other input (absent, `'0'`, `'true'`, `'on'`, arbitrary
+ * strings, arrays, non-strings) → `false` (no predicate).
+ */
+export function parseNew(raw: unknown): boolean {
+  return raw === '1'
+}
+
 export const listingSearchParamsSchema = z.object({
   sort: listingSortSchema,
   budget: listingBudgetSchema,
@@ -144,6 +156,8 @@ export type ListingSearchParams = {
   minRating: number | null
   /** Healed-work compare-photo facet; `true` only for `?healed=1` (HAR-479). */
   healed: boolean
+  /** New-artist freshness facet; `true` only for `?new=1` (HAR-585). */
+  new: boolean
 }
 
 /**
@@ -162,6 +176,7 @@ export function parseListingSearchParams(
     q: parseListingQuery(searchParams.q),
     minRating: parseMinRating(searchParams.minRating),
     healed: parseHealed(searchParams.healed),
+    new: parseNew(searchParams.new),
   }
 }
 
@@ -171,8 +186,8 @@ export function parseListingSearchParams(
  * is anything other than the `featured` default, the `budget` is anything other
  * than the `any` default, a `service` filter is set (HAR-446), a non-empty `q`
  * keyword search is active (HAR-455), a `minRating` threshold is set
- * (HAR-474), or the `healed` facet is on (HAR-479). Drives the `清除篩選`
- * (clear-filters) affordance.
+ * (HAR-474), the `healed` facet is on (HAR-479), or the `new` freshness facet
+ * is on (HAR-585). Drives the `清除篩選` (clear-filters) affordance.
  */
 export function hasActiveListingFilters(filters: {
   style?: string | null
@@ -183,6 +198,7 @@ export function hasActiveListingFilters(filters: {
   q?: string | null
   minRating?: number | null
   healed?: boolean
+  new?: boolean
 }): boolean {
   return (
     Boolean(filters.style) ||
@@ -192,6 +208,7 @@ export function hasActiveListingFilters(filters: {
     Boolean(filters.service) ||
     Boolean(filters.q && filters.q.trim()) ||
     filters.minRating != null ||
-    filters.healed === true
+    filters.healed === true ||
+    filters.new === true
   )
 }

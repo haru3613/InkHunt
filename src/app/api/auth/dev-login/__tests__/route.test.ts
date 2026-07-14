@@ -182,6 +182,10 @@ describe('POST /api/auth/dev-login', () => {
           name: 'New User',
           provider: 'line',
         }),
+        // Identity must land in app_metadata (service-role-only) — HAR-661
+        app_metadata: expect.objectContaining({
+          line_user_id: 'Unew',
+        }),
       })
     )
     expect(signInWithPassword).toHaveBeenCalledTimes(2)
@@ -214,7 +218,10 @@ describe('POST /api/auth/dev-login', () => {
     expect(admin.auth.admin.listUsers).toHaveBeenCalledWith({ page: 1, perPage: 50 })
     expect(admin.auth.admin.updateUserById).toHaveBeenCalledWith(
       'existing-uuid',
-      expect.objectContaining({ password: expect.any(String) })
+      expect.objectContaining({
+        password: expect.any(String),
+        app_metadata: expect.objectContaining({ line_user_id: 'Uexist' }),
+      })
     )
   })
 
