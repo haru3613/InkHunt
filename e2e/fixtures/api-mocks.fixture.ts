@@ -47,12 +47,10 @@ function inquiryListHandler(route: Route) {
 }
 
 async function setupApiMocks(page: Page) {
-  // Inquiry list (consumer/artist view). Playwright globs don't match query
-  // strings against `**/api/inquiries` alone (the pattern is anchored), so the
-  // app's actual calls (`/api/inquiries?role=artist|consumer`) need a second
-  // route registered explicitly for the `?query` variant.
-  await page.route('**/api/inquiries', inquiryListHandler)
-  await page.route('**/api/inquiries?*', inquiryListHandler)
+  // Inquiry list (consumer/artist view). Regex instead of a glob so the app's
+  // actual calls (`/api/inquiries?role=artist|consumer`) match too — globs
+  // anchor before the query string.
+  await page.route(/\/api\/inquiries(\?.*)?$/, inquiryListHandler)
 
   // Inquiry detail + nested resources (messages, quotes). `**` is required
   // (not `*`) so it matches multi-segment paths like `/inquiries/:id/messages`.

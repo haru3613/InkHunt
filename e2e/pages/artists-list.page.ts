@@ -103,6 +103,5 @@ export class ArtistsListPage extends BasePage {
       .first()
       .click()
     await this.page.waitForURL(/\/artists\/[^/?]+$/)
-    await this.page.waitForLoadState('domcontentloaded')
   }
 }

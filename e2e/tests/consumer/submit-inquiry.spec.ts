@@ -16,7 +16,7 @@ test.describe('Consumer: submit inquiry', () => {
     const formPage = new InquiryFormPage(consumerPage)
 
     await test.step('Given: the consumer is on an artist profile page', async () => {
-      await profilePage.open(KNOWN_ARTISTS.alex.slug)
+      await profilePage.open(KNOWN_ARTISTS.inkedWolf.slug)
     })
 
     await test.step('When: the consumer opens the inquiry drawer', async () => {
@@ -50,7 +50,7 @@ test.describe('Consumer: submit inquiry', () => {
     const formPage = new InquiryFormPage(consumerPage)
 
     await test.step('Given: the consumer is on an artist profile page', async () => {
-      await profilePage.open(KNOWN_ARTISTS.alex.slug)
+      await profilePage.open(KNOWN_ARTISTS.inkedWolf.slug)
     })
 
     await test.step('And: the inquiry drawer is open', async () => {
@@ -109,7 +109,7 @@ test.describe('Consumer: submit inquiry', () => {
     const formPage = new InquiryFormPage(publicPage)
 
     await test.step('Given: an unauthenticated visitor is on an artist profile page', async () => {
-      await profilePage.open(KNOWN_ARTISTS.alex.slug)
+      await profilePage.open(KNOWN_ARTISTS.inkedWolf.slug)
     })
 
     await test.step('When: the visitor opens the inquiry drawer', async () => {

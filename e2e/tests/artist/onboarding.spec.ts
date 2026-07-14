@@ -18,7 +18,6 @@ test.describe('Artist Journey: Onboarding', () => {
     })
 
     await test.step('And: no application or dashboard content is shown', async () => {
-      await expect(page.startApplicationButton()).not.toBeVisible()
       await expect(page.reviewStatusHeading()).not.toBeVisible()
     })
   })
@@ -61,9 +60,8 @@ test.describe('Artist Journey: Onboarding', () => {
       await expect(page.reviewStatusHeading()).toBeVisible()
     })
 
-    await test.step('And: neither the login button nor the application CTA is shown', async () => {
+    await test.step('And: the login button is not shown', async () => {
       await expect(page.loginButton()).not.toBeVisible()
-      await expect(page.startApplicationButton()).not.toBeVisible()
     })
   })
 })

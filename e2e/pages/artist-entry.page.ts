@@ -29,13 +29,6 @@ export class ArtistEntryPage extends BasePage {
     return this.page.getByRole('button', { name: 'LINE 登入開始建立' })
   }
 
-  /** "開始申請" CTA — HAR-665: no longer present anywhere; kept as a locator
-   *  only so tests asserting its *absence* (e.g. for pending artists) still
-   *  compile. Do not use to assert presence. */
-  startApplicationButton(): Locator {
-    return this.page.getByRole('button', { name: '開始申請' })
-  }
-
   /** h1 shown when the artist application is pending review: "申請審核中" */
   reviewStatusHeading(): Locator {
     return this.page.getByRole('heading', { name: '申請審核中', level: 1 })

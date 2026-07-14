@@ -37,7 +37,7 @@ export const TEST_PENDING_ARTIST_PROFILE = {
 // match a real row in supabase/seed.sql, not invented data.
 
 export const KNOWN_ARTISTS = {
-  alex: {
+  inkedWolf: {
     slug: 'inked-wolf',
     displayName: 'InkedWolf 刺青',
     city: '台北市',
@@ -65,7 +65,7 @@ export const TEST_INQUIRY = {
 // Quote message metadata carries dates as string[] (types/chat.ts), but the
 // quotes table row stores them joined as a single string (createQuote does
 // `.join(', ')` — types/database.ts `available_dates: string | null`).
-export const TEST_QUOTE_DATES = ['4/5', '4/12 下午'] as const
+const TEST_QUOTE_DATES = ['4/5', '4/12 下午'] as const
 
 export const TEST_QUOTE = {
   id: 'quote-001',
