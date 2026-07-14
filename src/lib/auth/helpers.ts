@@ -10,6 +10,12 @@ export interface AuthUser {
   avatarUrl: string | null
 }
 
+// Identity lives in app_metadata (service-role-only writable); user_metadata
+// is client-editable and must never be the source of truth (HAR-661).
+export function buildAppMetadata(lineUserId: string) {
+  return { line_user_id: lineUserId, provider: 'line' }
+}
+
 export function extractAuthUser(user: User | null): AuthUser | null {
   if (!user) return null
 

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createHmac } from 'crypto'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, getLineProfile } from '@/lib/line/auth'
+import { buildAppMetadata } from '@/lib/auth/helpers'
 
 function derivePassword(lineUserId: string): string {
   const secret = process.env.AUTH_PASSWORD_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -17,12 +18,6 @@ function buildUserMetadata(profile: { userId: string; displayName: string; pictu
     sub: profile.userId,
     provider: 'line',
   }
-}
-
-// Identity lives in app_metadata (service-role-only writable); user_metadata
-// is client-editable and must never be the source of truth (HAR-661).
-function buildAppMetadata(lineUserId: string) {
-  return { line_user_id: lineUserId, provider: 'line' }
 }
 
 export async function GET(request: NextRequest) {
