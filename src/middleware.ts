@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 import { routing } from '@/i18n/routing'
 import { updateSession } from '@/lib/supabase/middleware'
+import {
+  isAdmin,
+  isAdminPath,
+  isProtectedArtistPath,
+  withLocalePrefix,
+} from '@/lib/auth/admin'
 
 const intlMiddleware = createIntlMiddleware(routing)
-
-const PROTECTED_ARTIST_ROUTES =
-  /^(\/[a-z-]+)?\/artist\/(dashboard|profile|portfolio|calendar|clients|settings|stats)/
-
-const PROTECTED_ADMIN_ROUTES = /^(\/[a-z-]+)?\/admin/
 
 const PROTECTED_API_ROUTES = [
   { pattern: /^\/api\/inquiries$/, methods: ['POST'] },
@@ -20,6 +21,7 @@ const PROTECTED_API_ROUTES = [
 export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request)
   const pathname = request.nextUrl.pathname
+  const locales = routing.locales
 
   // E2E test mode: skip auth redirects, auth is mocked at the API layer
   if (process.env.E2E_AUTH_BYPASS === 'true' && !pathname.startsWith('/api/')) {
@@ -47,7 +49,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Artist dashboard routes require authentication
-  if (PROTECTED_ARTIST_ROUTES.test(pathname)) {
+  if (isProtectedArtistPath(pathname, locales)) {
     if (!user) {
       const loginUrl = new URL('/api/auth/line', request.url)
       loginUrl.searchParams.set('redirect', pathname)
@@ -56,18 +58,18 @@ export async function middleware(request: NextRequest) {
   }
 
   // Admin routes require authentication + admin role
-  if (PROTECTED_ADMIN_ROUTES.test(pathname)) {
+  if (isAdminPath(pathname, locales)) {
     if (!user) {
       const loginUrl = new URL('/api/auth/line', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
-    const adminIds = process.env.ADMIN_LINE_USER_IDS?.split(',') ?? []
     // Identity MUST come from app_metadata: user_metadata is client-editable
     // via auth.updateUser() and would allow admin spoofing (HAR-661).
     const lineUserId = user.app_metadata?.line_user_id
-    if (!lineUserId || !adminIds.includes(lineUserId)) {
-      return NextResponse.redirect(new URL('/', request.url))
+    if (typeof lineUserId !== 'string' || !isAdmin(lineUserId)) {
+      const forbidden = withLocalePrefix(pathname, '/forbidden', locales)
+      return NextResponse.redirect(new URL(forbidden, request.url))
     }
   }
 

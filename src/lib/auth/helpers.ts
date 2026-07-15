@@ -3,6 +3,9 @@ import type { User } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
 import { reportError } from '@/lib/observability'
 import type { Artist, Inquiry } from '@/types/database'
+// Edge-safe admin check — re-exported so route handlers keep importing from helpers.
+export { isAdmin } from '@/lib/auth/admin'
+import { isAdmin } from '@/lib/auth/admin'
 
 export interface AuthUser {
   supabaseId: string
@@ -61,11 +64,6 @@ export async function getArtistForUser(
     .eq('line_user_id', lineUserId)
     .single()
   return data
-}
-
-export function isAdmin(lineUserId: string): boolean {
-  const adminIds = (process.env.ADMIN_LINE_USER_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)
-  return adminIds.includes(lineUserId)
 }
 
 export async function requireAdmin(): Promise<AuthUser> {

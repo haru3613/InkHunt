@@ -8,6 +8,7 @@ import { lineLoginUrl } from '@/lib/auth/login-url'
 interface AuthState {
   isLoading: boolean
   isLoggedIn: boolean
+  isAdmin: boolean
   user: {
     lineUserId: string
     displayName: string
@@ -31,37 +32,44 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+const LOGGED_OUT: AuthState = {
+  isLoading: false,
+  isLoggedIn: false,
+  isAdmin: false,
+  user: null,
+  artist: null,
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
+    ...LOGGED_OUT,
     isLoading: true,
-    isLoggedIn: false,
-    user: null,
-    artist: null,
   })
 
   const fetchAuthState = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/me')
       if (!response.ok) {
-        setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
+        setState(LOGGED_OUT)
         return
       }
       const data = await response.json()
       setState({
         isLoading: false,
         isLoggedIn: !!data.user,
+        isAdmin: Boolean(data.isAdmin),
         user: data.user,
         artist: data.artist,
       })
     } catch {
-      setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
+      setState(LOGGED_OUT)
     }
   }, [])
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- guard clause for missing config, not a cascading render
-      setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
+      setState(LOGGED_OUT)
       return
     }
 
@@ -82,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const supabase = createClient()
       await supabase.auth.signOut()
     }
-    setState({ isLoading: false, isLoggedIn: false, user: null, artist: null })
+    setState(LOGGED_OUT)
   }, [])
 
   return (

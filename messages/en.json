@@ -11,7 +11,8 @@
     "artist": "Artist",
     "openMenu": "Open menu",
     "login": "Sign in",
-    "becomeArtist": "Become an Artist"
+    "becomeArtist": "Become an Artist",
+    "admin": "Admin"
   },
   "home": {
     "heroTitle": "Find Your Tattoo Artist",
@@ -287,5 +288,10 @@
     "title": "Page not found",
     "description": "The page you're looking for doesn't exist, or the link may be broken.",
     "goHome": "Back to home"
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "description": "Your account does not have permission to view this page. If you are an admin, sign in with the correct LINE account.",
+    "backHome": "Back to home"
   }
 }

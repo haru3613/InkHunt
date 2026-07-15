@@ -25,7 +25,10 @@ vi.mock('@/lib/supabase/middleware', () => ({
 }))
 
 vi.mock('@/i18n/routing', () => ({
-  routing: {},
+  routing: {
+    locales: ['zh-TW', 'en'],
+    defaultLocale: 'zh-TW',
+  },
 }))
 
 // ── Import under test (after mocks) ───────────────────────────────────────
@@ -180,9 +183,7 @@ describe('API route protection', () => {
 })
 
 describe('Artist dashboard route protection', () => {
-  // Note: the route regex uses [a-z-]+ for locale prefix, so only lowercase
-  // locale codes (e.g. /en/) match.  Mixed-case locales like /zh-TW/ do NOT
-  // match the pattern and fall through to i18n middleware instead.
+  // Locales include mixed-case zh-TW — must protect those paths too.
   const artistRoutes = [
     '/artist/dashboard',
     '/artist/profile',
@@ -192,6 +193,8 @@ describe('Artist dashboard route protection', () => {
     '/artist/settings',
     '/artist/stats',
     '/en/artist/portfolio',
+    '/zh-TW/artist/dashboard',
+    '/zh-TW/artist/inquiries',
   ]
 
   for (const route of artistRoutes) {
@@ -251,7 +254,7 @@ describe('Admin route protection', () => {
     expect(url.searchParams.get('redirect')).toBe('/admin')
   })
 
-  it('redirects to / when authenticated user is not an admin', async () => {
+  it('redirects non-admin to /forbidden (not silent home)', async () => {
     vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin1,Uadmin2')
 
     const nonAdminUser = { id: 'u-not-admin', app_metadata: { line_user_id: 'Unot_admin' } }
@@ -262,7 +265,19 @@ describe('Admin route protection', () => {
     expect([301, 302, 307, 308]).toContain(result.status)
     const location = result.headers.get('location')
     expect(location).not.toContain('/api/auth/line')
-    expect(new URL(location!).pathname).toBe('/')
+    expect(new URL(location!).pathname).toBe('/forbidden')
+  })
+
+  it('redirects non-admin on /zh-TW/admin to /zh-TW/forbidden', async () => {
+    vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin1')
+
+    const nonAdminUser = { id: 'u-not-admin', app_metadata: { line_user_id: 'Unot_admin' } }
+    mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: nonAdminUser as never })
+
+    const result = await middleware(createMockRequest('/zh-TW/admin'))
+
+    expect([301, 302, 307, 308]).toContain(result.status)
+    expect(new URL(result.headers.get('location')!).pathname).toBe('/zh-TW/forbidden')
   })
 
   it('allows admin user with matching app_metadata line_user_id to access /admin', async () => {
@@ -273,14 +288,29 @@ describe('Admin route protection', () => {
 
     const result = await middleware(createMockRequest('/admin'))
 
-    // Should NOT redirect to LINE login or to home
+    // Should NOT redirect to LINE login or to forbidden
     const location = result.headers.get('location')
     if (location !== null) {
       const loc = new URL(location)
       expect(loc.pathname).not.toBe('/')
+      expect(loc.pathname).not.toBe('/forbidden')
       expect(loc.searchParams.get('redirect')).toBeNull()
     }
-    // If no location, it passed through — also acceptable
+  })
+
+  it('allows admin through /zh-TW/admin', async () => {
+    vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin1')
+
+    const adminUser = { id: 'u-admin', app_metadata: { line_user_id: 'Uadmin1' }, user_metadata: {} }
+    mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: adminUser as never })
+
+    const result = await middleware(createMockRequest('/zh-TW/admin'))
+
+    const location = result.headers.get('location')
+    if (location !== null) {
+      expect(new URL(location).pathname).not.toBe('/zh-TW/forbidden')
+      expect(location).not.toContain('/api/auth/line')
+    }
   })
 
   it('rejects admin ids forged in client-editable user_metadata (HAR-661)', async () => {
@@ -297,10 +327,10 @@ describe('Admin route protection', () => {
     const result = await middleware(createMockRequest('/admin'))
 
     expect([301, 302, 307, 308]).toContain(result.status)
-    expect(new URL(result.headers.get('location')!).pathname).toBe('/')
+    expect(new URL(result.headers.get('location')!).pathname).toBe('/forbidden')
   })
 
-  it('redirects to / when authenticated user has no LINE id in app_metadata', async () => {
+  it('redirects to /forbidden when authenticated user has no LINE id in app_metadata', async () => {
     vi.stubEnv('ADMIN_LINE_USER_IDS', 'Uadmin1')
 
     const userNoId = { id: 'u-no-line', app_metadata: {}, user_metadata: {} }
@@ -309,19 +339,17 @@ describe('Admin route protection', () => {
     const result = await middleware(createMockRequest('/admin'))
 
     expect([301, 302, 307, 308]).toContain(result.status)
-    expect(new URL(result.headers.get('location')!).pathname).toBe('/')
+    expect(new URL(result.headers.get('location')!).pathname).toBe('/forbidden')
   })
 
-  it('handles locale-prefixed admin route /en/admin (lowercase locale matches pattern)', async () => {
-    // Only lowercase locale prefixes match PROTECTED_ADMIN_ROUTES regex ([a-z-]+).
-    // /zh-TW/admin does NOT match because of the uppercase letters.
-    // /en/admin DOES match.
+  it('protects locale-prefixed admin routes /en/admin and /zh-TW/admin when logged out', async () => {
     mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: null })
 
-    const result = await middleware(createMockRequest('/en/admin'))
-
-    expect([301, 302, 307, 308]).toContain(result.status)
-    expect(result.headers.get('location')).toContain('/api/auth/line')
+    for (const path of ['/en/admin', '/zh-TW/admin']) {
+      const result = await middleware(createMockRequest(path))
+      expect([301, 302, 307, 308]).toContain(result.status)
+      expect(result.headers.get('location')).toContain('/api/auth/line')
+    }
   })
 })
 

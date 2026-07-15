@@ -42,6 +42,7 @@ const mockUserResponse = {
     price_min: 3000,
     portfolio_count: 5,
   },
+  isAdmin: true,
 }
 
 describe('useAuth', () => {
@@ -92,6 +93,7 @@ describe('useAuth', () => {
     })
 
     expect(result.current.isLoggedIn).toBe(true)
+    expect(result.current.isAdmin).toBe(true)
     expect(result.current.user).toEqual(mockUserResponse.user)
     expect(result.current.artist).toEqual(mockUserResponse.artist)
   })
