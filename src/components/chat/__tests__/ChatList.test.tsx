@@ -178,6 +178,41 @@ describe('ChatList', () => {
     })
   }
 
+  // Budget badge (HAR-712): each row shows an at-a-glance budget pill whose label
+  // comes from the shared `inquiry.budgetRange.options.*` keys. Falsy budget_range
+  // renders no pill at all (no broken/empty badge).
+  it('renders the localized budget badge for a row with a budget_range', () => {
+    const item = makeItem({ inquiry: makeInquiry({ budget_range: '20k_50k' }) })
+    render(
+      <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
+    )
+
+    const badge = screen.getByTestId('budget-badge')
+    expect(badge).toBeInTheDocument()
+    expect(badge.textContent).toBe(zhTW.inquiry.budgetRange.options['20k_50k'])
+  })
+
+  it('renders the /en budget badge label for a row with a budget_range', () => {
+    setLocaleMessages(en)
+    const item = makeItem({ inquiry: makeInquiry({ budget_range: '20k_50k' }) })
+    render(
+      <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
+    )
+
+    const badge = screen.getByTestId('budget-badge')
+    expect(badge.textContent).toBe(en.inquiry.budgetRange.options['20k_50k'])
+    expect(screen.queryByText(zhTW.inquiry.budgetRange.options['20k_50k'])).not.toBeInTheDocument()
+  })
+
+  it('renders no budget badge when budget_range is null', () => {
+    const item = makeItem({ inquiry: makeInquiry({ budget_range: null }) })
+    render(
+      <ChatList items={[item]} selectedId={null} onSelect={onSelect} viewAs="artist" />,
+    )
+
+    expect(screen.queryByTestId('budget-badge')).not.toBeInTheDocument()
+  })
+
   it('calls onSelect with inquiry id when a list item is clicked', async () => {
     const item = makeItem({ inquiry: makeInquiry({ id: 'inq-42' }) })
     render(

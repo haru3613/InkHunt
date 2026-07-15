@@ -138,6 +138,10 @@
         "unsure": "不確定 / 想先問"
       }
     },
+    "inboxSort": {
+      "recent": "最新",
+      "budget": "依預算排序"
+    },
     "submit": "送出詢價",
     "loginToSubmit": "LINE 登入後詢價",
     "required": "*",
