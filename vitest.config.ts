@@ -16,13 +16,13 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/__tests__/**'],
-      // Realistic floor at the measured baseline (HAR-666, 2026-07-14); ratchet
-      // up as page/RLS/integration coverage grows. Below these, CI fails.
+      // Ratcheted after unit coverage phase 2 (admin/quote-requests/portfolio UI).
+      // Measured ~89.9% lines / ~84.7% branches / ~80% functions; floor leaves headroom.
       thresholds: {
-        lines: 77,
-        statements: 77,
-        functions: 65,
-        branches: 73,
+        lines: 85,
+        statements: 85,
+        functions: 75,
+        branches: 80,
       },
     },
   },
