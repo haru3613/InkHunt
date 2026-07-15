@@ -137,10 +137,12 @@ describe('ArtistsPage — listing header wiring (HAR-435)', () => {
     vi.clearAllMocks()
   })
 
-  it('mounts <ArtistListingHeader> fed by getArtists total', async () => {
+  it('mounts <ArtistListingHeader> fed by discovery list total', async () => {
     await renderPage({}, ARTISTS, 12)
     const header = screen.getByTestId('listing-header')
     expect(header).toHaveAttribute('data-total', '12')
+    // Strangler: discovery still delegates to getArtists
+    expect(getArtists).toHaveBeenCalled()
   })
 
   it('renders the result grid (one card per artist) when total > 0', async () => {
