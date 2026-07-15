@@ -25,8 +25,8 @@ const {
   getFeaturedArtists: vi.fn<() => Promise<unknown[]>>(),
   getNewArtists: vi.fn<(limit?: number) => Promise<unknown[]>>(),
   getAllStyles: vi.fn<() => Promise<unknown[]>>(),
-  getAllArtistCounts: vi.fn<() => Promise<Record<string, number>>>(),
-  getStyleSampleImages: vi.fn<() => Promise<Record<string, string>>>(),
+  getAllArtistCounts: vi.fn<() => Promise<Map<string, number>>>(),
+  getStyleSampleImages: vi.fn<() => Promise<Map<string, string>>>(),
 }))
 
 vi.mock('@/lib/supabase/queries/artists', () => ({
