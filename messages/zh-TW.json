@@ -26,7 +26,14 @@
     "browseByStyle": "按風格找刺青師",
     "sectionLabelFeatured": "精選推薦",
     "sectionLabelNew": "新進駐",
-    "sectionLabelStyles": "風格探索"
+    "sectionLabelStyles": "風格探索",
+    "coldStartLabel": "即將開放",
+    "coldStartTitle": "畫廊正在開幕",
+    "coldStartBody": "我們正在邀請台灣優秀刺青師進駐。現在可以先探索風格、收藏喜歡的方向，或登記成為刺青師。",
+    "coldStartCtaArtist": "成為刺青師",
+    "coldStartCtaBrowse": "探索風格",
+    "styleComingSoon": "即將有作品",
+    "styleSectionColdStartHint": "以下風格將隨著刺青師上線逐步亮起——先逛逛，找到你的方向。"
   },
   "artists": {
     "title": "找刺青師",
@@ -82,7 +89,11 @@
     "cityTaichung": "台中市",
     "cityKaohsiung": "高雄市",
     "cityTainan": "台南市",
-    "cityPingtung": "屏東縣"
+    "cityPingtung": "屏東縣",
+    "coldStartLabel": "即將開放",
+    "coldStartTitle": "刺青師即將上線",
+    "coldStartHelp": "平台正在冷啟動。先登記成為刺青師，或回到首頁探索風格。",
+    "coldStartCta": "成為刺青師"
   },
   "artistProfile": {
     "portfolio": "作品集",

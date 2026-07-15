@@ -3,6 +3,7 @@ import Image from "next/image"
 import { Link } from "@/i18n/navigation"
 import { StyleGrid } from "@/components/artists/StyleGrid"
 import { ArtistCard } from "@/components/artists/ArtistCard"
+import { ColdStartInvite } from "@/components/home/ColdStartInvite"
 import { JsonLd } from "@/components/shared/JsonLd"
 import {
   getAllStyles,
@@ -34,6 +35,22 @@ export default async function HomePage({
       getStyleSampleImages(),
     ])
 
+  // Supabase helpers may return Map or plain record depending on query layer.
+  const countsMap: Map<string, number> =
+    artistCounts instanceof Map
+      ? artistCounts
+      : new Map(Object.entries(artistCounts as Record<string, number>))
+
+  const sampleMap: Map<string, string> =
+    styleSampleImages instanceof Map
+      ? styleSampleImages
+      : new Map(Object.entries(styleSampleImages as Record<string, string>))
+
+  const isColdStart =
+    featuredArtists.length === 0 &&
+    newArtists.length === 0 &&
+    [...countsMap.values()].every((n) => n === 0)
+
   const websiteJsonLd = generateWebsiteJsonLd()
 
   return (
@@ -50,10 +67,8 @@ export default async function HomePage({
           className="object-cover object-center"
           sizes="100vw"
         />
-        {/* Gradient overlay */}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,10,10,0)_0%,rgba(10,10,10,0.7)_50%,rgba(10,10,10,0.95)_100%)]" />
 
-        {/* Hero content — left-aligned, bottom */}
         <div className="relative z-10 container mx-auto px-4 pb-16 pt-32 lg:pb-24">
           <h1 className="font-display text-[clamp(3rem,8vw,6rem)] font-bold leading-[0.95] tracking-[-0.03em] text-foreground">
             {t("heroTitleLine1")}
@@ -63,22 +78,24 @@ export default async function HomePage({
           <p className="mt-6 max-w-xl text-lg text-muted-foreground">
             {t("heroSubtitle")}
           </p>
-          <div className="mt-8 flex gap-4">
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/artists"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-sm bg-primary px-8 text-sm font-medium text-primary-foreground transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-ink-accent-hover"
             >
               {t("startSearch")}
             </Link>
             <Link
               href="/artist"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border px-8 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-sm border border-border px-8 text-sm font-medium text-foreground transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-muted"
             >
               {t("iAmArtist")}
             </Link>
           </div>
         </div>
       </section>
+
+      {isColdStart ? <ColdStartInvite /> : null}
 
       {/* Featured artists */}
       {featuredArtists.length > 0 && (
@@ -99,7 +116,7 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* New artists — freshly-approved supply gets a landing rail (HAR-584) */}
+      {/* New artists */}
       {newArtists.length > 0 && (
         <section
           data-testid="new-artists-section"
@@ -124,23 +141,22 @@ export default async function HomePage({
       {/* Style categories */}
       <section className="border-b border-border py-16 lg:py-24">
         <div className="container mx-auto px-4">
-          <p
-            className="font-display text-xs font-medium uppercase text-primary"
-            style={{ letterSpacing: "0.15em" }}
-          >
+          <p className="font-display text-xs font-medium uppercase tracking-[0.15em] text-primary">
             {t("sectionLabelStyles")}
           </p>
-          <h2
-            className="font-display mt-2 font-bold text-foreground"
-            style={{ fontSize: "clamp(1.5rem, 3vw, 2.5rem)" }}
-          >
+          <h2 className="font-display mt-2 text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-foreground">
             {t("browseByStyle")}
           </h2>
+          {isColdStart ? (
+            <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+              {t("styleSectionColdStartHint")}
+            </p>
+          ) : null}
           <div className="mt-8">
             <StyleGrid
               styles={styles}
-              artistCounts={artistCounts}
-              sampleImages={styleSampleImages}
+              artistCounts={countsMap}
+              sampleImages={sampleMap}
             />
           </div>
         </div>

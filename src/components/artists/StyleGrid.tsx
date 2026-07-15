@@ -2,6 +2,9 @@ import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import type { Database } from '@/types/database'
+import { selectStylesForDiscovery } from '@/components/artists/selectStylesForDiscovery'
+
+export { selectStylesForDiscovery } from '@/components/artists/selectStylesForDiscovery'
 
 type StyleRow = Database['public']['Tables']['styles']['Row']
 
@@ -14,42 +17,30 @@ const STYLE_IMAGES: Record<string, string> = {
     'https://images.unsplash.com/photo-1709897237651-1c624b3b428d?w=600&q=80',
   realism:
     'https://images.unsplash.com/photo-1575492899586-009d962fc732?w=600&q=80',
-  floral:
-    '/styles/floral.avif',
+  floral: '/styles/floral.avif',
   blackwork:
     'https://images.unsplash.com/photo-1557130641-1b14718f096a?w=600&q=80',
-  lettering:
-    '/styles/lettering.avif',
-  illustrative:
-    '/styles/illustrative.avif',
+  lettering: '/styles/lettering.avif',
+  illustrative: '/styles/illustrative.avif',
   anime:
     'https://images.unsplash.com/photo-1647929369462-3258f892eb70?w=600&q=80',
-  watercolor:
-    '/styles/watercolor.avif',
-  'japanese-traditional':
-    '/styles/japanese-traditional.avif',
-  geometric:
-    '/styles/geometric.avif',
-  'neo-traditional':
-    '/styles/neo-traditional.avif',
+  watercolor: '/styles/watercolor.avif',
+  'japanese-traditional': '/styles/japanese-traditional.avif',
+  geometric: '/styles/geometric.avif',
+  'neo-traditional': '/styles/neo-traditional.avif',
   'american-traditional':
     'https://images.unsplash.com/photo-1641402027551-6a2fbf05b356?w=600&q=80',
-  dotwork:
-    '/styles/dotwork.avif',
+  dotwork: '/styles/dotwork.avif',
   portrait:
     'https://images.unsplash.com/photo-1640202430303-a71359ade259?w=600&q=80',
-  ornamental:
-    '/styles/ornamental.avif',
+  ornamental: '/styles/ornamental.avif',
   handpoke:
     'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=600&q=80',
   tribal:
     'https://images.unsplash.com/photo-1595246344716-5c9b563f11fe?w=600&q=80',
-  surrealism:
-    '/styles/surrealism.avif',
-  abstract:
-    '/styles/abstract.avif',
-  other:
-    '/styles/other.avif',
+  surrealism: '/styles/surrealism.avif',
+  abstract: '/styles/abstract.avif',
+  other: '/styles/other.avif',
 }
 
 const DEFAULT_IMAGE =
@@ -60,11 +51,18 @@ interface StyleCardProps {
   readonly artistCount: number
   readonly artistsLabel: string
   readonly sampleImage?: string
+  readonly isColdStart: boolean
+  readonly comingSoonLabel: string
 }
 
-function StyleCard({ style, artistCount, artistsLabel, sampleImage }: StyleCardProps) {
-  // Real approved-artist work wins; the hardcoded STYLE_IMAGES / Unsplash map is
-  // only an empty-state fallback for styles that have no portfolio work yet.
+function StyleCard({
+  style,
+  artistCount,
+  artistsLabel,
+  sampleImage,
+  isColdStart,
+  comingSoonLabel,
+}: StyleCardProps) {
   const imageUrl = sampleImage ?? STYLE_IMAGES[style.slug] ?? DEFAULT_IMAGE
 
   return (
@@ -77,15 +75,17 @@ function StyleCard({ style, artistCount, artistsLabel, sampleImage }: StyleCardP
         alt={style.name}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px"
-        className="object-cover brightness-50 transition-all duration-500 ease-out group-hover:scale-105 group-hover:brightness-[0.7]"
+        className="object-cover brightness-[0.55] transition-[transform,filter] duration-300 ease-out motion-reduce:transition-none [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-105 [@media(hover:hover)_and_(pointer:fine)]:group-hover:brightness-[0.72]"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
       <div className="absolute bottom-0 left-0 p-4">
         <p className="font-display text-base font-semibold text-foreground">
           {style.name}
         </p>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          {artistCount} {artistsLabel}
+          {isColdStart || artistCount === 0
+            ? comingSoonLabel
+            : `${artistCount} ${artistsLabel}`}
         </p>
       </div>
     </Link>
@@ -98,18 +98,33 @@ interface StyleGridProps {
   readonly sampleImages?: ReadonlyMap<string, string>
 }
 
-export async function StyleGrid({ styles, artistCounts, sampleImages }: StyleGridProps) {
+export async function StyleGrid({
+  styles,
+  artistCounts,
+  sampleImages,
+}: StyleGridProps) {
   const t = await getTranslations('common')
+  const tHome = await getTranslations('home')
+  const { styles: visible, isColdStart } = selectStylesForDiscovery(
+    styles,
+    artistCounts,
+  )
+
+  if (visible.length === 0) {
+    return null
+  }
 
   return (
     <div className="grid auto-rows-auto grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-1">
-      {styles.map((style) => (
+      {visible.map((style) => (
         <StyleCard
           key={style.id}
           style={style}
           artistCount={artistCounts.get(style.slug) ?? 0}
           artistsLabel={t('artists')}
           sampleImage={sampleImages?.get(style.slug)}
+          isColdStart={isColdStart}
+          comingSoonLabel={tHome('styleComingSoon')}
         />
       ))}
     </div>
