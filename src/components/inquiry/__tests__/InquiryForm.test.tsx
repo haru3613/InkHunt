@@ -106,6 +106,7 @@ const mockedUseRouter = vi.mocked(useRouter)
 function makeAuthGuest() {
   mockedUseAuth.mockReturnValue({
     isLoggedIn: false,
+    isAdmin: false,
     isLoading: false,
     user: null,
     artist: null,
@@ -118,6 +119,7 @@ function makeAuthGuest() {
 function makeAuthLoggedIn() {
   mockedUseAuth.mockReturnValue({
     isLoggedIn: true,
+    isAdmin: false,
     isLoading: false,
     user: { lineUserId: 'U123', displayName: 'Test User', avatarUrl: null },
     artist: null,
@@ -213,6 +215,7 @@ describe('InquiryForm', () => {
       const loginWithRedirect = vi.fn()
       mockedUseAuth.mockReturnValue({
         isLoggedIn: false,
+        isAdmin: false,
         isLoading: false,
         user: null,
         artist: null,
