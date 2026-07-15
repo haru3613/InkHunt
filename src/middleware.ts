@@ -8,6 +8,7 @@ import {
   isProtectedArtistPath,
   withLocalePrefix,
 } from '@/lib/auth/admin'
+import { extractAuthUser } from '@/lib/auth/identity'
 
 const intlMiddleware = createIntlMiddleware(routing)
 
@@ -64,10 +65,10 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
-    // Identity MUST come from app_metadata: user_metadata is client-editable
-    // via auth.updateUser() and would allow admin spoofing (HAR-661).
-    const lineUserId = user.app_metadata?.line_user_id
-    if (typeof lineUserId !== 'string' || !isAdmin(lineUserId)) {
+    // Same identity policy as Node session (extractAuthUser + isAdmin).
+    // Never trust user_metadata for line_user_id (HAR-661).
+    const authUser = extractAuthUser(user)
+    if (!authUser || !isAdmin(authUser.lineUserId)) {
       const forbidden = withLocalePrefix(pathname, '/forbidden', locales)
       return NextResponse.redirect(new URL(forbidden, request.url))
     }
