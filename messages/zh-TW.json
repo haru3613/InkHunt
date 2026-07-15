@@ -11,7 +11,8 @@
     "artist": "設計師",
     "openMenu": "開啟選單",
     "login": "登入",
-    "becomeArtist": "成為刺青師"
+    "becomeArtist": "成為刺青師",
+    "admin": "管理後台"
   },
   "home": {
     "heroTitle": "找到你的刺青師",
@@ -287,5 +288,10 @@
     "title": "找不到頁面",
     "description": "你要找的頁面不存在，可能已經被移除或網址有誤。",
     "goHome": "返回首頁"
+  },
+  "forbidden": {
+    "title": "沒有權限",
+    "description": "你的帳號沒有權限瀏覽此頁面。若你是管理員，請確認已用正確的 LINE 帳號登入。",
+    "backHome": "回首頁"
   }
 }

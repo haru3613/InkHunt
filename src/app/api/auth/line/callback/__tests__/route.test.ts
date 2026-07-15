@@ -53,11 +53,18 @@ function makeRequest(searchParams: Record<string, string>): NextRequest {
 function makeSupabaseClient({
   signInWithIdTokenError = null as unknown,
   signInWithPasswordError = null as unknown,
+  getUserResult = {
+    id: 'user-uuid-123',
+    app_metadata: { line_user_id: 'Utest123', provider: 'line' },
+    user_metadata: {},
+  } as Record<string, unknown> | null,
 } = {}) {
   return {
     auth: {
       signInWithIdToken: vi.fn().mockResolvedValue({ error: signInWithIdTokenError }),
       signInWithPassword: vi.fn().mockResolvedValue({ error: signInWithPasswordError }),
+      getUser: vi.fn().mockResolvedValue({ data: { user: getUserResult } }),
+      refreshSession: vi.fn().mockResolvedValue({ error: null }),
     },
   }
 }
@@ -185,6 +192,7 @@ describe('GET /api/auth/line/callback', () => {
   it('redirects to the stored redirect path when OIDC sign-in succeeds', async () => {
     const supabase = makeSupabaseClient({ signInWithIdTokenError: null })
     mockCreateServerClient.mockResolvedValue(supabase as never)
+    mockCreateAdminClient.mockReturnValue(makeAdminClient() as never)
 
     const request = makeRequest({ code: 'auth-code-abc', state: 'valid-state-123' })
 
@@ -197,6 +205,7 @@ describe('GET /api/auth/line/callback', () => {
   it('calls signInWithIdToken with the id_token and stored nonce', async () => {
     const supabase = makeSupabaseClient({ signInWithIdTokenError: null })
     mockCreateServerClient.mockResolvedValue(supabase as never)
+    mockCreateAdminClient.mockReturnValue(makeAdminClient() as never)
 
     const request = makeRequest({ code: 'auth-code-abc', state: 'valid-state-123' })
 
@@ -207,6 +216,32 @@ describe('GET /api/auth/line/callback', () => {
       token: TOKENS.id_token,
       nonce: 'valid-nonce-456',
     })
+  })
+
+  it('backfills app_metadata when password sign-in succeeds but identity is missing', async () => {
+    const supabase = makeSupabaseClient({
+      signInWithIdTokenError: { message: 'OIDC not configured' },
+      signInWithPasswordError: null,
+      getUserResult: {
+        id: 'user-uuid-123',
+        app_metadata: { provider: 'email' },
+        user_metadata: {},
+      },
+    })
+    const adminClient = makeAdminClient()
+    mockCreateServerClient.mockResolvedValue(supabase as never)
+    mockCreateAdminClient.mockReturnValue(adminClient as never)
+
+    const request = makeRequest({ code: 'auth-code-abc', state: 'valid-state-123' })
+    await GET(request)
+
+    expect(adminClient.auth.admin.updateUserById).toHaveBeenCalledWith(
+      'user-uuid-123',
+      expect.objectContaining({
+        app_metadata: expect.objectContaining({ line_user_id: PROFILE.userId }),
+      }),
+    )
+    expect(supabase.auth.refreshSession).toHaveBeenCalled()
   })
 
   // ---------- happy path: OIDC fails, password sign-in succeeds -------------
@@ -242,6 +277,16 @@ describe('GET /api/auth/line/callback', () => {
       auth: {
         signInWithIdToken: vi.fn().mockResolvedValue({ error: { message: 'OIDC failed' } }),
         signInWithPassword,
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              id: 'user-uuid-123',
+              app_metadata: { line_user_id: PROFILE.userId },
+              user_metadata: {},
+            },
+          },
+        }),
+        refreshSession: vi.fn().mockResolvedValue({ error: null }),
       },
     }
     const adminClient = makeAdminClient({ createUserError: null })
@@ -282,6 +327,16 @@ describe('GET /api/auth/line/callback', () => {
       auth: {
         signInWithIdToken: vi.fn().mockResolvedValue({ error: { message: 'OIDC failed' } }),
         signInWithPassword,
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              id: 'existing-user-uuid',
+              app_metadata: { line_user_id: PROFILE.userId },
+              user_metadata: {},
+            },
+          },
+        }),
+        refreshSession: vi.fn().mockResolvedValue({ error: null }),
       },
     }
     const adminClient = makeAdminClient({

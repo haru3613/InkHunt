@@ -6,6 +6,10 @@ vi.mock('@/lib/auth/helpers', () => ({
   getArtistForUser: vi.fn(),
 }))
 
+vi.mock('@/lib/auth/admin', () => ({
+  isAdmin: vi.fn(() => false),
+}))
+
 const mockAdminUpdate = vi.fn().mockReturnThis()
 const mockAdminEq = vi.fn().mockResolvedValue({ error: null })
 vi.mock('@/lib/supabase/server', () => ({
@@ -20,10 +24,12 @@ vi.mock('@/lib/supabase/server', () => ({
 
 import { GET } from '../route'
 import { getCurrentUser, getArtistForUser } from '@/lib/auth/helpers'
+import { isAdmin } from '@/lib/auth/admin'
 import { createServerClient } from '@/lib/supabase/server'
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser)
 const mockGetArtistForUser = vi.mocked(getArtistForUser)
+const mockIsAdmin = vi.mocked(isAdmin)
 const mockCreateServerClient = vi.mocked(createServerClient)
 
 const mockAuthUser = {
@@ -77,6 +83,7 @@ describe('GET /api/auth/me', () => {
     expect(response.status).toBe(200)
     expect(body.user).toBeNull()
     expect(body.artist).toBeNull()
+    expect(body.isAdmin).toBe(false)
     // getArtistForUser should not be called when no user
     expect(mockGetArtistForUser).not.toHaveBeenCalled()
   })
@@ -84,6 +91,7 @@ describe('GET /api/auth/me', () => {
   it('returns user with null artist when user has no artist profile', async () => {
     mockGetCurrentUser.mockResolvedValue(mockAuthUser)
     mockGetArtistForUser.mockResolvedValue(null)
+    mockIsAdmin.mockReturnValue(true)
 
     const response = await GET()
     const body = await response.json()
@@ -95,7 +103,9 @@ describe('GET /api/auth/me', () => {
       avatarUrl: 'https://example.com/avatar.jpg',
     })
     expect(body.artist).toBeNull()
+    expect(body.isAdmin).toBe(true)
     expect(mockGetArtistForUser).toHaveBeenCalledWith('U_line_user_abc')
+    expect(mockIsAdmin).toHaveBeenCalledWith('U_line_user_abc')
   })
 
   it('returns user with artist profile including portfolio count', async () => {

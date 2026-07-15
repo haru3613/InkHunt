@@ -21,6 +21,38 @@ function buildUserMetadata(profile: { userId: string; displayName: string; pictu
   }
 }
 
+/**
+ * Ensure app_metadata.line_user_id is set after every successful login.
+ * Existing users that signed in before HAR-661 (or via OIDC) may lack it;
+ * without this, middleware/API treat them as unauthenticated for identity.
+ */
+async function ensureLineIdentity(
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
+  profile: { userId: string; displayName: string; pictureUrl?: string },
+) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
+
+  const currentLineId = user.app_metadata?.line_user_id
+  if (currentLineId === profile.userId) return
+
+  const adminClient = createAdminClient()
+  await adminClient.auth.admin.updateUserById(user.id, {
+    app_metadata: {
+      ...(user.app_metadata ?? {}),
+      ...buildAppMetadata(profile.userId),
+    },
+    user_metadata: {
+      ...(user.user_metadata ?? {}),
+      ...buildUserMetadata(profile),
+    },
+  })
+  // Refresh so subsequent requests see updated JWT claims
+  await supabase.auth.refreshSession()
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get('code')
@@ -90,6 +122,9 @@ export async function GET(request: NextRequest) {
         await supabase.auth.signInWithPassword({ email, password })
       }
     }
+
+    // Always backfill identity into app_metadata after a successful session
+    await ensureLineIdentity(supabase, profile)
 
     // Clean up auth cookies
     cookieStore.delete('line_auth_state')
