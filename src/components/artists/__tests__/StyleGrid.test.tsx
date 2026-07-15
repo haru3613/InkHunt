@@ -85,21 +85,51 @@ describe('StyleGrid — real portfolio image vs placeholder (HAR-541)', () => {
     expect(img.getAttribute('src')).not.toContain('real/')
   })
 
-  it('mixes real and placeholder across styles in one grid', async () => {
-    await renderGrid(
-      [
+  it('cold start hides zero-count label and shows coming-soon copy', async () => {
+    const ui = await StyleGrid({
+      styles: [style({ slug: 'floral', name: '花卉' })],
+      artistCounts: new Map(),
+      sampleImages: new Map(),
+    })
+    render(ui)
+    expect(screen.getByText('styleComingSoon')).toBeInTheDocument()
+    expect(screen.queryByText(/0/)).not.toBeInTheDocument()
+  })
+
+  it('with supply only renders styles that have artists', async () => {
+    const ui = await StyleGrid({
+      styles: [
         style({ id: 1, slug: 'fine-line', name: '極簡線條' }),
         style({ id: 2, slug: 'micro', name: '微刺青' }),
       ],
-      new Map([['fine-line', 'https://real/fine-line.jpg']]),
-    )
+      artistCounts: new Map([['fine-line', 3]]),
+      sampleImages: new Map([['fine-line', 'https://real/fine-line.jpg']]),
+    })
+    render(ui)
+    expect(screen.getByAltText('極簡線條')).toBeInTheDocument()
+    expect(screen.queryByAltText('微刺青')).not.toBeInTheDocument()
+    expect(screen.getByText(/3/)).toBeInTheDocument()
+  })
+
+  it('uses real portfolio image when a style has supply + sample map', async () => {
+    const ui = await StyleGrid({
+      styles: [
+        style({ id: 1, slug: 'fine-line', name: '極簡線條' }),
+        style({ id: 2, slug: 'micro', name: '微刺青' }),
+      ],
+      artistCounts: new Map([
+        ['fine-line', 2],
+        ['micro', 1],
+      ]),
+      sampleImages: new Map([['fine-line', 'https://real/fine-line.jpg']]),
+    })
+    render(ui)
 
     expect(
       (screen.getByAltText('極簡線條') as HTMLImageElement).getAttribute('src'),
     ).toBe('https://real/fine-line.jpg')
-    // micro has no real work → placeholder, not the fine-line real URL.
     expect(
       (screen.getByAltText('微刺青') as HTMLImageElement).getAttribute('src'),
-    ).not.toBe('https://real/fine-line.jpg')
+    ).toContain('unsplash.com')
   })
 })

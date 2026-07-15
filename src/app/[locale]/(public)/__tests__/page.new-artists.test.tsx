@@ -54,6 +54,9 @@ vi.mock('@/components/artists/ArtistCard', () => ({
 }))
 
 vi.mock('@/components/artists/StyleGrid', () => ({ StyleGrid: () => null }))
+vi.mock('@/components/home/ColdStartInvite', () => ({
+  ColdStartInvite: () => <div data-testid="cold-start-invite">cold-start</div>,
+}))
 vi.mock('@/components/shared/JsonLd', () => ({ JsonLd: () => null }))
 vi.mock('next/image', () => ({ default: () => null }))
 vi.mock('@/lib/seo', () => ({ generateWebsiteJsonLd: () => ({}) }))
@@ -79,8 +82,8 @@ describe('HomePage — 新進刺青師 rail (HAR-584)', () => {
     getFeaturedArtists.mockResolvedValue([])
     getNewArtists.mockResolvedValue([])
     getAllStyles.mockResolvedValue([])
-    getAllArtistCounts.mockResolvedValue({})
-    getStyleSampleImages.mockResolvedValue({})
+    getAllArtistCounts.mockResolvedValue(new Map())
+    getStyleSampleImages.mockResolvedValue(new Map())
   })
 
   it('requests up to 8 recently-active artists', async () => {
@@ -99,11 +102,21 @@ describe('HomePage — 新進刺青師 rail (HAR-584)', () => {
       'new-a',
       'new-b',
     ])
+    // Has supply rail → not pure cold-start invite
+    expect(screen.queryByTestId('cold-start-invite')).not.toBeInTheDocument()
   })
 
   it('renders NOTHING when there are no new artists (empty-safe)', async () => {
     getNewArtists.mockResolvedValue([])
     await renderPage()
     expect(screen.queryByTestId('new-artists-section')).not.toBeInTheDocument()
+  })
+
+  it('shows cold-start invite when marketplace has no artists yet', async () => {
+    getFeaturedArtists.mockResolvedValue([])
+    getNewArtists.mockResolvedValue([])
+    getAllArtistCounts.mockResolvedValue(new Map())
+    await renderPage()
+    expect(screen.getByTestId('cold-start-invite')).toBeInTheDocument()
   })
 })

@@ -9,35 +9,69 @@ interface ArtistListingHeaderProps {
 }
 
 /**
- * Presentational header for the `/artists` listing (HAR-435):
+ * Presentational header for the `/artists` listing (HAR-435 + cold-start):
  *
  * - a result-count line (`找到 {total} 位刺青師`),
  * - a `清除篩選` link to bare `/artists` whenever a filter is active, and
- * - a graceful empty-state block when `total === 0`.
- *
- * Purely presentational — no query/filter logic. The "any filter active" signal
- * is computed by the page (`hasActiveListingFilters`) and passed in, so this
- * stays a unit-testable component.
+ * - empty-state: filtered-no-results vs cold-start (no supply yet).
  */
-export function ArtistListingHeader({ total, hasActiveFilters }: ArtistListingHeaderProps) {
+export function ArtistListingHeader({
+  total,
+  hasActiveFilters,
+}: ArtistListingHeaderProps) {
   const t = useTranslations('artists')
 
   const clearLink = hasActiveFilters ? (
-    <Link href="/artists" className="text-sm text-primary underline-offset-4 hover:underline">
+    <Link
+      href="/artists"
+      className="text-sm text-primary underline-offset-4 transition-colors [@media(hover:hover)_and_(pointer:fine)]:hover:underline"
+    >
       {t('clearFilters')}
     </Link>
   ) : null
 
+  const isColdStart = total === 0 && !hasActiveFilters
+  const isFilteredEmpty = total === 0 && hasActiveFilters
+
   return (
     <div className="mb-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{t('resultCount', { count: total })}</p>
-        {total > 0 ? clearLink : null}
-      </div>
+      {!isColdStart ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {t('resultCount', { count: total })}
+          </p>
+          {total > 0 ? clearLink : null}
+        </div>
+      ) : null}
 
-      {total === 0 ? (
+      {isColdStart ? (
+        <div
+          data-testid="artists-cold-start"
+          className="mt-6 flex flex-col items-center gap-3 rounded-md border border-border bg-card px-6 py-12 text-center"
+        >
+          <p className="font-display text-xs font-medium uppercase tracking-[0.15em] text-primary">
+            {t('coldStartLabel')}
+          </p>
+          <h2 className="font-display text-xl font-semibold text-foreground">
+            {t('coldStartTitle')}
+          </h2>
+          <p className="max-w-md text-sm text-muted-foreground">
+            {t('coldStartHelp')}
+          </p>
+          <Link
+            href="/artist"
+            className="mt-2 inline-flex h-11 items-center justify-center rounded-sm bg-primary px-8 text-sm font-medium text-primary-foreground transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-ink-accent-hover"
+          >
+            {t('coldStartCta')}
+          </Link>
+        </div>
+      ) : null}
+
+      {isFilteredEmpty ? (
         <div className="mt-10 flex flex-col items-center gap-2 text-center">
-          <h2 className="font-display text-lg font-semibold text-foreground">{t('emptyTitle')}</h2>
+          <h2 className="font-display text-lg font-semibold text-foreground">
+            {t('emptyTitle')}
+          </h2>
           <p className="text-sm text-muted-foreground">{t('emptyHelp')}</p>
           {clearLink}
         </div>
