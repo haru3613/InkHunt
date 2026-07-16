@@ -8,10 +8,11 @@
     "artistEntry": "For Artists",
     "home": "Home",
     "favorites": "Saved",
-    "artist": "Artist",
+    "artist": "For Artists",
     "openMenu": "Open menu",
     "login": "Sign in",
-    "becomeArtist": "Become an Artist"
+    "becomeArtist": "Become an Artist",
+    "admin": "Admin"
   },
   "home": {
     "heroTitle": "Find Your Tattoo Artist",
@@ -19,13 +20,20 @@
     "heroTitleLine2": "Tattoo Artist",
     "heroSubtitle": "Filter by style, browse portfolios, transparent pricing, one-click inquiry. No more DM-ing on Instagram one by one.",
     "startSearch": "Find Artists",
-    "iAmArtist": "I'm an Artist",
+    "iAmArtist": "Become an Artist",
     "recommended": "Featured Artists",
     "newArtists": "New artists",
     "browseByStyle": "Browse by Style",
     "sectionLabelFeatured": "FEATURED",
     "sectionLabelNew": "NEW ARRIVALS",
-    "sectionLabelStyles": "BROWSE BY STYLE"
+    "sectionLabelStyles": "BROWSE BY STYLE",
+    "coldStartLabel": "Coming soon",
+    "coldStartTitle": "The gallery is opening",
+    "coldStartBody": "We're onboarding Taiwan's tattoo artists. Explore styles, save what you love, or apply as an artist.",
+    "coldStartCtaArtist": "Become an artist",
+    "coldStartCtaBrowse": "Explore styles",
+    "styleComingSoon": "Coming soon",
+    "styleSectionColdStartHint": "These styles light up as artists go live—browse and find your direction."
   },
   "artists": {
     "title": "Find Artists",
@@ -81,7 +89,11 @@
     "cityTaichung": "Taichung",
     "cityKaohsiung": "Kaohsiung",
     "cityTainan": "Tainan",
-    "cityPingtung": "Pingtung"
+    "cityPingtung": "Pingtung",
+    "coldStartLabel": "Coming soon",
+    "coldStartTitle": "Artists are on the way",
+    "coldStartHelp": "The marketplace is cold-starting. Apply as an artist, or head home to explore styles.",
+    "coldStartCta": "Become an artist"
   },
   "artistProfile": {
     "portfolio": "Portfolio",
@@ -125,6 +137,10 @@
         "over_50k": "Over NT$50,000",
         "unsure": "Not sure / just asking"
       }
+    },
+    "inboxSort": {
+      "recent": "Most recent",
+      "budget": "By budget"
     },
     "submit": "Submit Inquiry",
     "loginToSubmit": "Log in with LINE to Inquire",
@@ -287,5 +303,10 @@
     "title": "Page not found",
     "description": "The page you're looking for doesn't exist, or the link may be broken.",
     "goHome": "Back to home"
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "description": "Your account does not have permission to view this page. If you are an admin, sign in with the correct LINE account.",
+    "backHome": "Back to home"
   }
 }

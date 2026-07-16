@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { reportError } from "@/lib/observability"
 
 // HAR-663: last-resort boundary for a failure in the ROOT layout itself.
 // Next.js requires this file to render its own <html>/<body> — the locale
@@ -10,9 +11,6 @@ import { useEffect } from "react"
 //
 // Retry uses `unstable_retry()` (Next 16.2+), not bare `reset()` — see the
 // rationale in src/app/[locale]/error.tsx.
-//
-// Hook point for the sibling error-tracking ticket: swap this console.error
-// for `Sentry.captureException(error)` (or similar) once that ticket lands.
 export default function GlobalError({
   error,
   unstable_retry,
@@ -22,7 +20,7 @@ export default function GlobalError({
   unstable_retry: () => void
 }) {
   useEffect(() => {
-    console.error("[global-error-boundary]", error)
+    reportError("global-error-boundary", error)
   }, [error])
 
   return (

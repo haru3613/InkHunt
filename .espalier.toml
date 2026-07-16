@@ -4,7 +4,7 @@ linear_team_id = "04886110-ac98-435f-aaa2-dfc62afc9c79"
 linear_project_id = "e80ec8b8-436e-422d-ba84-f3120d0a21a4"
 
 [test]
-cmd = "npm test -- --run {paths}"
+cmd = "npm test -- --run"
 lint_cmd = "npm run lint -- src"
 
 [surface]

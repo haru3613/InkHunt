@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
+import { safeAdminClient } from '@/lib/supabase/admin'
 import {
   ARTIST_PUBLIC_SELECT,
   transformArtistRow,
@@ -87,12 +88,8 @@ export async function getFavoritedArtistIds(
   const favorited = new Set<string>()
   if (artistIds.length === 0) return favorited
 
-  let admin: ReturnType<typeof createAdminClient>
-  try {
-    admin = createAdminClient()
-  } catch {
-    return favorited
-  }
+  const admin = safeAdminClient()
+  if (!admin) return favorited
 
   const { data, error } = await admin
     .from('favorites')

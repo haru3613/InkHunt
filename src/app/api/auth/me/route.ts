@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser, getArtistForUser } from '@/lib/auth/helpers'
+import { isAdmin } from '@/lib/auth/admin'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function GET() {
   const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ user: null, artist: null })
+  if (!user) return NextResponse.json({ user: null, artist: null, isAdmin: false })
 
   const artist = await getArtistForUser(user.lineUserId)
 
@@ -44,5 +45,6 @@ export async function GET() {
           portfolio_count: portfolioCount,
         }
       : null,
+    isAdmin: isAdmin(user.lineUserId),
   })
 }

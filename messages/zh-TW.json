@@ -5,13 +5,14 @@
   },
   "nav": {
     "findArtist": "找刺青師",
-    "artistEntry": "設計師入口",
+    "artistEntry": "成為刺青師",
     "home": "首頁",
     "favorites": "收藏",
-    "artist": "設計師",
+    "artist": "成為刺青師",
     "openMenu": "開啟選單",
     "login": "登入",
-    "becomeArtist": "成為刺青師"
+    "becomeArtist": "成為刺青師",
+    "admin": "管理後台"
   },
   "home": {
     "heroTitle": "找到你的刺青師",
@@ -19,13 +20,20 @@
     "heroTitleLine2": "刺青師",
     "heroSubtitle": "按風格篩選、瀏覽作品集、價格透明、一鍵詢價。不用再一個一個 IG 私訊問價了。",
     "startSearch": "開始找刺青師",
-    "iAmArtist": "我是刺青師",
+    "iAmArtist": "成為刺青師",
     "recommended": "推薦刺青師",
     "newArtists": "新進刺青師",
     "browseByStyle": "按風格找刺青師",
     "sectionLabelFeatured": "精選推薦",
     "sectionLabelNew": "新進駐",
-    "sectionLabelStyles": "風格探索"
+    "sectionLabelStyles": "風格探索",
+    "coldStartLabel": "即將開放",
+    "coldStartTitle": "畫廊正在開幕",
+    "coldStartBody": "我們正在邀請台灣優秀刺青師進駐。現在可以先探索風格、收藏喜歡的方向，或登記成為刺青師。",
+    "coldStartCtaArtist": "成為刺青師",
+    "coldStartCtaBrowse": "探索風格",
+    "styleComingSoon": "即將有作品",
+    "styleSectionColdStartHint": "以下風格將隨著刺青師上線逐步亮起——先逛逛，找到你的方向。"
   },
   "artists": {
     "title": "找刺青師",
@@ -81,7 +89,11 @@
     "cityTaichung": "台中市",
     "cityKaohsiung": "高雄市",
     "cityTainan": "台南市",
-    "cityPingtung": "屏東縣"
+    "cityPingtung": "屏東縣",
+    "coldStartLabel": "即將開放",
+    "coldStartTitle": "刺青師即將上線",
+    "coldStartHelp": "平台正在冷啟動。先登記成為刺青師，或回到首頁探索風格。",
+    "coldStartCta": "成為刺青師"
   },
   "artistProfile": {
     "portfolio": "作品集",
@@ -125,6 +137,10 @@
         "over_50k": "50,000 以上",
         "unsure": "不確定 / 想先問"
       }
+    },
+    "inboxSort": {
+      "recent": "最新",
+      "budget": "依預算排序"
     },
     "submit": "送出詢價",
     "loginToSubmit": "LINE 登入後詢價",
@@ -287,5 +303,10 @@
     "title": "找不到頁面",
     "description": "你要找的頁面不存在，可能已經被移除或網址有誤。",
     "goHome": "返回首頁"
+  },
+  "forbidden": {
+    "title": "沒有權限",
+    "description": "你的帳號沒有權限瀏覽此頁面。若你是管理員，請確認已用正確的 LINE 帳號登入。",
+    "backHome": "回首頁"
   }
 }

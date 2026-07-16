@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
+const mockReportError = vi.fn()
+vi.mock('@/lib/observability', () => ({
+  reportError: (...args: unknown[]) => mockReportError(...args),
+}))
+
 // HAR-663: last-resort boundary for a failure in the ROOT layout itself
 // (locale never resolves, so no next-intl provider is available — copy is
 // hardcoded bilingual, not translated).
@@ -40,14 +45,13 @@ describe('GlobalError (src/app/global-error.tsx)', () => {
     expect(reset).not.toHaveBeenCalled()
   })
 
-  it('logs the error for the (future) error tracker hook point', async () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  it('reports the error to the error tracker (HAR-662)', async () => {
     const { default: GlobalError } = await import('../global-error')
     const error = new Error('boom')
     render(
       <GlobalError error={error} reset={vi.fn()} unstable_retry={vi.fn()} />
     )
 
-    expect(spy).toHaveBeenCalledWith('[global-error-boundary]', error)
+    expect(mockReportError).toHaveBeenCalledWith('global-error-boundary', error)
   })
 })

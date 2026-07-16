@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { UserIcon, LogOut, ChevronDown } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 // HAR-667: locale-aware router — bare next/navigation drops the locale segment.
 import { Link, useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -94,7 +95,8 @@ interface AuthSectionProps {
 }
 
 export function AuthSection({ loginLabel }: AuthSectionProps) {
-  const { isLoggedIn, user, loginWithRedirect, logout } = useAuth()
+  const { isLoggedIn, isAdmin, user, loginWithRedirect, logout } = useAuth()
+  const t = useTranslations('nav')
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -147,6 +149,15 @@ export function AuthSection({ loginLabel }: AuthSectionProps) {
 
         {menuOpen && (
           <div className="absolute right-0 top-full mt-2 w-40 rounded-lg border border-[#1F1F1F] bg-[#141414] py-1 shadow-xl">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2 text-sm text-primary transition-colors hover:bg-[#1F1F1F]"
+              >
+                {t('admin')}
+              </Link>
+            )}
             <Link
               href="/artist"
               onClick={() => setMenuOpen(false)}

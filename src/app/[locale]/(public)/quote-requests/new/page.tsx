@@ -175,6 +175,7 @@ export default function NewQuoteRequestPage() {
             <span className="text-ink-error">{tInquiry('required')}</span>
           </label>
           <Select
+            items={BODY_PARTS.map((part) => ({ value: part, label: part }))}
             value={form.body_part}
             onValueChange={(val) => handleFieldChange('body_part', val ?? '')}
           >

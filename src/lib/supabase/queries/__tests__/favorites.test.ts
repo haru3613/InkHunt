@@ -10,6 +10,10 @@ vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => mockCreateAdminClient(),
 }))
 
+vi.mock('@/lib/observability', () => ({
+  reportError: vi.fn(),
+}))
+
 import {
   addFavorite,
   removeFavorite,

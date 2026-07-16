@@ -89,7 +89,7 @@
     --border: #2A2A2A;
     --input: #2A2A2A;
     --ring: #C8A97E;
-    --radius: 0.75rem;
+    --radius: 0.25rem; /* DESIGN.md radius-sm */
     --chart-1: #C8A97E;
     --chart-2: #8A8A8A;
     --chart-3: #555555;

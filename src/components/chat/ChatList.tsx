@@ -47,6 +47,23 @@ function StatusBadge({ status }: { readonly status: Inquiry['status'] }) {
   )
 }
 
+// HAR-712: at-a-glance budget pill. Label reuses the shared
+// `inquiry.budgetRange.options.*` keys (same source as the inquiry form). Falsy
+// budget_range renders nothing — no broken/empty badge.
+function BudgetBadge({ budgetRange }: { readonly budgetRange: Inquiry['budget_range'] }) {
+  const t = useTranslations('inquiry.budgetRange.options')
+  if (!budgetRange) return null
+
+  return (
+    <span
+      data-testid="budget-badge"
+      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium leading-tight border border-[#C8A97E]/40 text-[#C8A97E]"
+    >
+      {t(budgetRange)}
+    </span>
+  )
+}
+
 export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps) {
   return (
     <div className="flex flex-col overflow-y-auto">
@@ -110,8 +127,11 @@ export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps)
                 {item.last_message ?? item.inquiry.description}
               </p>
 
-              {/* Bottom row: status badge */}
-              <StatusBadge status={item.inquiry.status} />
+              {/* Bottom row: status + budget badges */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <StatusBadge status={item.inquiry.status} />
+                <BudgetBadge budgetRange={item.inquiry.budget_range} />
+              </div>
             </div>
           </button>
         )
