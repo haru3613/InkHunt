@@ -7,6 +7,12 @@ import { X } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
 import { Badge } from '@/components/ui/badge'
 import type { Style } from '@/types/database'
+import {
+  BUDGET_LABEL_KEYS,
+  MIN_RATING_LABEL_KEYS,
+  SERVICE_LABEL_KEYS,
+  SORT_LABEL_KEYS,
+} from './filterLabels'
 
 interface ActiveFilterChipsProps {
   styles: Style[]
@@ -25,40 +31,14 @@ const FILTER_KEYS = [
   'q',
 ] as const
 
-/**
- * Map a non-default option value to the existing `artists`-namespace i18n key
- * (HAR-433/434/446). `sort=featured`, `budget=any`, `service=all` are the
- * defaults ArtistFilters clears, so they never appear here.
- */
-const SORT_LABEL_KEYS: Record<string, string> = {
-  price_low: 'sortPriceLow',
-  price_high: 'sortPriceHigh',
-  newest: 'sortNewest',
-  rating: 'sortRating',
-}
-
-const BUDGET_LABEL_KEYS: Record<string, string> = {
-  le3000: 'budgetLe3000',
-  le6000: 'budgetLe6000',
-  le10000: 'budgetLe10000',
-  gt10000: 'budgetGt10000',
-}
-
-const SERVICE_LABEL_KEYS: Record<string, string> = {
-  coverup: 'serviceCoverup',
-  flash: 'serviceFlash',
-}
-
-/**
- * Map an allowlisted `minRating` value to its chip label key (HAR-474/477).
- * Keyed by the raw URL-param string the control writes (`'4'` / `'4.5'`); a
- * value outside this allowlist (e.g. `'3'`, `'5'`) yields no chip — matching
- * `parseMinRating`'s "no predicate for off-list input" contract.
- */
-const MIN_RATING_LABEL_KEYS: Record<string, string> = {
-  '4': 'rating4Plus',
-  '4.5': 'rating45Plus',
-}
+// Label-key maps are shared with ArtistFilters (HAR-757) — see filterLabels.ts.
+// Widened to Record<string, string> because chips index them with raw URL
+// params; an off-map value (e.g. minRating=3) yields no chip, matching the
+// parsers' "no predicate for off-list input" contract.
+const SORT_KEYS: Readonly<Record<string, string>> = SORT_LABEL_KEYS
+const BUDGET_KEYS: Readonly<Record<string, string>> = BUDGET_LABEL_KEYS
+const SERVICE_KEYS: Readonly<Record<string, string>> = SERVICE_LABEL_KEYS
+const MIN_RATING_KEYS: Readonly<Record<string, string>> = MIN_RATING_LABEL_KEYS
 
 interface ActiveChip {
   key: (typeof FILTER_KEYS)[number]
@@ -105,17 +85,17 @@ export function ActiveFilterChips({ styles }: ActiveFilterChipsProps) {
   if (city) {
     chips.push({ key: 'city', label: city })
   }
-  if (sort && sort !== 'featured' && SORT_LABEL_KEYS[sort]) {
-    chips.push({ key: 'sort', label: t(SORT_LABEL_KEYS[sort]) })
+  if (sort && sort !== 'featured' && SORT_KEYS[sort]) {
+    chips.push({ key: 'sort', label: t(SORT_KEYS[sort]) })
   }
-  if (budget && budget !== 'any' && BUDGET_LABEL_KEYS[budget]) {
-    chips.push({ key: 'budget', label: t(BUDGET_LABEL_KEYS[budget]) })
+  if (budget && budget !== 'any' && BUDGET_KEYS[budget]) {
+    chips.push({ key: 'budget', label: t(BUDGET_KEYS[budget]) })
   }
-  if (service && service !== 'all' && SERVICE_LABEL_KEYS[service]) {
-    chips.push({ key: 'service', label: t(SERVICE_LABEL_KEYS[service]) })
+  if (service && service !== 'all' && SERVICE_KEYS[service]) {
+    chips.push({ key: 'service', label: t(SERVICE_KEYS[service]) })
   }
-  if (minRating && MIN_RATING_LABEL_KEYS[minRating]) {
-    chips.push({ key: 'minRating', label: t(MIN_RATING_LABEL_KEYS[minRating]) })
+  if (minRating && MIN_RATING_KEYS[minRating]) {
+    chips.push({ key: 'minRating', label: t(MIN_RATING_KEYS[minRating]) })
   }
   // Boolean facet: only the literal '1' is active (mirrors parseHealed).
   if (healed === '1') {

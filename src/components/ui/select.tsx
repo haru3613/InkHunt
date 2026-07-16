@@ -6,7 +6,17 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+// HAR-757: Base UI's <Select.Value> renders the RAW option value unless the
+// Root receives `items` (the popup is unmounted while closed, so labels can't
+// come from children). `items` is required here so no consumer can silently
+// ship raw values again; value===label selects pass a one-liner map.
+type SelectProps<Value> = SelectPrimitive.Root.Props<Value> & {
+  items: NonNullable<SelectPrimitive.Root.Props<Value>['items']>
+}
+
+function Select<Value>(props: SelectProps<Value>) {
+  return <SelectPrimitive.Root {...props} />
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

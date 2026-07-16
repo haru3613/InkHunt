@@ -76,6 +76,13 @@ export function InquiryForm({
   const router = useRouter()
   const t = useTranslations('inquiry')
   const tBudget = useTranslations('inquiry.budgetRange')
+
+  // HAR-757: feeds both the Base UI Root's `items` (closed trigger renders
+  // the label, not the raw code) and the <SelectItem> list.
+  const budgetItems = BUDGET_RANGES.map((code) => ({
+    value: code,
+    label: tBudget(`options.${code}`),
+  }))
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [referenceImages, setReferenceImages] = useState<string[]>([])
@@ -243,6 +250,7 @@ export function InquiryForm({
               {t('bodyPart')} <span className="text-ink-error">{t('required')}</span>
             </label>
             <Select
+              items={BODY_PARTS.map((part) => ({ value: part, label: part }))}
               value={form.body_part}
               onValueChange={(val) => handleFieldChange('body_part', val ?? '')}
             >
@@ -328,14 +336,9 @@ export function InquiryForm({
             <label className="text-sm font-medium text-foreground">
               {tBudget('label')}
             </label>
-            {/* HAR-757: `items` makes the closed trigger render the option
-                LABEL — without it Base UI falls back to the raw code. */}
             <Select
               name="budget_range"
-              items={BUDGET_RANGES.map((code) => ({
-                value: code,
-                label: tBudget(`options.${code}`),
-              }))}
+              items={budgetItems}
               value={form.budget_range}
               onValueChange={(val) => handleFieldChange('budget_range', val ?? '')}
             >
@@ -343,9 +346,9 @@ export function InquiryForm({
                 <SelectValue placeholder={tBudget('notSpecified')} />
               </SelectTrigger>
               <SelectContent>
-                {BUDGET_RANGES.map((code) => (
-                  <SelectItem key={code} value={code}>
-                    {tBudget(`options.${code}`)}
+                {budgetItems.map(({ value, label }) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
