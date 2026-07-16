@@ -118,8 +118,7 @@ describe('AuthSection', () => {
   it('renders login button when logged out outside development', async () => {
     authState.isLoggedIn = false
     authState.user = null
-    const prev = process.env.NODE_ENV
-    process.env.NODE_ENV = 'production'
+    vi.stubEnv('NODE_ENV', 'production')
 
     vi.resetModules()
     const { AuthSection } = await import('../AuthSection')
@@ -129,14 +128,13 @@ describe('AuthSection', () => {
     await user.click(screen.getByRole('button', { name: '登入' }))
     expect(mockLoginWithRedirect).toHaveBeenCalledWith('/')
 
-    process.env.NODE_ENV = prev
+    vi.unstubAllEnvs()
   })
 
   it('shows Dev Login picker in development when logged out', async () => {
     authState.isLoggedIn = false
     authState.user = null
-    const prev = process.env.NODE_ENV
-    process.env.NODE_ENV = 'development'
+    vi.stubEnv('NODE_ENV', 'development')
 
     vi.resetModules()
     const { AuthSection } = await import('../AuthSection')
@@ -158,6 +156,6 @@ describe('AuthSection', () => {
     })
     expect(mockRefresh).toHaveBeenCalled()
 
-    process.env.NODE_ENV = prev
+    vi.unstubAllEnvs()
   })
 })

@@ -8,6 +8,22 @@ import type { ArtistWithDetails } from '@/types/admin'
  * Heavy children stubbed so we assert page wiring only.
  */
 
+function style(id: number, name: string, slug: string) {
+  return {
+    id,
+    name,
+    slug,
+    icon: null,
+    name_en: null,
+    description: null,
+    subtitle: null,
+    group_name: null,
+    color_profile: null,
+    popularity: 0,
+    sort_order: id,
+  }
+}
+
 const ARTISTS: ArtistWithDetails[] = [
   {
     id: 'a1',
@@ -18,14 +34,26 @@ const ARTISTS: ArtistWithDetails[] = [
     avatar_url: null,
     city: '台北市',
     district: null,
+    address: null,
+    lat: null,
+    lng: null,
     ig_handle: 'inkwolf',
     price_min: 3000,
     price_max: 8000,
+    pricing_note: null,
+    deposit_amount: null,
+    booking_notice: null,
     status: 'pending',
+    is_claimed: true,
+    featured: false,
+    offers_coverup: false,
+    offers_custom_design: false,
+    has_flash_designs: false,
+    quote_templates: [],
     admin_note: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
-    styles: [{ id: 's1', name: 'Blackwork', slug: 'blackwork', description: null }],
+    styles: [style(1, 'Blackwork', 'blackwork')],
   },
   {
     id: 'a2',
@@ -36,10 +64,22 @@ const ARTISTS: ArtistWithDetails[] = [
     avatar_url: null,
     city: '高雄市',
     district: null,
+    address: null,
+    lat: null,
+    lng: null,
     ig_handle: null,
     price_min: null,
     price_max: null,
+    pricing_note: null,
+    deposit_amount: null,
+    booking_notice: null,
     status: 'active',
+    is_claimed: true,
+    featured: false,
+    offers_coverup: false,
+    offers_custom_design: false,
+    has_flash_designs: false,
+    quote_templates: [],
     admin_note: null,
     created_at: '2026-01-02T00:00:00Z',
     updated_at: '2026-01-02T00:00:00Z',

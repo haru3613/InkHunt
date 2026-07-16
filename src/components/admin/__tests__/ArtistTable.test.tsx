@@ -11,6 +11,22 @@ vi.mock('next/image', () => ({
   },
 }))
 
+function style(id: number, name: string, slug: string) {
+  return {
+    id,
+    name,
+    slug,
+    icon: null,
+    name_en: null,
+    description: null,
+    subtitle: null,
+    group_name: null,
+    color_profile: null,
+    popularity: 0,
+    sort_order: id,
+  }
+}
+
 const baseArtist = (overrides: Partial<ArtistWithDetails>): ArtistWithDetails => ({
   id: 'a1',
   line_user_id: 'u1',
@@ -20,18 +36,30 @@ const baseArtist = (overrides: Partial<ArtistWithDetails>): ArtistWithDetails =>
   avatar_url: null,
   city: '台北市',
   district: '大安區',
+  address: null,
+  lat: null,
+  lng: null,
   ig_handle: 'inkwolf',
   price_min: 3000,
   price_max: 8000,
+  pricing_note: null,
+  deposit_amount: null,
+  booking_notice: null,
   status: 'pending',
+  is_claimed: true,
+  featured: false,
+  offers_coverup: false,
+  offers_custom_design: false,
+  has_flash_designs: false,
+  quote_templates: [],
   admin_note: null,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
   styles: [
-    { id: 's1', name: 'Blackwork', slug: 'blackwork', description: null },
-    { id: 's2', name: 'Dotwork', slug: 'dotwork', description: null },
-    { id: 's3', name: 'Fine Line', slug: 'fine-line', description: null },
-    { id: 's4', name: 'Watercolor', slug: 'watercolor', description: null },
+    style(1, 'Blackwork', 'blackwork'),
+    style(2, 'Dotwork', 'dotwork'),
+    style(3, 'Fine Line', 'fine-line'),
+    style(4, 'Watercolor', 'watercolor'),
   ],
   ...overrides,
 })
@@ -67,7 +95,6 @@ describe('ArtistTable', () => {
       expect(screen.getByRole('button', { name: '核准上線' })).toBeInTheDocument()
     })
     expect(screen.getByRole('button', { name: '拒絕' })).toBeInTheDocument()
-    // Style chips appear in both the collapsed row and expanded detail.
     expect(screen.getAllByText('Blackwork').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('+1')).toBeInTheDocument()
 
