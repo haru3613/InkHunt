@@ -14,12 +14,49 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { StyleBadge } from './StyleBadge'
+import {
+  BUDGET_LABEL_KEYS,
+  MIN_RATING_LABEL_KEYS,
+  SERVICE_LABEL_KEYS,
+  SORT_LABEL_KEYS,
+} from './filterLabels'
 
 /** Debounce window (ms) for the keyword-search box (HAR-456). */
 const SEARCH_DEBOUNCE_MS = 300
 
 interface ArtistFiltersProps {
   styles: Style[]
+}
+
+interface FilterSelectProps {
+  items: ReadonlyArray<{ value: string; label: string }>
+  defaultValue: string
+  onValueChange: (value: string | null) => void
+  /** Doubles as the trigger's aria-label and the (never-visible) placeholder. */
+  label: string
+}
+
+/** One listing-filter dropdown — all five share this exact shape (HAR-757). */
+function FilterSelect({
+  items,
+  defaultValue,
+  onValueChange,
+  label,
+}: FilterSelectProps) {
+  return (
+    <Select items={items} defaultValue={defaultValue} onValueChange={onValueChange}>
+      <SelectTrigger aria-label={label} className="w-auto min-w-[120px]">
+        <SelectValue placeholder={label} />
+      </SelectTrigger>
+      <SelectContent>
+        {items.map(({ value, label: itemLabel }) => (
+          <SelectItem key={value} value={value}>
+            {itemLabel}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
 }
 
 const CITY_KEYS = [
@@ -36,6 +73,35 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('artists')
+
+  // HAR-757: option values come from the shared label maps (which the
+  // listing.ts allowlists type-check), with each select's clear/default
+  // option prepended. The arrays feed both the Base UI Root's `items` (so
+  // the closed trigger renders the LABEL, not the raw value) and the
+  // <SelectItem> list.
+  const labeled = (keys: Record<string, string>) =>
+    Object.entries(keys).map(([value, key]) => ({ value, label: t(key) }))
+
+  const cityItems = [
+    { value: 'all', label: t('allRegions') },
+    ...CITY_KEYS.map(({ key, value }) => ({ value, label: t(key) })),
+  ]
+  const sortItems = [
+    { value: 'featured', label: t('sortFeatured') },
+    ...labeled(SORT_LABEL_KEYS),
+  ]
+  const budgetItems = [
+    { value: 'any', label: t('budgetAny') },
+    ...labeled(BUDGET_LABEL_KEYS),
+  ]
+  const serviceItems = [
+    { value: 'all', label: t('serviceAll') },
+    ...labeled(SERVICE_LABEL_KEYS),
+  ]
+  const ratingItems = [
+    { value: 'all', label: t('ratingAll') },
+    ...labeled(MIN_RATING_LABEL_KEYS),
+  ]
 
   const activeStyle = searchParams.get('style')
   const activeCity = searchParams.get('city')
@@ -159,82 +225,36 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
       />
 
       <div className="flex gap-3">
-        <Select
+        <FilterSelect
+          items={cityItems}
           defaultValue={activeCity ?? 'all'}
           onValueChange={handleCityChange}
-        >
-          <SelectTrigger className="w-auto min-w-[120px]">
-            <SelectValue placeholder={t('selectRegion')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('allRegions')}</SelectItem>
-            {CITY_KEYS.map(({ key, value }) => (
-              <SelectItem key={value} value={value}>
-                {t(key)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
+          label={t('selectRegion')}
+        />
+        <FilterSelect
+          items={sortItems}
           defaultValue={activeSort ?? 'featured'}
           onValueChange={handleSortChange}
-        >
-          <SelectTrigger aria-label={t('sortLabel')} className="w-auto min-w-[120px]">
-            <SelectValue placeholder={t('sortLabel')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="featured">{t('sortFeatured')}</SelectItem>
-            <SelectItem value="rating">{t('sortRating')}</SelectItem>
-            <SelectItem value="price_low">{t('sortPriceLow')}</SelectItem>
-            <SelectItem value="price_high">{t('sortPriceHigh')}</SelectItem>
-            <SelectItem value="newest">{t('sortNewest')}</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
+          label={t('sortLabel')}
+        />
+        <FilterSelect
+          items={budgetItems}
           defaultValue={activeBudget ?? 'any'}
           onValueChange={handleBudgetChange}
-        >
-          <SelectTrigger aria-label={t('budgetLabel')} className="w-auto min-w-[120px]">
-            <SelectValue placeholder={t('budgetLabel')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">{t('budgetAny')}</SelectItem>
-            <SelectItem value="le3000">{t('budgetLe3000')}</SelectItem>
-            <SelectItem value="le6000">{t('budgetLe6000')}</SelectItem>
-            <SelectItem value="le10000">{t('budgetLe10000')}</SelectItem>
-            <SelectItem value="gt10000">{t('budgetGt10000')}</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
+          label={t('budgetLabel')}
+        />
+        <FilterSelect
+          items={serviceItems}
           defaultValue={activeService ?? 'all'}
           onValueChange={handleServiceChange}
-        >
-          <SelectTrigger aria-label={t('serviceLabel')} className="w-auto min-w-[120px]">
-            <SelectValue placeholder={t('serviceLabel')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('serviceAll')}</SelectItem>
-            <SelectItem value="coverup">{t('serviceCoverup')}</SelectItem>
-            <SelectItem value="flash">{t('serviceFlash')}</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
+          label={t('serviceLabel')}
+        />
+        <FilterSelect
+          items={ratingItems}
           defaultValue={activeMinRating ?? 'all'}
           onValueChange={handleMinRatingChange}
-        >
-          <SelectTrigger aria-label={t('ratingLabel')} className="w-auto min-w-[120px]">
-            <SelectValue placeholder={t('ratingLabel')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('ratingAll')}</SelectItem>
-            <SelectItem value="4">{t('rating4Plus')}</SelectItem>
-            <SelectItem value="4.5">{t('rating45Plus')}</SelectItem>
-          </SelectContent>
-        </Select>
+          label={t('ratingLabel')}
+        />
 
         {/* HAR-481: boolean healed-work facet — a toggle, not a Select. */}
         <button
