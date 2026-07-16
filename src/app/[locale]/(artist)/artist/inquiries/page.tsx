@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatList } from '@/components/chat/ChatList'
 import type { ChatListItem } from '@/components/chat/ChatList'
@@ -9,12 +10,23 @@ import { QuoteFormModal } from '@/components/chat/QuoteFormModal'
 import type { QuoteTemplate } from '@/components/chat/QuoteFormModal'
 import type { Inquiry } from '@/types/database'
 import type { SendQuoteRequest } from '@/types/chat'
+import { compareByBudgetDesc } from '@/lib/inquiries/budget-triage'
 
 // TopBar: h-12 (48px) mobile, h-14 (56px) desktop + bottom tab h-16 (64px) on mobile
 const CHAT_HEIGHT_CLASSES = 'h-[calc(100dvh-48px-64px)] lg:h-[calc(100dvh-56px)]'
 
 // 'all' omits the status query param; the rest map 1:1 to /api/inquiries?status=
 type StatusFilter = 'all' | Inquiry['status']
+
+// Client-side ordering of the already-fetched list. 'recent' keeps the fetch
+// order (server default); 'budget' re-sorts highest-budget-first via HAR-711's
+// comparator. Additive — does NOT touch statusFilter or trigger a refetch.
+type SortBy = 'recent' | 'budget'
+
+const SORT_OPTIONS: { value: SortBy; labelKey: 'recent' | 'budget' }[] = [
+  { value: 'recent', labelKey: 'recent' },
+  { value: 'budget', labelKey: 'budget' },
+]
 
 const STATUS_FILTERS: { value: StatusFilter; label: string; emptyCopy: string }[] = [
   { value: 'all', label: '全部', emptyCopy: '還沒有任何詢價' },
@@ -26,12 +38,14 @@ const STATUS_FILTERS: { value: StatusFilter; label: string; emptyCopy: string }[
 
 export default function InquiriesPage() {
   const { user } = useAuth()
+  const tSort = useTranslations('inquiry.inboxSort')
   const [inquiries, setInquiries] = useState<ChatListItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [quoteModalOpen, setQuoteModalOpen] = useState(false)
   const [templates, setTemplates] = useState<QuoteTemplate[]>([])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sortBy, setSortBy] = useState<SortBy>('recent')
   const [isClosing, setIsClosing] = useState(false)
   const [closeError, setCloseError] = useState<string | null>(null)
 
@@ -142,6 +156,18 @@ export default function InquiriesPage() {
   const activeFilter =
     STATUS_FILTERS.find((f) => f.value === statusFilter) ?? STATUS_FILTERS[0]
 
+  // Purely client-side re-sort of the already-fetched list. 'recent' keeps the
+  // server (fetch) order untouched; 'budget' copies before sorting so toggling
+  // back to 'recent' restores the original order. Stable sort keeps ties (incl.
+  // null/unsure budgets, which the comparator ranks last) in fetch order.
+  const displayedInquiries = useMemo(
+    () =>
+      sortBy === 'budget'
+        ? [...inquiries].sort((a, b) => compareByBudgetDesc(a.inquiry, b.inquiry))
+        : inquiries,
+    [inquiries, sortBy],
+  )
+
   if (isLoading) {
     return (
       <div className={`flex items-center justify-center text-[#F5F0EB]/40 ${CHAT_HEIGHT_CLASSES}`}>
@@ -185,6 +211,26 @@ export default function InquiriesPage() {
               )
             })}
           </div>
+          {/* Sort toggle — additive client-side re-order, no refetch */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {SORT_OPTIONS.map((option) => {
+              const isActive = option.value === sortBy
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => setSortBy(option.value)}
+                  aria-pressed={isActive}
+                  className={`px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                    isActive
+                      ? 'bg-[#C8A97E] text-[#0A0A0A]'
+                      : 'border border-[#2A2A2A] text-[#F5F0EB]/60 hover:text-[#F5F0EB]'
+                  }`}
+                >
+                  {tSort(option.labelKey)}
+                </button>
+              )
+            })}
+          </div>
         </div>
         {inquiries.length === 0 ? (
           <div className="p-8 text-center text-[#F5F0EB]/40 text-sm">
@@ -192,7 +238,7 @@ export default function InquiriesPage() {
           </div>
         ) : (
           <ChatList
-            items={inquiries}
+            items={displayedInquiries}
             selectedId={selectedId}
             onSelect={handleSelect}
             viewAs="artist"

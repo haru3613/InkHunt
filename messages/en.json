@@ -138,6 +138,10 @@
         "unsure": "Not sure / just asking"
       }
     },
+    "inboxSort": {
+      "recent": "Most recent",
+      "budget": "By budget"
+    },
     "submit": "Submit Inquiry",
     "loginToSubmit": "Log in with LINE to Inquire",
     "required": "*",
