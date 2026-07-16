@@ -37,6 +37,38 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const searchParams = useSearchParams()
   const t = useTranslations('artists')
 
+  // HAR-757: each option list is a single source of truth — passed to the
+  // Base UI Root as `items` (so the closed trigger renders the LABEL of the
+  // selected option instead of its raw value) and mapped to <SelectItem>s.
+  const cityItems = [
+    { value: 'all', label: t('allRegions') },
+    ...CITY_KEYS.map(({ key, value }) => ({ value, label: t(key) })),
+  ]
+  const sortItems = [
+    { value: 'featured', label: t('sortFeatured') },
+    { value: 'rating', label: t('sortRating') },
+    { value: 'price_low', label: t('sortPriceLow') },
+    { value: 'price_high', label: t('sortPriceHigh') },
+    { value: 'newest', label: t('sortNewest') },
+  ]
+  const budgetItems = [
+    { value: 'any', label: t('budgetAny') },
+    { value: 'le3000', label: t('budgetLe3000') },
+    { value: 'le6000', label: t('budgetLe6000') },
+    { value: 'le10000', label: t('budgetLe10000') },
+    { value: 'gt10000', label: t('budgetGt10000') },
+  ]
+  const serviceItems = [
+    { value: 'all', label: t('serviceAll') },
+    { value: 'coverup', label: t('serviceCoverup') },
+    { value: 'flash', label: t('serviceFlash') },
+  ]
+  const ratingItems = [
+    { value: 'all', label: t('ratingAll') },
+    { value: '4', label: t('rating4Plus') },
+    { value: '4.5', label: t('rating45Plus') },
+  ]
+
   const activeStyle = searchParams.get('style')
   const activeCity = searchParams.get('city')
   const activeSort = searchParams.get('sort')
@@ -160,6 +192,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
 
       <div className="flex gap-3">
         <Select
+          items={cityItems}
           defaultValue={activeCity ?? 'all'}
           onValueChange={handleCityChange}
         >
@@ -167,16 +200,16 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectValue placeholder={t('selectRegion')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('allRegions')}</SelectItem>
-            {CITY_KEYS.map(({ key, value }) => (
+            {cityItems.map(({ value, label }) => (
               <SelectItem key={value} value={value}>
-                {t(key)}
+                {label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select
+          items={sortItems}
           defaultValue={activeSort ?? 'featured'}
           onValueChange={handleSortChange}
         >
@@ -184,15 +217,16 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectValue placeholder={t('sortLabel')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="featured">{t('sortFeatured')}</SelectItem>
-            <SelectItem value="rating">{t('sortRating')}</SelectItem>
-            <SelectItem value="price_low">{t('sortPriceLow')}</SelectItem>
-            <SelectItem value="price_high">{t('sortPriceHigh')}</SelectItem>
-            <SelectItem value="newest">{t('sortNewest')}</SelectItem>
+            {sortItems.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         <Select
+          items={budgetItems}
           defaultValue={activeBudget ?? 'any'}
           onValueChange={handleBudgetChange}
         >
@@ -200,15 +234,16 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectValue placeholder={t('budgetLabel')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="any">{t('budgetAny')}</SelectItem>
-            <SelectItem value="le3000">{t('budgetLe3000')}</SelectItem>
-            <SelectItem value="le6000">{t('budgetLe6000')}</SelectItem>
-            <SelectItem value="le10000">{t('budgetLe10000')}</SelectItem>
-            <SelectItem value="gt10000">{t('budgetGt10000')}</SelectItem>
+            {budgetItems.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         <Select
+          items={serviceItems}
           defaultValue={activeService ?? 'all'}
           onValueChange={handleServiceChange}
         >
@@ -216,13 +251,16 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectValue placeholder={t('serviceLabel')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('serviceAll')}</SelectItem>
-            <SelectItem value="coverup">{t('serviceCoverup')}</SelectItem>
-            <SelectItem value="flash">{t('serviceFlash')}</SelectItem>
+            {serviceItems.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         <Select
+          items={ratingItems}
           defaultValue={activeMinRating ?? 'all'}
           onValueChange={handleMinRatingChange}
         >
@@ -230,9 +268,11 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
             <SelectValue placeholder={t('ratingLabel')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('ratingAll')}</SelectItem>
-            <SelectItem value="4">{t('rating4Plus')}</SelectItem>
-            <SelectItem value="4.5">{t('rating45Plus')}</SelectItem>
+            {ratingItems.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

@@ -328,8 +328,14 @@ export function InquiryForm({
             <label className="text-sm font-medium text-foreground">
               {tBudget('label')}
             </label>
+            {/* HAR-757: `items` makes the closed trigger render the option
+                LABEL — without it Base UI falls back to the raw code. */}
             <Select
               name="budget_range"
+              items={BUDGET_RANGES.map((code) => ({
+                value: code,
+                label: tBudget(`options.${code}`),
+              }))}
               value={form.budget_range}
               onValueChange={(val) => handleFieldChange('budget_range', val ?? '')}
             >
