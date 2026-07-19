@@ -93,7 +93,8 @@
     "coldStartLabel": "Coming soon",
     "coldStartTitle": "Artists are on the way",
     "coldStartHelp": "The marketplace is cold-starting. Apply as an artist, or head home to explore styles.",
-    "coldStartCta": "Become an artist"
+    "coldStartCta": "Become an artist",
+    "coldStartBrowseCta": "Explore tattoo styles"
   },
   "artistProfile": {
     "portfolio": "Portfolio",

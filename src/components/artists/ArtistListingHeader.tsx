@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
+import { hasPublicArtistCount } from '@/lib/public-supply'
 
 interface ArtistListingHeaderProps {
   /** Total number of artists matching the current filters (from `getArtists`). */
@@ -32,14 +33,19 @@ export function ArtistListingHeader({
 
   const isColdStart = total === 0 && !hasActiveFilters
   const isFilteredEmpty = total === 0 && hasActiveFilters
+  const showResultCount = hasPublicArtistCount(total) || isFilteredEmpty
 
   return (
     <div className="mb-4">
-      {!isColdStart ? (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            {t('resultCount', { count: total })}
-          </p>
+      {!isColdStart && (showResultCount || hasActiveFilters) ? (
+        <div
+          className={`flex items-center gap-3 ${showResultCount ? 'justify-between' : 'justify-end'}`}
+        >
+          {showResultCount ? (
+            <p className="text-sm text-muted-foreground">
+              {t('resultCount', { count: total })}
+            </p>
+          ) : null}
           {total > 0 ? clearLink : null}
         </div>
       ) : null}
@@ -58,12 +64,20 @@ export function ArtistListingHeader({
           <p className="max-w-md text-sm text-muted-foreground">
             {t('coldStartHelp')}
           </p>
-          <Link
-            href="/artist"
-            className="mt-2 inline-flex h-11 items-center justify-center rounded-sm bg-primary px-8 text-sm font-medium text-primary-foreground transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-ink-accent-hover"
-          >
-            {t('coldStartCta')}
-          </Link>
+          <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row">
+            <Link
+              href="/artist"
+              className="inline-flex h-11 items-center justify-center rounded-sm bg-primary px-8 text-sm font-medium text-primary-foreground transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-ink-accent-hover"
+            >
+              {t('coldStartCta')}
+            </Link>
+            <Link
+              href="/#styles"
+              className="inline-flex h-11 items-center justify-center rounded-sm border border-border px-8 text-sm font-medium text-foreground transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-muted"
+            >
+              {t('coldStartBrowseCta')}
+            </Link>
+          </div>
         </div>
       ) : null}
 

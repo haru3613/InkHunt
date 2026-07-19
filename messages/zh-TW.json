@@ -93,7 +93,8 @@
     "coldStartLabel": "即將開放",
     "coldStartTitle": "刺青師即將上線",
     "coldStartHelp": "平台正在冷啟動。先登記成為刺青師，或回到首頁探索風格。",
-    "coldStartCta": "成為刺青師"
+    "coldStartCta": "成為刺青師",
+    "coldStartBrowseCta": "逛逛風格介紹"
   },
   "artistProfile": {
     "portfolio": "作品集",
