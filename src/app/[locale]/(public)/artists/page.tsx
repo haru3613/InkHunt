@@ -11,8 +11,7 @@ import { ArtistFilters } from '@/components/artists/ArtistFilters'
 import { ActiveFilterChips } from '@/components/artists/ActiveFilterChips'
 import { ArtistListingHeader } from '@/components/artists/ArtistListingHeader'
 import { ArtistPagination } from '@/components/artists/ArtistPagination'
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
+import { buildLocalizedAlternates } from '@/lib/metadata'
 
 export async function generateMetadata({
   params,
@@ -32,13 +31,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary',
     },
-    alternates: {
-      canonical: `${baseUrl}/${locale}/artists`,
-      languages: {
-        'zh-TW': `${baseUrl}/zh-TW/artists`,
-        'en': `${baseUrl}/en/artists`,
-      },
-    },
+    alternates: buildLocalizedAlternates(locale, '/artists'),
   }
 }
 

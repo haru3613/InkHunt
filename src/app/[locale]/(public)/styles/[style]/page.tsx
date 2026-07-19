@@ -10,8 +10,7 @@ import { generateStyleCollectionJsonLd } from '@/lib/seo'
 import { JsonLd } from '@/components/shared/JsonLd'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { Link } from '@/i18n/navigation'
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
+import { buildLocalizedAlternates } from '@/lib/metadata'
 
 export async function generateStaticParams() {
   const styles = await getAllStyles()
@@ -40,13 +39,7 @@ export async function generateMetadata({ params }: StylePageProps): Promise<Meta
     twitter: {
       card: 'summary',
     },
-    alternates: {
-      canonical: `${baseUrl}/${locale}/styles/${slug}`,
-      languages: {
-        'zh-TW': `${baseUrl}/zh-TW/styles/${slug}`,
-        'en': `${baseUrl}/en/styles/${slug}`,
-      },
-    },
+    alternates: buildLocalizedAlternates(locale, `/styles/${slug}`),
   }
 }
 
