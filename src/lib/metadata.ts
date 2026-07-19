@@ -1,3 +1,5 @@
+import { routing } from '@/i18n/routing'
+
 const SITE_URL = (
   process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
 ).replace(/\/$/, '')
@@ -12,9 +14,11 @@ export function buildLocalizedAlternates(locale: string, path: string) {
 
   return {
     canonical: `${SITE_URL}/${locale}${normalizedPath}`,
-    languages: {
-      'zh-TW': `${SITE_URL}/zh-TW${normalizedPath}`,
-      en: `${SITE_URL}/en${normalizedPath}`,
-    },
+    languages: Object.fromEntries(
+      routing.locales.map((supportedLocale) => [
+        supportedLocale,
+        `${SITE_URL}/${supportedLocale}${normalizedPath}`,
+      ]),
+    ),
   }
 }
