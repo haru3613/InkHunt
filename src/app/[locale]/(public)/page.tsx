@@ -1,4 +1,5 @@
 import { setRequestLocale, getTranslations } from "next-intl/server"
+import type { Metadata } from "next"
 import Image from "next/image"
 import { Link } from "@/i18n/navigation"
 import { StyleGrid } from "@/components/artists/StyleGrid"
@@ -12,9 +13,20 @@ import {
 } from "@/lib/supabase/queries/styles"
 import { getFeaturedArtists, getNewArtists } from "@/lib/supabase/queries/artists"
 import { generateWebsiteJsonLd } from "@/lib/seo"
+import { buildLocalizedAlternates } from "@/lib/metadata"
 
 const HERO_BG_URL =
   "https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=1920&q=80"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+
+  return { alternates: buildLocalizedAlternates(locale, '') }
+}
 
 export default async function HomePage({
   params,

@@ -19,8 +19,7 @@ import { ArtistReviewsSection } from "@/components/artist/ArtistReviewsSection"
 import { ArtistReviewFormSection } from "@/components/artist/ArtistReviewFormSection"
 import type { ReviewListItem } from "@/components/artist/ReviewList"
 import { MobileCTA } from "@/components/artists/MobileCTA"
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
+import { buildLocalizedAlternates } from "@/lib/metadata"
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>
@@ -78,13 +77,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       images: artist.avatar_url ? [artist.avatar_url] : undefined,
     },
-    alternates: {
-      canonical: `${baseUrl}/${locale}/artists/${slug}`,
-      languages: {
-        'zh-TW': `${baseUrl}/zh-TW/artists/${slug}`,
-        'en': `${baseUrl}/en/artists/${slug}`,
-      },
-    },
+    alternates: buildLocalizedAlternates(locale, `/artists/${slug}`),
   }
 }
 
