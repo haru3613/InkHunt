@@ -21,7 +21,7 @@ export const COLD_START_STYLE_ORDER = [
   'other',
 ] as const
 
-export const COLD_START_LIMIT = 12
+export const COLD_START_LIMIT = 8
 
 /** Slugs that have a STYLE_IMAGES entry (local or remote) — used for cold-start fill. */
 export const STYLES_WITH_FALLBACK_IMAGE = new Set([

@@ -85,15 +85,35 @@ describe('StyleGrid — real portfolio image vs placeholder (HAR-541)', () => {
     expect(img.getAttribute('src')).not.toContain('real/')
   })
 
-  it('cold start hides zero-count label and shows coming-soon copy', async () => {
+  it('cold start renders the style name only without zero-count copy', async () => {
     const ui = await StyleGrid({
       styles: [style({ slug: 'floral', name: '花卉' })],
       artistCounts: new Map(),
       sampleImages: new Map(),
     })
     render(ui)
-    expect(screen.getByText('styleComingSoon')).toBeInTheDocument()
+    expect(screen.getByText('花卉')).toBeInTheDocument()
+    expect(screen.queryByText('styleComingSoon')).not.toBeInTheDocument()
     expect(screen.queryByText(/0/)).not.toBeInTheDocument()
+  })
+
+  it('hides artist counts below the public social-proof threshold', async () => {
+    const ui = await StyleGrid({
+      styles: [style({ slug: 'fine-line', name: '極簡線條' })],
+      artistCounts: new Map([['fine-line', 2]]),
+      sampleImages: new Map(),
+    })
+    render(ui)
+
+    expect(screen.getByText('極簡線條')).toBeInTheDocument()
+    expect(screen.queryByText(/2/)).not.toBeInTheDocument()
+    expect(screen.queryByText('styleComingSoon')).not.toBeInTheDocument()
+  })
+
+  it('uses a lighter image treatment for mobile readability', async () => {
+    await renderGrid([style({ slug: 'floral', name: '花卉' })], new Map())
+
+    expect(screen.getByAltText('花卉')).toHaveClass('brightness-[0.72]')
   })
 
   it('with supply only renders styles that have artists', async () => {

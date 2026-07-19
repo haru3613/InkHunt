@@ -151,7 +151,7 @@ export default async function HomePage({
       )}
 
       {/* Style categories */}
-      <section className="border-b border-border py-16 lg:py-24">
+      <section id="styles" className="border-b border-border py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <p className="font-display text-xs font-medium uppercase tracking-[0.15em] text-primary">
             {t("sectionLabelStyles")}

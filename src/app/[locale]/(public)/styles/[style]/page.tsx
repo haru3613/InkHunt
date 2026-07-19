@@ -11,6 +11,7 @@ import { JsonLd } from '@/components/shared/JsonLd'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { Link } from '@/i18n/navigation'
 import { buildLocalizedAlternates } from '@/lib/metadata'
+import { hasPublicArtistCount } from '@/lib/public-supply'
 
 export async function generateStaticParams() {
   const styles = await getAllStyles()
@@ -77,9 +78,11 @@ export default async function StylePage({ params }: StylePageProps) {
             <h1 className="font-display mt-2 text-2xl font-bold text-foreground lg:text-3xl">
               {t('recommendTitle', { styleName: style.name })}
             </h1>
-            <p className="mt-1 text-muted-foreground">
-              {t('totalArtists', { count: artistCount })}
-            </p>
+            {hasPublicArtistCount(artistCount) ? (
+              <p className="mt-1 text-muted-foreground">
+                {t('totalArtists', { count: artistCount })}
+              </p>
+            ) : null}
           </div>
 
           {artists.length > 0 ? (
