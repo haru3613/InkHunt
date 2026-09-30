@@ -24,9 +24,9 @@ interface ChatListProps {
 // Status badge color config following DESIGN.md palette. Single source of truth
 // for the per-status color; the label is resolved from i18n (inquiry.status.*).
 const STATUS_CLASSNAME: Record<Inquiry['status'], string> = {
-  pending: 'bg-[#C8A97E] text-[#0A0A0A]',
+  pending: 'bg-[#53614A] text-[#F7F6F2]',
   quoted: 'border border-[#8A8A8A] text-[#8A8A8A]',
-  accepted: 'bg-[#4ADE80]/15 text-[#4ADE80]',
+  accepted: 'bg-[#34734B]/15 text-[#34734B]',
   closed: 'text-[#555555]',
 }
 
@@ -57,7 +57,7 @@ function BudgetBadge({ budgetRange }: { readonly budgetRange: Inquiry['budget_ra
   return (
     <span
       data-testid="budget-badge"
-      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium leading-tight border border-[#C8A97E]/40 text-[#C8A97E]"
+      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium leading-tight border border-[#53614A]/40 text-[#53614A]"
     >
       {t(budgetRange)}
     </span>
@@ -68,7 +68,7 @@ export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps)
   return (
     <div className="flex flex-col overflow-y-auto">
       {items.length === 0 && (
-        <div className="p-8 text-center text-[#F5F0EB]/40 text-sm">
+        <div className="p-8 text-center text-[#20241F]/40 text-sm">
           還沒有任何對話
         </div>
       )}
@@ -87,19 +87,19 @@ export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps)
             key={item.inquiry.id}
             onClick={() => onSelect(item.inquiry.id)}
             className={cn(
-              'flex items-start gap-3 px-4 py-3 text-left transition-colors border-b border-[#2A2A2A]',
-              isSelected ? 'bg-[#1C1C1C]' : 'hover:bg-[#141414]',
+              'flex items-start gap-3 px-4 py-3 text-left transition-colors border-b border-[#DEDFD7]',
+              isSelected ? 'bg-[#ECEEE7]' : 'hover:bg-[#FFFFFF]',
               isClosed && 'opacity-50',
             )}
           >
             {/* Avatar with unread dot indicator */}
             <div className="relative shrink-0 mt-0.5">
-              <div className="w-10 h-10 rounded-full bg-[#1C1C1C] flex items-center justify-center text-[#F5F0EB]/60 text-sm font-medium">
+              <div className="w-10 h-10 rounded-full bg-[#ECEEE7] flex items-center justify-center text-[#20241F]/60 text-sm font-medium">
                 {getInitials(displayName)}
               </div>
               {hasUnread && (
                 <span
-                  className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#C8A97E] border-2 border-[#0A0A0A]"
+                  className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#53614A] border-2 border-[#F7F6F2]"
                   aria-label="未讀訊息"
                 />
               )}
@@ -112,7 +112,7 @@ export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps)
                 <span
                   className={cn(
                     'text-[14px] font-medium truncate',
-                    hasUnread ? 'text-[#F5F0EB]' : 'text-[#F5F0EB]/80',
+                    hasUnread ? 'text-[#20241F]' : 'text-[#20241F]/80',
                   )}
                 >
                   {displayName}
@@ -123,7 +123,7 @@ export function ChatList({ items, selectedId, onSelect, viewAs }: ChatListProps)
               </div>
 
               {/* Middle row: last message preview */}
-              <p className="text-[13px] text-[#F5F0EB]/40 truncate mb-1.5">
+              <p className="text-[13px] text-[#20241F]/40 truncate mb-1.5">
                 {item.last_message ?? item.inquiry.description}
               </p>
 

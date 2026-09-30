@@ -6,10 +6,10 @@
 import { ARTIST_IDS } from './artists'
 
 // Deterministic UUIDs
-const iid = (n: number) => `cccccccc-cccc-cccc-cccc-ccccccccc${String(n).padStart(3, '0')}`
-const qid = (n: number) => `dddddddd-dddd-dddd-dddd-ddddddddd${String(n).padStart(3, '0')}`
-const mid = (n: number) => `eeeeeeee-eeee-eeee-eeee-eeeeeeeee${String(n).padStart(3, '0')}`
-const qrid = (n: number) => `ffffffff-ffff-ffff-ffff-fffffffffff${String(n).padStart(1, '0')}`
+const iid = (n: number) => `cccccccc-cccc-4ccc-8ccc-ccccccccc${String(n).padStart(3, '0')}`
+const qid = (n: number) => `dddddddd-dddd-4ddd-8ddd-ddddddddd${String(n).padStart(3, '0')}`
+const mid = (n: number) => `eeeeeeee-eeee-4eee-8eee-eeeeeeeee${String(n).padStart(3, '0')}`
+const qrid = (n: number) => `ffffffff-ffff-4fff-8fff-fffffffffff${String(n).padStart(1, '0')}`
 
 // --- Quote Requests (Journey 3: 阿偉) ---
 export const SEED_QUOTE_REQUESTS = [

@@ -10,7 +10,7 @@ describe('validateInquiryCreate', () => {
       size_estimate: '5x5 cm',
       budget_min: 3000,
       budget_max: 8000,
-      reference_images: ['https://example.com/ref1.jpg'],
+      reference_images: ['/api/media/inquiries/550e8400-e29b-41d4-a716-446655440001/ref1.jpg'],
     })
     expect(result.success).toBe(true)
   })
@@ -70,10 +70,10 @@ describe('validateInquiryCreate', () => {
       artist_id: '550e8400-e29b-41d4-a716-446655440000',
       description: 'I want a detailed sleeve tattoo design',
       reference_images: [
-        'https://example.com/1.jpg',
-        'https://example.com/2.jpg',
-        'https://example.com/3.jpg',
-        'https://example.com/4.jpg',
+        '/api/media/inquiries/550e8400-e29b-41d4-a716-446655440001/1.jpg',
+        '/api/media/inquiries/550e8400-e29b-41d4-a716-446655440001/2.jpg',
+        '/api/media/inquiries/550e8400-e29b-41d4-a716-446655440001/3.jpg',
+        '/api/media/inquiries/550e8400-e29b-41d4-a716-446655440001/4.jpg',
       ],
     })
     expect(result.success).toBe(false)
@@ -148,13 +148,33 @@ describe('validateInquiryCreate', () => {
     expect(result.success).toBe(false)
   })
 
-  it('rejects reference_images with invalid URLs', () => {
+  it('rejects reference_images outside the protected media route', () => {
     const result = validateInquiryCreate({
       artist_id: '550e8400-e29b-41d4-a716-446655440000',
       description: 'I want a detailed sleeve tattoo design',
-      reference_images: ['not-a-url'],
+      reference_images: ['https://example.com/ref.jpg'],
     })
     expect(result.success).toBe(false)
+  })
+
+  it('rejects protected reference images owned by a different authenticated user', () => {
+    const result = validateInquiryCreate({
+      artist_id: '550e8400-e29b-41d4-a716-446655440000',
+      description: 'I want a detailed sleeve tattoo design',
+      reference_images: ['/api/media/inquiries/user-b/ref.jpg'],
+    }, 'user-a')
+
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts protected reference images owned by the authenticated user', () => {
+    const result = validateInquiryCreate({
+      artist_id: '550e8400-e29b-41d4-a716-446655440000',
+      description: 'I want a detailed sleeve tattoo design',
+      reference_images: ['/api/media/inquiries/user-a/ref.jpg'],
+    }, 'user-a')
+
+    expect(result.success).toBe(true)
   })
 
   // HAR-530: budget_range is an optional categorical code. Unknown / absent
@@ -194,7 +214,8 @@ describe('validateInquiryCreate', () => {
 // ---------------------------------------------------------------------------
 
 const mockAdminFrom = vi.fn()
-const mockAdminClient = { from: mockAdminFrom }
+const mockAdminRpc = vi.fn()
+const mockAdminClient = { from: mockAdminFrom, rpc: mockAdminRpc }
 
 const mockServerFrom = vi.fn()
 const mockServerClient = { from: mockServerFrom }
@@ -262,20 +283,12 @@ describe('createInquiry', () => {
     vi.clearAllMocks()
   })
 
-  it('creates an inquiry and returns inquiry + messages on success', async () => {
+  it('creates the inquiry and initial messages through one transaction RPC', async () => {
     const { createInquiry } = await import('../inquiries')
 
     const inquiry = makeInquiry()
     const messages = [makeMessage()]
-
-    // First admin.from() call is for 'inquiries' insert
-    const inquiryChain = makeThenable({ data: inquiry, error: null })
-    // Second admin.from() call is for 'messages' insert
-    const messagesChain = makeThenable({ data: messages, error: null })
-
-    mockAdminFrom
-      .mockReturnValueOnce(inquiryChain)
-      .mockReturnValueOnce(messagesChain)
+    mockAdminRpc.mockResolvedValueOnce({ data: { inquiry, messages }, error: null })
 
     const result = await createInquiry('U123', 'Test User', {
       artist_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -285,64 +298,24 @@ describe('createInquiry', () => {
 
     expect(result.inquiry).toEqual(inquiry)
     expect(result.messages).toEqual(messages)
-    expect(mockAdminFrom).toHaveBeenCalledWith('inquiries')
-    expect(mockAdminFrom).toHaveBeenCalledWith('messages')
-  })
-
-  it('creates image messages for each reference_image', async () => {
-    const { createInquiry } = await import('../inquiries')
-
-    const inquiry = makeInquiry({ id: 'inquiry-uuid-2' })
-    const imageMessages = [
-      makeMessage({ message_type: 'image', content: 'https://example.com/1.jpg' }),
-      makeMessage({ message_type: 'image', content: 'https://example.com/2.jpg' }),
-    ]
-
-    const inquiryChain = makeThenable({ data: inquiry, error: null })
-    const messagesChain = makeThenable({ data: imageMessages, error: null })
-
-    mockAdminFrom
-      .mockReturnValueOnce(inquiryChain)
-      .mockReturnValueOnce(messagesChain)
-
-    const result = await createInquiry('U123', 'Test User', {
-      artist_id: '550e8400-e29b-41d4-a716-446655440000',
-      description: 'I want a small geometric tattoo on my forearm',
-      reference_images: [
-        'https://example.com/1.jpg',
-        'https://example.com/2.jpg',
-      ],
-    })
-
-    // The messages insert chain receives the payload; verify the image messages
-    // chain was invoked (insert was called on the messages chain).
-    const messagesInsertFn = (messagesChain.insert as ReturnType<typeof vi.fn>)
-    expect(messagesInsertFn).toHaveBeenCalledOnce()
-    const insertedMessages = messagesInsertFn.mock.calls[0][0] as Array<{ message_type: string; content: string }>
-    const imageEntries = insertedMessages.filter((m) => m.message_type === 'image')
-    expect(imageEntries).toHaveLength(2)
-    expect(imageEntries[0].content).toBe('https://example.com/1.jpg')
-    expect(imageEntries[1].content).toBe('https://example.com/2.jpg')
-    expect(result.messages).toEqual(imageMessages)
+    expect(mockAdminRpc).toHaveBeenCalledWith(
+      'create_inquiry_transaction',
+      expect.objectContaining({
+        p_consumer_line_id: 'U123',
+        p_artist_id: '550e8400-e29b-41d4-a716-446655440000',
+        p_reference_images: [],
+      }),
+    )
+    expect(mockAdminFrom).not.toHaveBeenCalled()
   })
 
   it('builds summary content with all optional fields when provided', async () => {
     const { createInquiry } = await import('../inquiries')
 
-    const inquiry = makeInquiry({
-      body_part: '手臂（前臂）',
-      size_estimate: '5x5 cm',
-      budget_min: 3000,
-      budget_max: 8000,
+    mockAdminRpc.mockResolvedValueOnce({
+      data: { inquiry: makeInquiry(), messages: [makeMessage()] },
+      error: null,
     })
-    const messages = [makeMessage()]
-
-    const inquiryChain = makeThenable({ data: inquiry, error: null })
-    const messagesChain = makeThenable({ data: messages, error: null })
-
-    mockAdminFrom
-      .mockReturnValueOnce(inquiryChain)
-      .mockReturnValueOnce(messagesChain)
 
     await createInquiry('U123', 'Test User', {
       artist_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -354,20 +327,20 @@ describe('createInquiry', () => {
       budget_max: 8000,
     })
 
-    const insertedMessages = (messagesChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as Array<{ content: string }>
-    const systemMessage = insertedMessages[0]
-    expect(systemMessage.content).toContain('部位：手臂（前臂）')
-    expect(systemMessage.content).toContain('大小：5x5 cm')
-    expect(systemMessage.content).toContain('預算：NT$3000 ~ NT$8000')
-    expect(systemMessage.content).toContain('I want a small geometric tattoo on my forearm')
+    const rpcArgs = mockAdminRpc.mock.calls[0][1] as { p_summary_content: string }
+    expect(rpcArgs.p_summary_content).toContain('部位：手臂（前臂）')
+    expect(rpcArgs.p_summary_content).toContain('大小：5x5 cm')
+    expect(rpcArgs.p_summary_content).toContain('預算：NT$3000 ~ NT$8000')
+    expect(rpcArgs.p_summary_content).toContain('I want a small geometric tattoo on my forearm')
   })
 
-  it('threads a valid budget_range code into the inquiry insert', async () => {
+  it('threads a valid budget_range code into the transaction RPC', async () => {
     const { createInquiry } = await import('../inquiries')
 
-    const inquiryChain = makeThenable({ data: makeInquiry({ budget_range: '8k_20k' }), error: null })
-    const messagesChain = makeThenable({ data: [makeMessage()], error: null })
-    mockAdminFrom.mockReturnValueOnce(inquiryChain).mockReturnValueOnce(messagesChain)
+    mockAdminRpc.mockResolvedValueOnce({
+      data: { inquiry: makeInquiry({ budget_range: '8k_20k' }), messages: [makeMessage()] },
+      error: null,
+    })
 
     await createInquiry('U123', 'Test User', {
       artist_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -376,18 +349,18 @@ describe('createInquiry', () => {
       budget_range: '8k_20k',
     })
 
-    const inserted = (inquiryChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
-      budget_range: string | null
-    }
-    expect(inserted.budget_range).toBe('8k_20k')
+    expect(mockAdminRpc.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ p_budget_range: '8k_20k' }),
+    )
   })
 
-  it('inserts NULL budget_range when it is omitted', async () => {
+  it('passes null budget_range when it is omitted', async () => {
     const { createInquiry } = await import('../inquiries')
 
-    const inquiryChain = makeThenable({ data: makeInquiry(), error: null })
-    const messagesChain = makeThenable({ data: [makeMessage()], error: null })
-    mockAdminFrom.mockReturnValueOnce(inquiryChain).mockReturnValueOnce(messagesChain)
+    mockAdminRpc.mockResolvedValueOnce({
+      data: { inquiry: makeInquiry(), messages: [makeMessage()] },
+      error: null,
+    })
 
     await createInquiry('U123', 'Test User', {
       artist_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -395,17 +368,33 @@ describe('createInquiry', () => {
       reference_images: [],
     })
 
-    const inserted = (inquiryChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
-      budget_range: string | null
-    }
-    expect(inserted.budget_range).toBeNull()
+    expect(mockAdminRpc.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ p_budget_range: null }),
+    )
   })
 
-  it('throws when the inquiry insert fails', async () => {
-    const { createInquiry } = await import('../inquiries')
+  it('maps inactive target rejection to a structured domain error', async () => {
+    const { createInquiry, InquiryMutationError } = await import('../inquiries')
+    mockAdminRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'INKHUNT_ARTIST_NOT_ACTIVE' },
+    })
 
-    const inquiryChain = makeThenable({ data: null, error: { message: 'insert failed' } })
-    mockAdminFrom.mockReturnValueOnce(inquiryChain)
+    const promise = createInquiry('U123', 'Test User', {
+        artist_id: '550e8400-e29b-41d4-a716-446655440000',
+        description: 'I want a small geometric tattoo on my forearm',
+        reference_images: [],
+      })
+    await expect(promise).rejects.toBeInstanceOf(InquiryMutationError)
+    await expect(promise).rejects.toMatchObject({ code: 'ARTIST_NOT_ACTIVE' })
+  })
+
+  it('maps self-inquiry rejection to a structured domain error', async () => {
+    const { createInquiry } = await import('../inquiries')
+    mockAdminRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'INKHUNT_SELF_INQUIRY' },
+    })
 
     await expect(
       createInquiry('U123', 'Test User', {
@@ -413,27 +402,7 @@ describe('createInquiry', () => {
         description: 'I want a small geometric tattoo on my forearm',
         reference_images: [],
       }),
-    ).rejects.toThrow('Failed to create inquiry: insert failed')
-  })
-
-  it('throws when the messages insert fails', async () => {
-    const { createInquiry } = await import('../inquiries')
-
-    const inquiry = makeInquiry()
-    const inquiryChain = makeThenable({ data: inquiry, error: null })
-    const messagesChain = makeThenable({ data: null, error: { message: 'msg insert failed' } })
-
-    mockAdminFrom
-      .mockReturnValueOnce(inquiryChain)
-      .mockReturnValueOnce(messagesChain)
-
-    await expect(
-      createInquiry('U123', 'Test User', {
-        artist_id: '550e8400-e29b-41d4-a716-446655440000',
-        description: 'I want a small geometric tattoo on my forearm',
-        reference_images: [],
-      }),
-    ).rejects.toThrow('Failed to create initial messages: msg insert failed')
+    ).rejects.toMatchObject({ code: 'SELF_INQUIRY' })
   })
 })
 
@@ -610,39 +579,39 @@ describe('updateInquiryStatus', () => {
     vi.clearAllMocks()
   })
 
-  it('updates status and returns the updated inquiry', async () => {
+  it('closes through a transaction RPC with the server-authenticated caller identity', async () => {
     const { updateInquiryStatus } = await import('../inquiries')
 
-    const updated = makeInquiry({ status: 'quoted' })
-    const chain = makeThenable({ data: updated, error: null })
-    mockAdminFrom.mockReturnValueOnce(chain)
+    const updated = makeInquiry({ status: 'closed' })
+    mockAdminRpc.mockResolvedValueOnce({ data: updated, error: null })
 
-    const result = await updateInquiryStatus('inquiry-uuid-1', 'quoted')
+    const result = await updateInquiryStatus('inquiry-uuid-1', 'closed', 'U123')
 
     expect(result).toEqual(updated)
-    expect(result.status).toBe('quoted')
-    expect(mockAdminFrom).toHaveBeenCalledWith('inquiries')
+    expect(result.status).toBe('closed')
+    expect(mockAdminRpc).toHaveBeenCalledWith('close_inquiry_transaction', {
+      p_inquiry_id: 'inquiry-uuid-1',
+      p_caller_line_id: 'U123',
+    })
+    expect(mockAdminFrom).not.toHaveBeenCalled()
   })
 
-  it('throws when the update returns an error', async () => {
+  it('rejects unsupported state transitions before touching the database', async () => {
     const { updateInquiryStatus } = await import('../inquiries')
 
-    const chain = makeThenable({ data: null, error: { message: 'update failed' } })
-    mockAdminFrom.mockReturnValueOnce(chain)
-
-    await expect(updateInquiryStatus('inquiry-uuid-1', 'closed')).rejects.toThrow(
-      'Failed to update inquiry: update failed',
-    )
+    await expect(updateInquiryStatus('inquiry-uuid-1', 'quoted', 'U123'))
+      .rejects.toMatchObject({ code: 'INVALID_INQUIRY_STATUS' })
+    expect(mockAdminRpc).not.toHaveBeenCalled()
   })
 
-  it('throws when the update returns null data without an error', async () => {
+  it('maps forbidden closure from the locked database transaction', async () => {
     const { updateInquiryStatus } = await import('../inquiries')
+    mockAdminRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'INKHUNT_INQUIRY_FORBIDDEN' },
+    })
 
-    const chain = makeThenable({ data: null, error: null })
-    mockAdminFrom.mockReturnValueOnce(chain)
-
-    await expect(updateInquiryStatus('inquiry-uuid-1', 'closed')).rejects.toThrow(
-      'Failed to update inquiry',
-    )
+    await expect(updateInquiryStatus('inquiry-uuid-1', 'closed', 'U-other'))
+      .rejects.toMatchObject({ code: 'INQUIRY_FORBIDDEN' })
   })
 })

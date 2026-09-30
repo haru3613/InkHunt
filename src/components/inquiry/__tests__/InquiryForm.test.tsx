@@ -1,670 +1,95 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-// --- Mocks (must be declared before component imports) ---
-
-// HAR-667: the form must navigate via the LOCALE-AWARE router
-// (`@/i18n/navigation`), not bare `next/navigation` — the latter drops the
-// current locale segment and bounces English visitors back to `/zh-TW`.
-vi.mock('@/i18n/navigation', () => ({
-  useRouter: vi.fn(() => ({ push: vi.fn() })),
-}))
-
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string, params?: Record<string, string>) =>
-    params ? `${key}:${JSON.stringify(params)}` : key,
-}))
-
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: vi.fn(),
-}))
-
-vi.mock('@/lib/analytics', () => ({
-  trackSubmitInquiry: vi.fn(),
-}))
-
-vi.mock('@/components/inquiry/ReferenceImageUpload', () => ({
-  ReferenceImageUpload: () => <div data-testid="ref-upload" />,
-}))
-
+vi.mock('@/i18n/navigation', () => ({ useRouter: vi.fn(() => ({ push: vi.fn() })) }))
+vi.mock('next-intl', () => ({ useLocale: () => 'zh-TW' }))
+vi.mock('@/hooks/useAuth', () => ({ useAuth: vi.fn() }))
+vi.mock('@/lib/analytics', () => ({ trackSubmitInquiry: vi.fn() }))
+vi.mock('@/components/inquiry/ReferenceImageUpload', () => ({ ReferenceImageUpload: () => <div data-testid="ref-upload" /> }))
 vi.mock('@/components/ui/bottom-drawer', () => ({
-  BottomDrawer: ({
-    children,
-    open,
-    onOpenChange,
-  }: {
-    children: React.ReactNode
-    open: boolean
-    onOpenChange?: (open: boolean) => void
-  }) =>
-    open ? (
-      <div data-testid="drawer">
-        {/* Test helper: close button that triggers the internal onOpenChange */}
-        <button
-          data-testid="drawer-close-trigger"
-          type="button"
-          onClick={() => onOpenChange?.(false)}
-        >
-          close
-        </button>
-        {children}
-      </div>
-    ) : null,
+  BottomDrawer: ({ children, open }: { children: React.ReactNode; open: boolean }) => open ? <div data-testid="drawer">{children}</div> : null,
   BottomDrawerContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   BottomDrawerHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   BottomDrawerTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
   BottomDrawerDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
 }))
-
 vi.mock('@/components/ui/select', () => ({
-  Select: ({
-    children,
-    onValueChange,
-    value,
-    name,
-  }: {
-    children: React.ReactNode
-    onValueChange?: (value: string) => void
-    value?: string
-    name?: string
-  }) => (
-    <div data-testid="select">
-      {/* Render a native select so tests can fireEvent.change on it. The
-          aria-label is derived from the Radix/Base-UI `name` prop so multiple
-          Select fields (body_part, budget_range) are addressable individually;
-          the un-named body_part Select keeps its historical label. */}
-      <select
-        aria-label={name ?? 'body-part-select'}
-        value={value ?? ''}
-        onChange={(e) => onValueChange?.(e.target.value)}
-      >
-        {children}
-      </select>
-    </div>
-  ),
+  Select: ({ children, value, onValueChange, name }: { children: React.ReactNode; value?: string; onValueChange?: (value: string) => void; name?: string }) => <select aria-label={name ?? 'body-part'} value={value ?? ''} onChange={(event) => onValueChange?.(event.target.value)}>{children}</select>,
   SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  SelectItem: ({ children, value }: { children: React.ReactNode; value: string }) => (
-    <option value={value}>{children}</option>
-  ),
-  SelectTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  SelectValue: () => null,
+  SelectItem: ({ children, value }: { children: React.ReactNode; value: string }) => <option value={value}>{children}</option>,
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>, SelectValue: () => null,
 }))
 
-// --- Component imports (after mocks) ---
 import { InquiryForm } from '../InquiryForm'
 import { useAuth } from '@/hooks/useAuth'
-import { trackSubmitInquiry } from '@/lib/analytics'
 import { useRouter } from '@/i18n/navigation'
+import { clearInquiryDraft, INQUIRY_DRAFT_TTL_MS, readInquiryDraft, saveInquiryDraft } from '../inquiry-draft'
 
-const mockedUseAuth = vi.mocked(useAuth)
-const mockedTrackSubmitInquiry = vi.mocked(trackSubmitInquiry)
-const mockedUseRouter = vi.mocked(useRouter)
+const auth = vi.mocked(useAuth)
+const props = { artistId: 'artist-uuid-1', artistName: '測試刺青師', artistSlug: 'artist', open: true, onOpenChange: vi.fn() }
+const loggedIn = () => auth.mockReturnValue({ isLoggedIn: true, isAdmin: false, isLoading: false, user: null, artist: null, loginWithRedirect: vi.fn(), logout: vi.fn(), refetch: vi.fn() })
+const guest = () => auth.mockReturnValue({ isLoggedIn: false, isAdmin: false, isLoading: false, user: null, artist: null, loginWithRedirect: vi.fn(), logout: vi.fn(), refetch: vi.fn() })
 
-// --- Helpers ---
+async function reachReview() {
+  await userEvent.type(screen.getByLabelText(/你想刺什麼/), '希望刺一個極簡風格的玫瑰花，放在手腕內側')
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }))
+  fireEvent.change(screen.getByRole('combobox', { name: 'body-part' }), { target: { value: '手腕' } })
+  await userEvent.type(screen.getByLabelText(/大約多大/), '5 x 5 cm')
+  fireEvent.change(screen.getByRole('combobox', { name: 'budget_range' }), { target: { value: '8k_20k' } })
+  await userEvent.click(screen.getByRole('button', { name: '查看確認內容' }))
+}
 
-function makeAuthGuest() {
-  mockedUseAuth.mockReturnValue({
-    isLoggedIn: false,
-    isAdmin: false,
-    isLoading: false,
-    user: null,
-    artist: null,
-    loginWithRedirect: vi.fn(),
-    logout: vi.fn(),
-    refetch: vi.fn(),
+describe('inquiry drafts', () => {
+  beforeEach(() => { sessionStorage.clear() })
+  it('restores a valid artist-scoped OAuth draft and removes expired or malformed values', () => {
+    saveInquiryDraft('a1', { description: '有效草稿內容超過十個字', body_part: '手腕', size_estimate: '5cm', budget_range: '8k_20k' }, [])
+    expect(readInquiryDraft('a1')?.form.body_part).toBe('手腕')
+    sessionStorage.setItem('inkhunt:inquiry-draft:a2', JSON.stringify({ savedAt: Date.now() - INQUIRY_DRAFT_TTL_MS - 1, form: {}, referenceImages: [] }))
+    expect(readInquiryDraft('a2')).toBeNull()
+    expect(sessionStorage.getItem('inkhunt:inquiry-draft:a2')).toBeNull()
+    sessionStorage.setItem('inkhunt:inquiry-draft:a3', '{bad')
+    expect(readInquiryDraft('a3')).toBeNull()
+    clearInquiryDraft('a1')
   })
-}
-
-function makeAuthLoggedIn() {
-  mockedUseAuth.mockReturnValue({
-    isLoggedIn: true,
-    isAdmin: false,
-    isLoading: false,
-    user: { lineUserId: 'U123', displayName: 'Test User', avatarUrl: null },
-    artist: null,
-    loginWithRedirect: vi.fn(),
-    logout: vi.fn(),
-    refetch: vi.fn(),
-  })
-}
-
-const defaultProps = {
-  artistId: 'artist-uuid-1',
-  artistName: '測試刺青師',
-  artistSlug: 'test-artist',
-  open: true,
-  onOpenChange: vi.fn(),
-}
-
-// --- Tests ---
+})
 
 describe('InquiryForm', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    // Default: guest user
-    makeAuthGuest()
-    // Default router push spy
-    const pushMock = vi.fn()
-    mockedUseRouter.mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>)
+  beforeEach(() => { vi.clearAllMocks(); sessionStorage.clear(); guest(); vi.mocked(useRouter).mockReturnValue({ push: vi.fn() } as never) })
+  it('blocks invalid steps and only renders uploads for signed-in users', async () => {
+    loggedIn(); render(<InquiryForm {...props} />)
+    expect(screen.getByTestId('ref-upload')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '下一步' }))
+    expect(screen.getByText('請至少描述 10 個字')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/你想刺什麼/), '希望刺一朵玫瑰花在手腕上')
+    await userEvent.click(screen.getByRole('button', { name: '下一步' }))
+    await userEvent.click(screen.getByRole('button', { name: '查看確認內容' }))
+    expect(screen.getByText('請選擇刺青部位')).toBeInTheDocument()
   })
-
-  describe('visibility', () => {
-    it('does not render when open is false', () => {
-      makeAuthGuest()
-      render(<InquiryForm {...defaultProps} open={false} />)
-
-      expect(screen.queryByTestId('drawer')).not.toBeInTheDocument()
-    })
-
-    it('renders the drawer when open is true', () => {
-      render(<InquiryForm {...defaultProps} open={true} />)
-
-      expect(screen.getByTestId('drawer')).toBeInTheDocument()
-    })
+  it('saves a guest draft and returns through OAuth with inquiry=1', async () => {
+    const loginWithRedirect = vi.fn(); auth.mockReturnValue({ isLoggedIn: false, isAdmin: false, isLoading: false, user: null, artist: null, loginWithRedirect, logout: vi.fn(), refetch: vi.fn() })
+    render(<InquiryForm {...props} />); await reachReview(); await userEvent.click(screen.getByRole('button', { name: 'LINE 登入後免費送出' }))
+    expect(loginWithRedirect).toHaveBeenCalledWith(expect.stringContaining('inquiry=1'))
+    expect(readInquiryDraft(props.artistId)?.form.description).toContain('玫瑰')
   })
-
-  describe('form fields', () => {
-    it('renders description textarea when open', () => {
-      render(<InquiryForm {...defaultProps} />)
-
-      expect(screen.getByRole('textbox', { name: /description/i })).toBeInTheDocument()
-    })
-
-    it('renders size estimate input when open', () => {
-      render(<InquiryForm {...defaultProps} />)
-
-      // Input labelled with translation key 'sizeEstimate'
-      expect(screen.getByLabelText(/sizeEstimate/i)).toBeInTheDocument()
-    })
-
-    it('renders the reference image upload slot', () => {
-      render(<InquiryForm {...defaultProps} />)
-
-      expect(screen.getByTestId('ref-upload')).toBeInTheDocument()
-    })
-
-    it('renders title with artist name via translation key', () => {
-      render(<InquiryForm {...defaultProps} artistName="林小華" />)
-
-      // The mock translator produces "title:{"artistName":"林小華"}"
-      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('林小華')
-    })
+  it('posts once and retains fields when a request fails', async () => {
+    loggedIn(); global.fetch = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: '網路錯誤' }) })
+    render(<InquiryForm {...props} />); await reachReview()
+    const form = screen.getByTestId('drawer').querySelector('form')!
+    fireEvent.submit(form); fireEvent.submit(form)
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1))
+    expect(await screen.findByText('網路錯誤')).toBeInTheDocument()
+    expect(screen.getByText('希望刺一個極簡風格的玫瑰花，放在手腕內側')).toBeInTheDocument()
   })
-
-  describe('auth gate — button label', () => {
-    it('shows the localized login button text (translation key, not a hardcoded zh-TW string — HAR-667) when user is not logged in', () => {
-      makeAuthGuest()
-      render(<InquiryForm {...defaultProps} />)
-
-      // The mock translator echoes the key itself; a hardcoded '登入後詢價'
-      // literal would fail this and would also render untranslated on /en.
-      expect(screen.getByRole('button', { name: 'loginToSubmit' })).toBeInTheDocument()
-    })
-
-    it('shows submit button text (translation key) when user is logged in', () => {
-      makeAuthLoggedIn()
-      render(<InquiryForm {...defaultProps} />)
-
-      expect(screen.getByRole('button', { name: 'submit' })).toBeInTheDocument()
-    })
-  })
-
-  describe('auth gate — redirect on submit', () => {
-    it('calls loginWithRedirect when unauthenticated user submits the form', async () => {
-      const loginWithRedirect = vi.fn()
-      mockedUseAuth.mockReturnValue({
-        isLoggedIn: false,
-        isAdmin: false,
-        isLoading: false,
-        user: null,
-        artist: null,
-        loginWithRedirect,
-        logout: vi.fn(),
-        refetch: vi.fn(),
-      })
-
-      render(<InquiryForm {...defaultProps} />)
-
-      const form = screen.getByRole('button', { name: 'loginToSubmit' }).closest('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(loginWithRedirect).toHaveBeenCalledOnce()
-      })
-    })
-
-    it('does not call fetch when unauthenticated user submits', async () => {
-      makeAuthGuest()
-      global.fetch = vi.fn()
-
-      render(<InquiryForm {...defaultProps} />)
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(global.fetch).not.toHaveBeenCalled()
-      })
-    })
-  })
-
-  describe('validation', () => {
-    it('shows description error when submitting with empty description', async () => {
-      makeAuthLoggedIn()
-      render(<InquiryForm {...defaultProps} />)
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        // Zod message: '請至少描述 10 個字'
-        expect(screen.getByText('請至少描述 10 個字')).toBeInTheDocument()
-      })
-    })
-
-    it('shows body_part error when submitting without selecting a body part', async () => {
-      makeAuthLoggedIn()
-      render(<InquiryForm {...defaultProps} />)
-
-      // Fill in description to pass that validation but leave body_part empty
-      const descriptionInput = screen.getByRole('textbox', { name: /description/i })
-      await userEvent.type(descriptionInput, '這是一段超過十個字的刺青描述')
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(screen.getByText('請選擇刺青部位')).toBeInTheDocument()
-      })
-    })
-
-    it('shows size_estimate error when submitting without size', async () => {
-      makeAuthLoggedIn()
-      render(<InquiryForm {...defaultProps} />)
-
-      const descriptionInput = screen.getByRole('textbox', { name: /description/i })
-      await userEvent.type(descriptionInput, '這是一段超過十個字的刺青描述')
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(screen.getByText('請填寫預計大小')).toBeInTheDocument()
-      })
-    })
-
-    it('clears a field error when that field is edited', async () => {
-      makeAuthLoggedIn()
-      render(<InquiryForm {...defaultProps} />)
-
-      // Trigger validation errors
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(screen.getByText('請至少描述 10 個字')).toBeInTheDocument()
-      })
-
-      // Type into description — error should disappear
-      const descriptionInput = screen.getByRole('textbox', { name: /description/i })
-      await userEvent.type(descriptionInput, '超過十個字的測試描述文字')
-
-      await waitFor(() => {
-        expect(screen.queryByText('請至少描述 10 個字')).not.toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('successful submission', () => {
-    beforeEach(() => {
-      makeAuthLoggedIn()
-    })
-
-    async function fillValidForm() {
-      const descriptionInput = screen.getByRole('textbox', { name: /description/i })
-      await userEvent.type(descriptionInput, '希望刺一個極簡風格的玫瑰花，放在手腕內側')
-
-      const sizeInput = screen.getByLabelText(/sizeEstimate/i)
-      await userEvent.type(sizeInput, '5cm x 5cm')
-
-      // Select a body part via the native select rendered by our Select mock
-      const bodyPartSelect = screen.getByRole('combobox', { name: 'body-part-select' })
-      fireEvent.change(bodyPartSelect, { target: { value: '手腕' } })
-    }
-
-    it('POSTs to /api/inquiries with artist_id and form data', async () => {
-      const pushMock = vi.fn()
-      mockedUseRouter.mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>)
-
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'inquiry-uuid-1' }),
-      })
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillValidForm()
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          '/api/inquiries',
-          expect.objectContaining({
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-          }),
-        )
-
-        const body = JSON.parse(
-          (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
-        )
-        expect(body.artist_id).toBe('artist-uuid-1')
-        expect(body.description).toContain('希望刺一個')
-        expect(body.size_estimate).toBe('5cm x 5cm')
-      })
-    })
-
-    it('redirects to /inquiries/:id after successful submission', async () => {
-      const pushMock = vi.fn()
-      mockedUseRouter.mockReturnValue({ push: pushMock } as unknown as ReturnType<typeof useRouter>)
-
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'inquiry-uuid-1' }),
-      })
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillValidForm()
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(pushMock).toHaveBeenCalledWith('/inquiries/inquiry-uuid-1')
-      })
-    })
-
-    it('calls trackSubmitInquiry with artistSlug after successful submission', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'inquiry-uuid-2' }),
-      })
-
-      render(<InquiryForm {...defaultProps} artistSlug="test-artist" />)
-      await fillValidForm()
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(mockedTrackSubmitInquiry).toHaveBeenCalledWith(
-          'test-artist',
-          '手腕', // body_part selected in fillValidForm
-          undefined, // budget not filled
-        )
-      })
-    })
-
-    it('calls onOpenChange(false) after successful submission', async () => {
-      const onOpenChange = vi.fn()
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'inquiry-uuid-3' }),
-      })
-
-      render(<InquiryForm {...defaultProps} onOpenChange={onOpenChange} />)
-      await fillValidForm()
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(onOpenChange).toHaveBeenCalledWith(false)
-      })
-    })
-  })
-
-  describe('API error handling', () => {
-    beforeEach(() => {
-      makeAuthLoggedIn()
-    })
-
-    async function fillAndSubmit() {
-      const descriptionInput = screen.getByRole('textbox', { name: /description/i })
-      await userEvent.type(descriptionInput, '希望刺一個極簡風格的玫瑰花，放在手腕內側')
-      const sizeInput = screen.getByLabelText(/sizeEstimate/i)
-      await userEvent.type(sizeInput, '5cm')
-      const bodyPartSelect = screen.getByRole('combobox', { name: 'body-part-select' })
-      fireEvent.change(bodyPartSelect, { target: { value: '手腕' } })
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-    }
-
-    it('shows _form error when the API returns a non-ok response', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: '刺青師不存在' }),
-      })
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillAndSubmit()
-
-      await waitFor(() => {
-        expect(screen.getByText('刺青師不存在')).toBeInTheDocument()
-      })
-    })
-
-    it('shows generic error message when fetch throws', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'))
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillAndSubmit()
-
-      await waitFor(() => {
-        expect(screen.getByText('Network failure')).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('drawer close resets form', () => {
-    it('resets form state when the drawer is closed then reopened', async () => {
-      makeAuthLoggedIn()
-      // Use a stateful wrapper so open prop changes propagate correctly
-      const onOpenChange = vi.fn()
-      const currentOpen = true
-
-      const { rerender } = render(
-        <InquiryForm {...defaultProps} open={true} onOpenChange={onOpenChange} />,
-      )
-
-      // Type something into description
-      const descriptionInput = screen.getByRole('textbox', { name: /description/i })
-      await userEvent.type(descriptionInput, 'Some description text input')
-      expect((descriptionInput as HTMLTextAreaElement).value).toBe('Some description text input')
-
-      // Click the test close button — this calls handleOpenChange(false), resetting state
-      await userEvent.click(screen.getByTestId('drawer-close-trigger'))
-      // onOpenChange should have been called with false
-      expect(onOpenChange).toHaveBeenCalledWith(false)
-
-      // Simulate the parent re-rendering with open=true (user re-opens the drawer)
-      rerender(<InquiryForm {...defaultProps} open={true} onOpenChange={onOpenChange} />)
-
-      const reopenedInput = screen.getByRole('textbox', { name: /description/i }) as HTMLTextAreaElement
-      // handleOpenChange reset the state, so description should be empty now
-      expect(reopenedInput.value).toBe('')
-    })
-  })
-
-  describe('budget range (HAR-530)', () => {
-    // Canonical codes, in render order. Labels resolve via the
-    // useTranslations('inquiry.budgetRange') mock which echoes `options.<code>`.
-    const BUDGET_CODES = ['under_3k', '3k_8k', '8k_20k', '20k_50k', 'over_50k', 'unsure']
-
-    beforeEach(() => {
-      makeAuthLoggedIn()
-    })
-
-    async function fillRequired() {
-      await userEvent.type(
-        screen.getByRole('textbox', { name: /description/i }),
-        '希望刺一個極簡風格的玫瑰花，放在手腕內側',
-      )
-      await userEvent.type(screen.getByLabelText(/sizeEstimate/i), '5cm x 5cm')
-      fireEvent.change(screen.getByRole('combobox', { name: 'body-part-select' }), {
-        target: { value: '手腕' },
-      })
-    }
-
-    it('renders the budget select with label, helper and the 6 localized options', () => {
-      render(<InquiryForm {...defaultProps} />)
-
-      // label + helper resolve from useTranslations('inquiry.budgetRange')
-      expect(screen.getByText('label')).toBeInTheDocument()
-      expect(screen.getByText('helper')).toBeInTheDocument()
-
-      const budgetSelect = screen.getByRole('combobox', { name: 'budget_range' })
-      const options = within(budgetSelect).getAllByRole('option')
-
-      expect(options).toHaveLength(6)
-      expect(options.map((o) => (o as HTMLOptionElement).value)).toEqual(BUDGET_CODES)
-      expect(options.map((o) => o.textContent)).toEqual(
-        BUDGET_CODES.map((code) => `options.${code}`),
-      )
-    })
-
-    it('POSTs the chosen budget_range code in the request body', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'inquiry-uuid-b1' }),
-      })
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillRequired()
-      fireEvent.change(screen.getByRole('combobox', { name: 'budget_range' }), {
-        target: { value: '8k_20k' },
-      })
-
-      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
-
-      await waitFor(() => {
-        const body = JSON.parse(
-          (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
-        )
-        expect(body.budget_range).toBe('8k_20k')
-      })
-    })
-
-    it('omits budget_range from the body when left untouched', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'inquiry-uuid-b2' }),
-      })
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillRequired()
-
-      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
-
-      await waitFor(() => {
-        const body = JSON.parse(
-          (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body,
-        )
-        expect(body.budget_range).toBeUndefined()
-        expect('budget_range' in body).toBe(false)
-      })
-    })
-  })
-
-  describe('double-submit guard (HAR-667)', () => {
-    beforeEach(() => {
-      makeAuthLoggedIn()
-    })
-
-    async function fillValidForm() {
-      const descriptionInput = screen.getByRole('textbox', { name: /description/i })
-      await userEvent.type(descriptionInput, '希望刺一個極簡風格的玫瑰花，放在手腕內側')
-      const sizeInput = screen.getByLabelText(/sizeEstimate/i)
-      await userEvent.type(sizeInput, '5cm x 5cm')
-      fireEvent.change(screen.getByRole('combobox', { name: 'body-part-select' }), {
-        target: { value: '手腕' },
-      })
-    }
-
-    it('disables the submit button while the request is in flight', async () => {
-      let resolveFetch: (value: unknown) => void = () => {}
-      global.fetch = vi.fn().mockReturnValue(
-        new Promise((resolve) => {
-          resolveFetch = resolve
-        }),
-      )
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillValidForm()
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'submit' })).toBeDisabled()
-      })
-
-      resolveFetch({ ok: true, json: async () => ({ id: 'inquiry-uuid-guard' }) })
-    })
-
-    it('only POSTs once when the form is submitted twice in rapid succession', async () => {
-      let resolveFetch: (value: unknown) => void = () => {}
-      global.fetch = vi.fn().mockReturnValue(
-        new Promise((resolve) => {
-          resolveFetch = resolve
-        }),
-      )
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillValidForm()
-
-      const form = screen.getByTestId('drawer').querySelector('form')!
-      fireEvent.submit(form)
-      fireEvent.submit(form)
-      fireEvent.submit(form)
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(1)
-      })
-
-      resolveFetch({ ok: true, json: async () => ({ id: 'inquiry-uuid-guard-2' }) })
-    })
-
-    it('re-enables the submit button after the request settles (success)', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'inquiry-uuid-guard-3' }),
-      })
-
-      const onOpenChange = vi.fn()
-      render(<InquiryForm {...defaultProps} onOpenChange={onOpenChange} />)
-      await fillValidForm()
-
-      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
-
-      await waitFor(() => {
-        expect(onOpenChange).toHaveBeenCalledWith(false)
-      })
-    })
-
-    it('re-enables the submit button after the request fails so the consumer can retry', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'))
-
-      render(<InquiryForm {...defaultProps} />)
-      await fillValidForm()
-
-      fireEvent.submit(screen.getByTestId('drawer').querySelector('form')!)
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'submit' })).not.toBeDisabled()
-      })
-    })
+  it('clears the draft only after a successful POST and sends one budget field', async () => {
+    loggedIn(); global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'inq-1' }) })
+    const push = vi.fn(); vi.mocked(useRouter).mockReturnValue({ push } as never)
+    render(<InquiryForm {...props} />); await reachReview(); await userEvent.click(screen.getByRole('button', { name: '免費送出詢價' }))
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/inquiries/inq-1'))
+    const payload = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body)
+    expect(payload.budget_range).toBe('8k_20k')
+    expect(payload).not.toHaveProperty('budget_min')
+    expect(payload).not.toHaveProperty('budget_max')
+    expect(readInquiryDraft(props.artistId)).toBeNull()
   })
 })

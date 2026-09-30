@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/v2-local-lib.sh"
+
+v2_require_isolated_stack
+echo "InkHunt v2 Supabase is running."
+echo "API:    ${V2_API_URL}"
+echo "DB:     postgresql://postgres:postgres@127.0.0.1:${V2_DB_PORT}/postgres"

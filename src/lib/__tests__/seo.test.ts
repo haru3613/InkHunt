@@ -285,7 +285,7 @@ describe('generateWebsiteJsonLd', () => {
   it('returns the correct description', () => {
     const result = generateWebsiteJsonLd()
     expect(result.description).toBe(
-      '台灣第一個刺青師媒合平台。按風格篩選、瀏覽作品集、價格透明、一鍵詢價。',
+      '探索台灣刺青作品、尋找刺青師並免費討論預約。雙方免費，平台不抽成。',
     )
   })
 

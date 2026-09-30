@@ -17,7 +17,8 @@
     "staging:seed": "SUPABASE_URL=http://127.0.0.1:54321 npx tsx scripts/seed-staging.ts",
     "staging:reset": "npx supabase db reset",
     "staging:down": "npx supabase stop",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:v2:acceptance": "node scripts/v2-acceptance.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
@@ -63,5 +64,10 @@
     "*.{ts,tsx,js,jsx}": [
       "eslint --fix"
     ]
+  },
+  "packageManager": "npm@11.6.2",
+  "engines": {
+    "node": ">=22.14 <23",
+    "npm": ">=11.6.2 <12"
   }
 }

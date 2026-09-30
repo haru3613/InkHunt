@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/v2-local-lib.sh"
+
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker is not available. Start Docker Desktop or OrbStack, then retry." >&2
+  exit 1
+fi
+
+v2_prepare_runtime
+
+if ! v2_status_json >/dev/null 2>&1; then
+  for port in 56320 56321 56322 56323 56324 56327 56329 56383; do
+    if lsof -nP -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1; then
+      echo "Port ${port} is already in use; refusing to start the isolated v2 stack." >&2
+      exit 1
+    fi
+  done
+fi
+
+# Keep the real services the MVP exercises (Postgres, Auth, REST, Storage,
+# Realtime and Kong) while omitting local dashboards and observability images.
+# This reduces the stack's disk footprint on constrained development machines.
+supabase start \
+  --workdir "${V2_RUNTIME_DIR}" \
+  --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit,postgres-meta
+v2_require_isolated_stack
+v2_write_env_files
+
+echo "InkHunt v2 Supabase is ready."
+echo "API:    ${V2_API_URL}"
+echo "DB:     postgresql://postgres:postgres@127.0.0.1:${V2_DB_PORT}/postgres"
+echo "Optional Studio and local mail services are omitted from this disk-conscious stack."
+echo "Local credentials were written to ignored .env.local and .env.test.local files."

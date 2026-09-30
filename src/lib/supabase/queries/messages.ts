@@ -31,7 +31,20 @@ export async function getMessagesByInquiry(inquiryId: string): Promise<Message[]
     .order('created_at', { ascending: true })
 
   if (error) throw new Error(`Failed to fetch messages: ${error.message}`)
-  return data ?? []
+  const messages = data ?? []
+  if (!messages.some(message => message.message_type === 'quote')) return messages
+  // Quote message metadata is an immutable creation snapshot. Read the current
+  // quote status so a refresh never offers acceptance after it was settled.
+  const { data: quotes, error: quoteError } = await supabase.from('quotes')
+    .select('id, status').eq('inquiry_id', inquiryId)
+  if (quoteError) throw new Error(`Failed to fetch quote status: ${quoteError.message}`)
+  const statuses = new Map((quotes ?? []).map(quote => [quote.id, quote.status]))
+  return messages.map(message => {
+    if (message.message_type !== 'quote') return message
+    const metadata = message.metadata && typeof message.metadata === 'object' && !Array.isArray(message.metadata) ? message.metadata : {}
+    const status = typeof metadata.quote_id === 'string' ? statuses.get(metadata.quote_id) : undefined
+    return { ...message, metadata: { ...metadata, status: status ?? 'unavailable' } }
+  })
 }
 
 export async function sendMessage(

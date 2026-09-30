@@ -1,139 +1,20 @@
 'use client'
-
 import { useEffect } from 'react'
-// HAR-667: locale-aware router — bare next/navigation drops the locale segment.
-import { useRouter } from '@/i18n/navigation'
+import { useLocale } from 'next-intl'
+import { useRouter, Link } from '@/i18n/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui/button'
 import { RejectedScreen } from '@/components/onboarding/RejectedScreen'
-
-function ValueCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: string
-  title: string
-  description: string
-}) {
-  return (
-    <div className="flex flex-col gap-3 rounded-lg border border-[#1F1F1F] bg-[#141414] p-5">
-      <span className="text-2xl font-bold text-[#C8A97E]">{icon}</span>
-      <h3 className="font-semibold text-[#F5F0EB]">{title}</h3>
-      <p className="text-sm leading-relaxed text-[#F5F0EB]/60">{description}</p>
-    </div>
-  )
-}
-
-function PendingScreen() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0A0A0A] px-4">
-      <div className="w-full max-w-md space-y-4 text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-[#C8A97E]/30 bg-[#141414]">
-          <span className="text-2xl">&#10003;</span>
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#F5F0EB]">
-          申請審核中
-        </h1>
-        <p className="text-[#F5F0EB]/60">
-          你的刺青師帳號正在審核中，我們會在 1-2 個工作天內完成審核。審核通過後即可使用後台功能。
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function LandingScreen({
-  onLogin,
-}: {
-  onLogin: () => void
-}) {
-  return (
-    <div className="min-h-screen bg-[#0A0A0A]">
-      {/* Hero */}
-      <section className="flex flex-col items-center justify-center px-4 pb-16 pt-20 text-center sm:pt-28">
-        <p className="mb-4 text-sm font-medium tracking-widest text-[#C8A97E] uppercase">
-          for tattoo artists
-        </p>
-        <h1 className="mb-4 text-3xl font-bold tracking-tight text-[#F5F0EB] sm:text-4xl lg:text-5xl">
-          在 InkHunt 展示你的作品
-        </h1>
-        <p className="mb-8 max-w-md text-base leading-relaxed text-[#F5F0EB]/60">
-          免費建立作品集、接收詢價，讓客人主動找到你。
-        </p>
-        <Button
-          onClick={onLogin}
-          className="h-12 rounded-lg px-8 text-base font-semibold text-white"
-          style={{ backgroundColor: '#06C755' }}
-        >
-          LINE 登入開始建立
-        </Button>
-      </section>
-
-      {/* Value props */}
-      <section className="mx-auto max-w-3xl px-4 pb-20">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <ValueCard
-            icon="01"
-            title="免費曝光"
-            description="你的作品會出現在風格搜尋結果中，讓有需求的客人直接找到你。"
-          />
-          <ValueCard
-            icon="02"
-            title="輕鬆接案"
-            description="客人直接填寫需求，帶著預算來找你，省去來回溝通的時間。"
-          />
-          <ValueCard
-            icon="03"
-            title="專業形象"
-            description="一頁式作品集，比 IG 更專業，讓客人一眼看到你的風格與實力。"
-          />
-        </div>
-      </section>
-    </div>
-  )
-}
+import { ArrowRight, Check } from 'lucide-react'
 
 export default function ArtistEntryPage() {
-  const { isLoading, isLoggedIn, artist, loginWithRedirect } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (isLoading) return
-    if (!isLoggedIn) return
-    if (!artist) {
-      router.push('/artist/onboarding')
-      return
-    }
-    if (artist.status === 'active') {
-      router.push('/artist/dashboard')
-    }
-  }, [isLoading, isLoggedIn, artist, router])
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A]">
-        <div className="text-[#F5F0EB]/40">Loading...</div>
-      </div>
-    )
-  }
-
-  if (!isLoggedIn) {
-    return <LandingScreen onLogin={() => loginWithRedirect('/artist')} />
-  }
-
-  if (artist?.status === 'pending') {
-    return <PendingScreen />
-  }
-
-  if (artist?.status === 'suspended') {
-    return <RejectedScreen />
-  }
-
-  // Redirecting (active or no artist record) — show minimal loading
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A]">
-      <div className="text-[#F5F0EB]/40">Loading...</div>
-    </div>
-  )
+ const {isLoading,isLoggedIn,artist,loginWithRedirect}=useAuth();const router=useRouter();const locale=useLocale();const en=locale==='en'
+ useEffect(()=>{if(isLoading||!isLoggedIn)return;if(!artist)router.replace('/artist/onboarding');else if(artist.status==='active')router.replace('/artist/dashboard')},[isLoading,isLoggedIn,artist,router])
+ if(isLoading||(isLoggedIn&&(!artist||artist.status==='active')))return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground" role="status">{en?'Loading your workspace…':'正在準備你的工作室…'}</div>
+ if(artist?.status==='suspended')return <RejectedScreen/>
+ if(artist?.status==='pending')return <div className="mx-auto max-w-xl px-6 py-24 text-center"><Check className="mx-auto mb-6 size-12 rounded-full bg-accent p-3 text-primary"/><h1 className="text-3xl font-semibold">{en?'Your application is under review.':'你的作品，已經送出審核。'}</h1><p className="mt-5 leading-8 text-muted-foreground">{en?'We will check your profile and portfolio before publishing. You can return here to check your application.':'我們會確認你的個人資料與作品，通過審核後，頁面就能公開接受詢問。你可以隨時回到這裡查看狀態。'}</p><Link href="/" className="v2-button secondary mt-8">{en?'Explore InkHunt':'先逛逛 InkHunt'}</Link></div>
+ return <div className="v2-container py-12 lg:py-20">
+  <div className="mx-auto max-w-3xl text-center"><h1 className="text-4xl font-bold leading-[1.3] tracking-tight lg:text-5xl">{en?<>Your art deserves<br/>to be discovered.</>:<>讓懂你作品的人，<br/>找到你。</>}</h1><p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-muted-foreground">{en?'A home for your portfolio and a place to meet future clients. Free to join, free to use, no commission.':'免費建立你的作品頁，讓客人透過搜尋認識你。入駐免費、詢價免費，成交也不抽成。'}</p><button onClick={()=>loginWithRedirect(`/${locale}/artist`)} className="v2-button mt-8">{en?'Start with LINE':'使用 LINE 免費開始'}<ArrowRight size={18}/></button><p className="mt-4 text-xs text-muted-foreground">{en?'You own your work, pricing and client relationships.':'作品、定價與客戶關係，都由你自己掌握。'}</p></div>
+  <div className="mx-auto mt-16 grid max-w-5xl gap-8 sm:grid-cols-3">{(en?[['Your own portfolio','Show your style, healed work, location and reference prices in one shareable page.'],['Better conversations','Clients share their idea, placement, size and budget before you reply.'],['Your way of working','Discuss design and dates directly. Use the payment method you normally use.']]:[['一頁介紹你的風格','展示作品、恢復照、服務地區與參考價格，分享連結就能完整介紹自己。'],['從完整的想法開始','客人先整理題材、部位、大小與預算，你再依需求回覆與報價。'],['保留你的工作方式','設計與預約時間由你確認，付款沿用你習慣的方式，平台不介入抽成。']]).map(([title,description],i)=><section key={title} className="border-t border-border pt-6"><span className="text-sm text-primary">0{i+1}</span><h2 className="mt-4 text-xl font-semibold">{title}</h2><p className="mt-3 text-sm leading-7 text-muted-foreground">{description}</p></section>)}</div>
+  <div className="mx-auto mt-14 max-w-5xl rounded-xl border border-border bg-card p-8"><h2 className="text-lg font-semibold">{en?'How to join':'怎麼開始？'}</h2><p className="mt-3 leading-8 text-muted-foreground">{en?'Sign in with LINE → fill in your profile → upload your own work → submit for review → welcome your first inquiry.':'LINE 登入 → 填寫個人資料 → 上傳你自己的作品 → 送出審核 → 開始接收詢問。'}</p><p className="mt-3 text-sm text-muted-foreground">{en?'Upload only work you created or have permission to publish.':'請上傳你創作或已取得公開授權的作品。'}</p></div>
+ </div>
 }

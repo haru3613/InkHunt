@@ -134,7 +134,7 @@ describe('GET /api/artists/[slug]', () => {
     expect(body.styles).toBeDefined()
   })
 
-  it('strips admin_note and line_user_id from response', async () => {
+  it('strips private identity, location, admin, and template fields from response', async () => {
     const mockSingle = vi.fn().mockResolvedValue({ data: mockArtistRow, error: null })
     const mockEq = vi.fn().mockReturnValue({ single: mockSingle })
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
@@ -150,6 +150,10 @@ describe('GET /api/artists/[slug]', () => {
     expect(body).not.toHaveProperty('admin_note')
     expect(body).not.toHaveProperty('artist_styles')
     expect(body).not.toHaveProperty('line_user_id')
+    expect(body).not.toHaveProperty('address')
+    expect(body).not.toHaveProperty('lat')
+    expect(body).not.toHaveProperty('lng')
+    expect(body).not.toHaveProperty('quote_templates')
   })
 
   it('returns flattened styles array in response', async () => {

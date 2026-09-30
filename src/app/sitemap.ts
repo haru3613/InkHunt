@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.9,
     }),
-    ...['/about', '/privacy', '/terms'].flatMap((path) =>
+    ...['/explore', '/guide', '/artist', '/about', '/privacy', '/terms'].flatMap((path) =>
       localizedEntries(path, {
         lastModified: new Date(),
         changeFrequency: 'monthly',

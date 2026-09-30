@@ -66,7 +66,8 @@ export default function QuoteRequestPage() {
   }, [id, t])
 
   useEffect(() => {
-    fetchData()
+    const timer = setTimeout(() => { void fetchData() }, 0)
+    return () => clearTimeout(timer)
   }, [fetchData])
 
   const handleAcceptQuote = useCallback(
@@ -83,8 +84,7 @@ export default function QuoteRequestPage() {
           return
         }
         // Refetch to get updated statuses
-        setIsLoading(true)
-        await fetchData()
+            await fetchData()
       } catch {
         setError(t('acceptError'))
       }

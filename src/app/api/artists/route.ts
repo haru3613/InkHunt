@@ -52,7 +52,20 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error) {
+      const duplicateLineIdentity = error.code === '23505'
+        && `${error.message} ${error.details ?? ''}`.includes('line_user_id')
+      if (duplicateLineIdentity) {
+        return NextResponse.json(
+          {
+            error: 'Artist profile already exists',
+            code: 'ARTIST_ALREADY_EXISTS',
+          },
+          { status: 409 },
+        )
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
 
     if (resolvedStyleIds.size > 0) {
       await admin

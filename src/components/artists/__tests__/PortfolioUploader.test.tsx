@@ -55,6 +55,27 @@ describe('PortfolioUploader', () => {
       expect(uploadFile).toHaveBeenCalled()
     })
     expect(onUpload).not.toHaveBeenCalled()
+    expect(await screen.findByRole('alert')).toHaveTextContent('x.jpg')
+  })
+
+  it('keeps successful uploads and retries only the failed file', async () => {
+    uploadFile
+      .mockResolvedValueOnce('https://cdn.example/a.jpg')
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce('https://cdn.example/b.jpg')
+    const onUpload = vi.fn()
+    const user = userEvent.setup()
+    render(<PortfolioUploader onUpload={onUpload} />)
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    const first = new File(['a'], 'a.jpg', { type: 'image/jpeg' })
+    const second = new File(['b'], 'b.jpg', { type: 'image/jpeg' })
+    await user.upload(input, [first, second])
+    await screen.findByText('b.jpg')
+    expect(onUpload).toHaveBeenCalledWith(['https://cdn.example/a.jpg'])
+    await user.click(screen.getByRole('button', { name: '重試失敗檔案' }))
+    await waitFor(() => expect(onUpload).toHaveBeenLastCalledWith(['https://cdn.example/b.jpg']))
+    expect(uploadFile).toHaveBeenCalledTimes(3)
+    expect(uploadFile).toHaveBeenLastCalledWith('portfolio', second)
   })
 
   it('disables the button when disabled prop is true', () => {

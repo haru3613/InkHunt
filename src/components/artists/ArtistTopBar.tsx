@@ -53,11 +53,11 @@ export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
   return (
     <>
       {/* Top bar — 48px mobile, 56px desktop */}
-      <header className="sticky top-0 z-40 h-12 lg:h-14 bg-[#0A0A0A] border-b border-[#2A2A2A] flex items-center px-4 lg:px-6">
+      <header className="sticky top-0 z-40 h-[72px] bg-[#F7F6F2] border-b border-[#DEDFD7] flex items-center px-4 lg:px-6">
         {/* Logo */}
         <Link
           href="/"
-          className="font-display text-lg font-bold text-[#C8A97E] hover:text-[#E8D5B5] transition-colors duration-200 shrink-0"
+          className="v2-wordmark text-3xl font-bold text-[#53614A] hover:text-[#3E4B36] transition-colors duration-200 shrink-0"
         >
           InkHunt
         </Link>
@@ -74,14 +74,14 @@ export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
                   'relative px-3 py-1.5 text-sm font-medium uppercase tracking-[0.05em] transition-colors duration-200',
                   'font-sans',
                   isActive
-                    ? 'text-[#F5F0EB]'
-                    : 'text-[#8A8A8A] hover:text-[#F5F0EB]',
+                    ? 'text-[#20241F]'
+                    : 'text-[#8A8A8A] hover:text-[#20241F]',
                 )}
               >
                 {label}
                 {/* Active underline — 2px brass */}
                 {isActive && (
-                  <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-[#C8A97E]" />
+                  <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-[#53614A]" />
                 )}
               </Link>
             )
@@ -96,7 +96,7 @@ export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
           <button
             type="button"
             onClick={() => setDropdownOpen((prev) => !prev)}
-            className="flex items-center gap-2 rounded-sm p-1 hover:bg-[#1C1C1C] transition-colors duration-200"
+            className="flex items-center gap-2 rounded-sm p-1 hover:bg-[#ECEEE7] transition-colors duration-200"
             aria-label="帳號選單"
             aria-expanded={dropdownOpen}
             aria-haspopup="menu"
@@ -111,13 +111,13 @@ export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
                 className="rounded-full object-cover h-8 w-8"
               />
             ) : (
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1C1C1C] border border-[#2A2A2A] text-xs font-medium text-[#C8A97E] font-display">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#ECEEE7] border border-[#DEDFD7] text-xs font-medium text-[#53614A] font-display">
                 {initials}
               </span>
             )}
 
             {/* Display name — desktop only */}
-            <span className="hidden lg:block text-sm text-[#F5F0EB] font-sans max-w-[120px] truncate">
+            <span className="hidden lg:block text-sm text-[#20241F] font-sans max-w-[120px] truncate">
               {artistName ?? '刺青師'}
             </span>
 
@@ -133,21 +133,21 @@ export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
           {dropdownOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-full mt-2 w-44 rounded-sm border border-[#2A2A2A] bg-[#141414] py-1 shadow-xl"
+              className="absolute right-0 top-full mt-2 w-44 rounded-sm border border-[#DEDFD7] bg-[#FFFFFF] py-1 shadow-xl"
             >
               <Link
                 href="/artist/profile"
                 role="menuitem"
-                className="block px-4 py-2 text-sm text-[#F5F0EB] hover:bg-[#1C1C1C] transition-colors duration-200 font-sans"
+                className="block px-4 py-2 text-sm text-[#20241F] hover:bg-[#ECEEE7] transition-colors duration-200 font-sans"
                 onClick={() => setDropdownOpen(false)}
               >
                 個人檔案
               </Link>
-              <div className="my-1 border-t border-[#2A2A2A]" />
+              <div className="my-1 border-t border-[#DEDFD7]" />
               <Link
                 href="/"
                 role="menuitem"
-                className="block px-4 py-2 text-sm text-[#8A8A8A] hover:text-[#F5F0EB] hover:bg-[#1C1C1C] transition-colors duration-200 font-sans"
+                className="block px-4 py-2 text-sm text-[#8A8A8A] hover:text-[#20241F] hover:bg-[#ECEEE7] transition-colors duration-200 font-sans"
                 onClick={() => setDropdownOpen(false)}
               >
                 回到首頁
@@ -158,7 +158,7 @@ export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
       </header>
 
       {/* Mobile bottom tab bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t border-[#2A2A2A] bg-[#0A0A0A]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t border-[#DEDFD7] bg-[#F7F6F2] pb-[env(safe-area-inset-bottom)]">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname.includes(href)
           return (
@@ -167,7 +167,7 @@ export function ArtistTopBar({ artistName, avatarUrl }: ArtistTopBarProps) {
               href={href}
               className={cn(
                 'flex-1 flex flex-col items-center gap-1 py-2 text-xs transition-colors duration-200 font-sans',
-                isActive ? 'text-[#C8A97E]' : 'text-[#8A8A8A]',
+                isActive ? 'text-[#53614A]' : 'text-[#8A8A8A]',
               )}
             >
               <Icon className="h-5 w-5" />

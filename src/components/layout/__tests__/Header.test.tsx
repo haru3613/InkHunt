@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 
 vi.mock('next-intl/server', () => ({
+  getLocale: vi.fn().mockResolvedValue('zh-TW'),
   getTranslations: vi.fn().mockResolvedValue((key: string) => key),
 }))
 
@@ -38,11 +39,10 @@ describe('Header', () => {
   })
 
   it('renders the 成為刺青師 apply CTA linking to the artist entry', async () => {
-    // getTranslations mock echoes the key, so the CTA label is the i18n key.
     const { Header } = await import('../Header')
     const HeaderResolved = await Header()
     render(HeaderResolved)
-    const cta = screen.getByText('becomeArtist')
+    const cta = screen.getByText('刺青師入駐 · 免費')
     expect(cta.closest('a')).toHaveAttribute('href', '/artist')
   })
 
@@ -51,7 +51,7 @@ describe('Header', () => {
     const { Header } = await import('../Header')
     const HeaderResolved = await Header()
     render(HeaderResolved)
-    const favLink = screen.getByText('favorites').closest('a')
+    const favLink = screen.getByText('我的收藏').closest('a')
     expect(favLink).not.toBeNull()
     expect(favLink).toHaveAttribute('href', '/favorites')
   })

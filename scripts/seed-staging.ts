@@ -215,7 +215,8 @@ async function seedFavorites() {
   console.log('\n⭐ Inserting favorites...')
 
   for (const fav of SEED_FAVORITES) {
-    const { error } = await supabase.from('favorites').upsert(fav, {
+    const row: { consumer_line_id: string; artist_id: string } = fav
+    const { error } = await supabase.from('favorites').upsert(row, {
       onConflict: 'consumer_line_id,artist_id',
     })
     if (error) {

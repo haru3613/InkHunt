@@ -52,6 +52,8 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
 
   // Sync form state when artist or selectedStyleIds props change
   useEffect(() => {
+    // The form must track externally loaded profile data after a hard refresh.
+     
     setForm({
       display_name: artist?.display_name ?? '',
       bio: artist?.bio ?? '',
@@ -149,13 +151,13 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
     >
       {/* Avatar upload */}
       <div className="flex flex-col items-start gap-3">
-        <label className="text-sm font-medium text-[#F5F0EB]">頭像</label>
+        <label className="text-sm font-medium text-[#20241F]">頭像</label>
         <button
           type="button"
           onClick={handleAvatarClick}
           disabled={isUploadingAvatar}
           aria-label="上傳頭像"
-          className="group relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A97E] disabled:cursor-not-allowed"
+          className="group relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#53614A] disabled:cursor-not-allowed"
         >
           <ArtistAvatar
             name={avatarDisplayName}
@@ -165,7 +167,7 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
           {/* Hover / loading overlay */}
           <span
             aria-hidden="true"
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 text-[#F5F0EB] text-xs font-medium opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 text-[#20241F] text-xs font-medium opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
           >
             {isUploadingAvatar ? '上傳中...' : '更換照片'}
           </span>
@@ -181,57 +183,57 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="profile-display-name" className="text-sm font-medium text-[#F5F0EB]">顯示名稱 <span className="text-red-500">*</span></label>
-        <Input id="profile-display-name" value={form.display_name} onChange={(e) => handleChange('display_name', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" required />
+        <label htmlFor="profile-display-name" className="text-sm font-medium text-[#20241F]">顯示名稱 <span className="text-red-500">*</span></label>
+        <Input id="profile-display-name" value={form.display_name} onChange={(e) => handleChange('display_name', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F]" required />
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="profile-bio" className="text-sm font-medium text-[#F5F0EB]">自我介紹</label>
-        <Textarea id="profile-bio" value={form.bio} onChange={(e) => handleChange('bio', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB] min-h-24" placeholder="介紹你的風格、經歷、理念..." />
+        <label htmlFor="profile-bio" className="text-sm font-medium text-[#20241F]">自我介紹</label>
+        <Textarea id="profile-bio" value={form.bio} onChange={(e) => handleChange('bio', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F] min-h-24" placeholder="介紹你的風格、經歷、理念..." />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label htmlFor="profile-city" className="text-sm font-medium text-[#F5F0EB]">城市 <span className="text-red-500">*</span></label>
-          <Input id="profile-city" value={form.city} onChange={(e) => handleChange('city', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" placeholder="台北市" required />
+          <label htmlFor="profile-city" className="text-sm font-medium text-[#20241F]">城市 <span className="text-red-500">*</span></label>
+          <Input id="profile-city" value={form.city} onChange={(e) => handleChange('city', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F]" placeholder="台北市" required />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="profile-district" className="text-sm font-medium text-[#F5F0EB]">區域</label>
-          <Input id="profile-district" value={form.district} onChange={(e) => handleChange('district', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" placeholder="大安區" />
+          <label htmlFor="profile-district" className="text-sm font-medium text-[#20241F]">區域</label>
+          <Input id="profile-district" value={form.district} onChange={(e) => handleChange('district', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F]" placeholder="大安區" />
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="profile-address" className="text-sm font-medium text-[#F5F0EB]">地址</label>
-        <Input id="profile-address" value={form.address} onChange={(e) => handleChange('address', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" placeholder="詳細地址（選填）" />
+        <label htmlFor="profile-address" className="text-sm font-medium text-[#20241F]">地址</label>
+        <Input id="profile-address" value={form.address} onChange={(e) => handleChange('address', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F]" placeholder="詳細地址（選填）" />
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="profile-price-min" className="text-sm font-medium text-[#F5F0EB]">價格範圍 (NTD)</label>
+        <label htmlFor="profile-price-min" className="text-sm font-medium text-[#20241F]">價格範圍 (NTD)</label>
         <div className="flex items-center gap-2">
-          <Input id="profile-price-min" type="number" value={form.price_min} onChange={(e) => handleChange('price_min', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" placeholder="最低" min={0} />
-          <span className="text-[#F5F0EB]/40">~</span>
-          <Input aria-label="價格範圍上限" type="number" value={form.price_max} onChange={(e) => handleChange('price_max', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" placeholder="最高" min={0} />
+          <Input id="profile-price-min" type="number" value={form.price_min} onChange={(e) => handleChange('price_min', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F]" placeholder="最低" min={0} />
+          <span className="text-[#20241F]/40">~</span>
+          <Input aria-label="價格範圍上限" type="number" value={form.price_max} onChange={(e) => handleChange('price_max', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F]" placeholder="最高" min={0} />
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="profile-pricing-note" className="text-sm font-medium text-[#F5F0EB]">價格備註</label>
-        <Input id="profile-pricing-note" value={form.pricing_note} onChange={(e) => handleChange('pricing_note', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" placeholder="例：依大小、複雜度報價" />
+        <label htmlFor="profile-pricing-note" className="text-sm font-medium text-[#20241F]">價格備註</label>
+        <Input id="profile-pricing-note" value={form.pricing_note} onChange={(e) => handleChange('pricing_note', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F]" placeholder="例：依大小、複雜度報價" />
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="profile-ig-handle" className="text-sm font-medium text-[#F5F0EB]">Instagram</label>
-        <Input id="profile-ig-handle" value={form.ig_handle} onChange={(e) => handleChange('ig_handle', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB]" placeholder="@yourtattoo" />
+        <label htmlFor="profile-ig-handle" className="text-sm font-medium text-[#20241F]">Instagram</label>
+        <Input id="profile-ig-handle" value={form.ig_handle} onChange={(e) => handleChange('ig_handle', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F]" placeholder="@yourtattoo" />
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="profile-booking-notice" className="text-sm font-medium text-[#F5F0EB]">預約須知</label>
-        <Textarea id="profile-booking-notice" value={form.booking_notice} onChange={(e) => handleChange('booking_notice', e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#F5F0EB] min-h-20" placeholder="預約流程、注意事項..." />
+        <label htmlFor="profile-booking-notice" className="text-sm font-medium text-[#20241F]">預約須知</label>
+        <Textarea id="profile-booking-notice" value={form.booking_notice} onChange={(e) => handleChange('booking_notice', e.target.value)} className="bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F] min-h-20" placeholder="預約流程、注意事項..." />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-[#F5F0EB]">擅長風格</label>
+        <label className="text-sm font-medium text-[#20241F]">擅長風格</label>
         <div className="flex flex-wrap gap-2">
           {styles.map((style) => (
             <button
@@ -240,8 +242,8 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
               onClick={() => toggleStyle(style.id)}
               className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                 form.style_ids.includes(style.id)
-                  ? 'bg-[#C8A97E] text-[#0A0A0A]'
-                  : 'bg-[#1F1F1F] text-[#F5F0EB]/60 hover:text-[#F5F0EB]'
+                  ? 'bg-[#53614A] text-[#F7F6F2]'
+                  : 'bg-[#DEDFD7] text-[#20241F]/60 hover:text-[#20241F]'
               }`}
             >
               {style.name}
@@ -255,7 +257,7 @@ export function ProfileForm({ artist, styles, selectedStyleIds }: ProfileFormPro
           {message.text}
         </div>
       )}
-      <Button type="submit" disabled={isSaving || isUploadingAvatar} className="bg-[#C8A97E] text-[#0A0A0A] hover:bg-[#C8A97E]/90 px-8">
+      <Button type="submit" disabled={isSaving || isUploadingAvatar} className="bg-[#53614A] text-[#F7F6F2] hover:bg-[#53614A]/90 px-8">
         {isSaving ? '儲存中...' : (artist ? '儲存' : '提交申請')}
       </Button>
     </form>

@@ -15,6 +15,8 @@ vi.mock('../MessageBubble', () => ({
   ),
 }))
 
+vi.mock('@/components/booking/BookingPanel', () => ({ BookingPanel: () => null }))
+
 vi.mock('../ChatInput', () => ({
   ChatInput: () => <div data-testid="chat-input" />,
 }))
@@ -24,6 +26,7 @@ vi.mock('../ChatInput', () => ({
 // asserts the wired label; the real messages live in Slice B (HAR-529,
 // `inquiry.budgetRange.*`).
 vi.mock('next-intl', () => ({
+  useLocale: () => 'zh-TW',
   useTranslations: () => (key: string) => {
     const dict: Record<string, string> = {
       'options.under_3k': '3,000 以下',
@@ -54,6 +57,7 @@ describe('ChatWindow', () => {
   it('shows loading state when isLoading is true', () => {
     mockUseRealtimeMessages.mockReturnValue({
       messages: [],
+      error: false,
       isLoading: true,
       sendMessage: makeSendMessage(),
       refetch: vi.fn(),
@@ -99,6 +103,7 @@ describe('ChatWindow', () => {
 
     mockUseRealtimeMessages.mockReturnValue({
       messages,
+      error: false,
       isLoading: false,
       sendMessage: makeSendMessage(),
       refetch: vi.fn(),
@@ -121,6 +126,7 @@ describe('ChatWindow', () => {
   it('renders ChatInput component when not loading', () => {
     mockUseRealtimeMessages.mockReturnValue({
       messages: [],
+      error: false,
       isLoading: false,
       sendMessage: makeSendMessage(),
       refetch: vi.fn(),
@@ -141,6 +147,7 @@ describe('ChatWindow', () => {
   it('calls useRealtimeMessages with the provided inquiryId', () => {
     mockUseRealtimeMessages.mockReturnValue({
       messages: [],
+      error: false,
       isLoading: false,
       sendMessage: makeSendMessage(),
       refetch: vi.fn(),
@@ -160,6 +167,7 @@ describe('ChatWindow', () => {
   it('renders empty message list without error when there are no messages', () => {
     mockUseRealtimeMessages.mockReturnValue({
       messages: [],
+      error: false,
       isLoading: false,
       sendMessage: makeSendMessage(),
       refetch: vi.fn(),
@@ -183,7 +191,8 @@ describe('ChatWindow', () => {
     beforeEach(() => {
       mockUseRealtimeMessages.mockReturnValue({
         messages: [],
-        isLoading: false,
+        error: false,
+      isLoading: false,
         sendMessage: makeSendMessage(),
         refetch: vi.fn(),
       })
@@ -290,7 +299,8 @@ describe('ChatWindow', () => {
     beforeEach(() => {
       mockUseRealtimeMessages.mockReturnValue({
         messages: [],
-        isLoading: false,
+        error: false,
+      isLoading: false,
         sendMessage: makeSendMessage(),
         refetch: vi.fn(),
       })

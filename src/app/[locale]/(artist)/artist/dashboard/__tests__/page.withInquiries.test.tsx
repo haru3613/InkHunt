@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 /**
  * HAR-666: page.statusBanner.test.tsx only exercises the empty-inquiries
@@ -79,12 +80,12 @@ describe('DashboardPage with inquiries', () => {
   it('shows the greeting, stat counts by status, and the recent inquiry list', async () => {
     render(<DashboardPage />)
 
-    expect(await screen.findByText('歡迎回來，刺青師')).toBeInTheDocument()
+    expect(await screen.findByText('今天，從好好回覆開始。')).toBeInTheDocument()
 
     // Stats: 1 pending, 1 quoted, 1 closed (accepted+closed bucket)
     expect(screen.getByText('待處理詢價')).toBeInTheDocument()
     expect(screen.getByText('已報價')).toBeInTheDocument()
-    expect(screen.getByText('已完成')).toBeInTheDocument()
+    expect(screen.getByText('已接受／已關閉')).toBeInTheDocument()
 
     // Recent list renders each inquiry's label (consumer name or anonymous fallback)
     expect(screen.getByText('王小明')).toBeInTheDocument()
@@ -101,5 +102,18 @@ describe('DashboardPage with inquiries', () => {
       'href',
       '/artists/test-artist',
     )
+  })
+
+  it('shows a retry state instead of treating an inquiry fetch failure as empty', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: INQUIRIES }) })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<DashboardPage />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('無法載入詢價')
+    await userEvent.click(screen.getByRole('button', { name: '重新載入' }))
+    await waitFor(() => expect(screen.getByText('王小明')).toBeInTheDocument())
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

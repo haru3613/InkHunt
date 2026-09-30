@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 // HAR-667: locale-aware router — bare next/navigation drops the locale segment.
 import { useRouter } from '@/i18n/navigation'
@@ -43,9 +43,7 @@ export default function NewQuoteRequestPage() {
   const searchParams = useSearchParams()
 
   const artistIdsParam = searchParams.get('artists') ?? ''
-  const artistIds = artistIdsParam
-    ? artistIdsParam.split(',').filter(Boolean)
-    : []
+  const artistIds = useMemo(() => artistIdsParam ? artistIdsParam.split(',').filter(Boolean) : [], [artistIdsParam])
   const artistCount = artistIds.length
 
   const [form, setForm] = useState<FormState>(INITIAL_FORM)

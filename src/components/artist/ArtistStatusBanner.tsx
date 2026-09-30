@@ -13,12 +13,12 @@ export function ArtistStatusBanner({ status }: ArtistStatusBannerProps) {
       : '帳號目前未上線，請更新作品集與個人資料後聯繫我們重新送審。'
 
   return (
-    <div className="mb-6 rounded-lg border border-[#2A2A2A] bg-[#141414] p-4">
+    <div className="mb-6 rounded-lg border border-[#DEDFD7] bg-[#FFFFFF] p-4">
       <div className="flex items-start gap-3">
         <span className={`mt-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLORS[status].bg} ${STATUS_COLORS[status].text}`}>
           {STATUS_LABELS[status]}
         </span>
-        <p className="text-sm leading-relaxed text-[#F5F0EB]/70">{message}</p>
+        <p className="text-sm leading-relaxed text-[#20241F]/70">{message}</p>
       </div>
     </div>
   )

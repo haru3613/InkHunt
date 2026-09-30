@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import { Send, Image, DollarSign } from 'lucide-react'
+import { Send, Image as ImageIcon, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { uploadFile } from '@/lib/upload/client'
@@ -17,25 +17,33 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
   const [text, setText] = useState('')
   // HAR-653: failed sends must be visible, not silent
   const [sendFailed, setSendFailed] = useState(false)
+  const [isSending, setIsSending] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const sendingRef = useRef(false)
+  const isComposingRef = useRef(false)
 
   const handleSend = useCallback(async () => {
     const trimmed = text.trim()
-    if (!trimmed) return
+    if (!trimmed || disabled || sendingRef.current) return
+    sendingRef.current = true
+    setIsSending(true)
     try {
       await onSendMessage('text', trimmed)
       // Only clear the input after successful send
-      setText('')
+      setText((current) => current === trimmed ? '' : current)
       setSendFailed(false)
     } catch {
       // Input remains for user to retry
       setSendFailed(true)
+    } finally {
+      sendingRef.current = false
+      setIsSending(false)
     }
-  }, [text, onSendMessage])
+  }, [disabled, text, onSendMessage])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && !isComposingRef.current) {
         e.preventDefault()
         handleSend()
       }
@@ -65,7 +73,7 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
   )
 
   return (
-    <div className="border-t border-[#2A2A2A] bg-[#0A0A0A] px-4 py-3">
+    <div className="border-t border-[#DEDFD7] bg-[#F7F6F2] px-4 py-3">
     {sendFailed && (
       <p role="alert" className="mx-auto max-w-2xl pb-2 text-[12px] text-[#E25C5C]">
         訊息傳送失敗，請重試
@@ -82,19 +90,21 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
       <Button
         variant="ghost"
         size="icon"
+        aria-label="上傳參考圖片"
         onClick={() => fileInputRef.current?.click()}
-        className="text-[#F5F0EB]/40 hover:text-[#F5F0EB]"
-        disabled={disabled}
+        className="text-[#20241F]/40 hover:text-[#20241F]"
+        disabled={disabled || isSending}
       >
-        <Image className="w-5 h-5" />
+        <ImageIcon className="w-5 h-5" />
       </Button>
       {isArtist && onSendQuote && (
         <Button
           variant="ghost"
           size="icon"
+          aria-label="傳送報價"
           onClick={onSendQuote}
-          className="text-[#C8A97E]/60 hover:text-[#C8A97E]"
-          disabled={disabled}
+          className="text-[#53614A]/60 hover:text-[#53614A]"
+          disabled={disabled || isSending}
         >
           <DollarSign className="w-5 h-5" />
         </Button>
@@ -103,16 +113,19 @@ export function ChatInput({ onSendMessage, onSendQuote, isArtist, disabled }: Ch
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
+        onCompositionStart={() => { isComposingRef.current = true }}
+        onCompositionEnd={() => { isComposingRef.current = false }}
         placeholder="輸入訊息..."
-        className="flex-1 bg-[#141414] border-[#2A2A2A] text-[#F5F0EB] placeholder:text-[#F5F0EB]/30"
+        className="flex-1 bg-[#FFFFFF] border-[#DEDFD7] text-[#20241F] placeholder:text-[#20241F]/30"
         disabled={disabled}
       />
       <Button
         variant="ghost"
         size="icon"
+        aria-label="傳送訊息"
         onClick={handleSend}
-        disabled={disabled || !text.trim()}
-        className="text-[#C8A97E] hover:text-[#C8A97E]/80"
+        disabled={disabled || isSending || !text.trim()}
+        className="text-[#53614A] hover:text-[#53614A]/80"
       >
         <Send className="w-5 h-5" />
       </Button>

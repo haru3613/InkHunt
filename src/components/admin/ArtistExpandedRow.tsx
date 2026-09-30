@@ -53,24 +53,24 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
   const priceText = formatPriceRange(artist.price_min, artist.price_max)
 
   return (
-    <div className="border-b border-[#1F1F1F] border-l-2 border-l-[#C8A97E] bg-[#141414] px-6 py-4">
+    <div className="border-b border-[#DEDFD7] border-l-2 border-l-[#53614A] bg-[#FFFFFF] px-6 py-4">
       <div className="mb-4 flex items-start gap-4">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[#1F1F1F] text-lg text-[#F5F0EB]/60">
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[#DEDFD7] text-lg text-[#20241F]/60">
           {artist.display_name.charAt(0)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-[#F5F0EB]">{artist.display_name}</h3>
+            <h3 className="text-base font-semibold text-[#20241F]">{artist.display_name}</h3>
             <span className={cn('rounded-full px-2 py-0.5 text-[10px]', STATUS_COLORS[status].bg, STATUS_COLORS[status].text)}>
               {STATUS_LABELS[status]}
             </span>
           </div>
           {artist.ig_handle && formatIgUrl(artist.ig_handle) && (
-            <a href={formatIgUrl(artist.ig_handle)!} target="_blank" rel="noopener noreferrer" className="text-sm text-[#C8A97E] hover:underline">
+            <a href={formatIgUrl(artist.ig_handle)!} target="_blank" rel="noopener noreferrer" className="text-sm text-[#53614A] hover:underline">
               @{artist.ig_handle}
             </a>
           )}
-          <div className="mt-1 text-xs text-[#F5F0EB]/40">
+          <div className="mt-1 text-xs text-[#20241F]/40">
             {artist.city}{artist.district ? ` ${artist.district}` : ''}
             {priceText ? ` · ${priceText}` : ''}
             {' · '}申請於 {new Date(artist.created_at).toLocaleDateString('zh-TW')}
@@ -81,21 +81,21 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
       {artist.styles.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-1.5">
           {artist.styles.map((s) => (
-            <span key={s.id} className="rounded bg-[#1F1F1F] px-2 py-0.5 text-xs text-[#F5F0EB]/70">{s.name}</span>
+            <span key={s.id} className="rounded bg-[#DEDFD7] px-2 py-0.5 text-xs text-[#20241F]/70">{s.name}</span>
           ))}
         </div>
       )}
 
       {artist.bio && (
-        <p className="mb-3 text-sm leading-relaxed text-[#F5F0EB]/60">{artist.bio}</p>
+        <p className="mb-3 text-sm leading-relaxed text-[#20241F]/60">{artist.bio}</p>
       )}
 
       {portfolio.length > 0 && (
         <div className="mb-4">
-          <div className="mb-2 text-xs text-[#F5F0EB]/40">作品集 ({portfolio.length} 張)</div>
+          <div className="mb-2 text-xs text-[#20241F]/40">作品集 ({portfolio.length} 張)</div>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
             {portfolio.map((item) => (
-              <div key={item.id} className="relative aspect-square overflow-hidden rounded bg-[#1F1F1F]">
+              <div key={item.id} className="relative aspect-square overflow-hidden rounded bg-[#DEDFD7]">
                 <Image src={item.image_url} alt={item.title ?? 'Portfolio'} fill className="object-cover" sizes="80px" />
               </div>
             ))}
@@ -105,14 +105,14 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
 
       <div className="flex items-end gap-3">
         <div className="flex-1">
-          <label htmlFor={`note-${artist.id}`} className="mb-1 block text-xs text-[#F5F0EB]/40">管理備註 (選填)</label>
+          <label htmlFor={`note-${artist.id}`} className="mb-1 block text-xs text-[#20241F]/40">管理備註 (選填)</label>
           <textarea
             id={`note-${artist.id}`}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="輸入備註..."
             rows={2}
-            className="w-full resize-none rounded-lg border border-[#1F1F1F] bg-[#0A0A0A] px-3 py-2 text-sm text-[#F5F0EB] placeholder:text-[#F5F0EB]/20 focus:border-[#C8A97E]/50 focus:outline-none"
+            className="w-full resize-none rounded-lg border border-[#DEDFD7] bg-[#F7F6F2] px-3 py-2 text-sm text-[#20241F] placeholder:text-[#20241F]/20 focus:border-[#53614A]/50 focus:outline-none"
           />
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
@@ -122,7 +122,7 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
           <div className="flex gap-2">
             {status === 'pending' && (
               <>
-                <button onClick={() => handleAction('active')} disabled={isSubmitting} className="rounded-lg bg-[#4ade80] px-4 py-2 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#4ade80]/80 disabled:opacity-50">核准上線</button>
+                <button onClick={() => handleAction('active')} disabled={isSubmitting} className="rounded-lg bg-[#4ade80] px-4 py-2 text-sm font-semibold text-[#F7F6F2] transition-colors hover:bg-[#4ade80]/80 disabled:opacity-50">核准上線</button>
                 <button onClick={() => handleAction('suspended')} disabled={isSubmitting} className="rounded-lg bg-[#f87171] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#f87171]/80 disabled:opacity-50">拒絕</button>
               </>
             )}
@@ -130,7 +130,7 @@ export function ArtistExpandedRow({ artist, onAction }: ArtistExpandedRowProps) 
               <button onClick={() => handleAction('suspended')} disabled={isSubmitting} className="rounded-lg bg-[#f87171] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#f87171]/80 disabled:opacity-50">停權</button>
             )}
             {status === 'suspended' && (
-              <button onClick={() => handleAction('active')} disabled={isSubmitting} className="rounded-lg bg-[#4ade80] px-4 py-2 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#4ade80]/80 disabled:opacity-50">重新上線</button>
+              <button onClick={() => handleAction('active')} disabled={isSubmitting} className="rounded-lg bg-[#4ade80] px-4 py-2 text-sm font-semibold text-[#F7F6F2] transition-colors hover:bg-[#4ade80]/80 disabled:opacity-50">重新上線</button>
             )}
           </div>
         </div>

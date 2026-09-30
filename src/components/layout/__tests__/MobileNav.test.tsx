@@ -64,16 +64,16 @@ describe('MobileNav', () => {
     expect(activeLabels()).toEqual(['findArtist'])
   })
 
-  it('highlights only the artist destination on /artist', () => {
+  it('does not show an artist portal destination on /artist', () => {
     mockPathname = '/artist'
     render(<MobileNav />)
-    expect(activeLabels()).toEqual(['artist'])
+    expect(activeLabels()).toEqual([])
   })
 
-  it('highlights only the artist destination on a nested /artist route', () => {
+  it('does not show an artist portal destination on a nested /artist route', () => {
     mockPathname = '/artist/dashboard'
     render(<MobileNav />)
-    expect(activeLabels()).toEqual(['artist'])
+    expect(activeLabels()).toEqual([])
   })
 
   it('highlights only home on /', () => {

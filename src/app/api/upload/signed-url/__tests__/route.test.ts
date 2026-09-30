@@ -113,6 +113,7 @@ describe('POST /api/upload/signed-url', () => {
     const signedUrlResult = {
       signed_url: 'https://storage.example.com/portfolio/U_line_user/1234567-abc.jpg?token=xyz',
       public_url: 'https://storage.example.com/portfolio/U_line_user/1234567-abc.jpg',
+      publicUrl: 'https://storage.example.com/portfolio/U_line_user/1234567-abc.jpg',
       path: 'U_line_user/1234567-abc.jpg',
     }
     mockCreateSignedUploadUrl.mockResolvedValue(signedUrlResult)
@@ -128,10 +129,11 @@ describe('POST /api/upload/signed-url', () => {
     expect(response.status).toBe(200)
     expect(body.signed_url).toBe(signedUrlResult.signed_url)
     expect(body.public_url).toBe(signedUrlResult.public_url)
+    expect(body.publicUrl).toBe(signedUrlResult.publicUrl)
     expect(body.path).toBe(signedUrlResult.path)
     expect(mockCreateSignedUploadUrl).toHaveBeenCalledWith(
       'portfolio',
-      'U_line_user',
+      'supabase-uuid',
       'my-tattoo.jpg',
       'image/jpeg',
     )

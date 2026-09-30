@@ -78,6 +78,26 @@ beforeEach(() => {
 })
 
 describe('Artist inquiries page — status filters', () => {
+  it('shows a retry state when inquiry loading fails instead of an empty inbox', async () => {
+    let inquiryCalls = 0
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).startsWith('/api/inquiries')) {
+        inquiryCalls += 1
+        return inquiryCalls === 1
+          ? { ok: false, status: 503, json: async () => ({}) }
+          : { ok: true, json: async () => ({ data: [makeInquiry()] }) }
+      }
+      return { ok: true, json: async () => ({ templates: [] }) }
+    })
+    global.fetch = fetchMock as unknown as typeof fetch
+    render(<InquiriesPage />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('無法載入詢價')
+    await userEvent.click(screen.getByRole('button', { name: '重新載入' }))
+    await waitFor(() => expect(screen.getByText('王小明')).toBeInTheDocument())
+    expect(fetchMock.mock.calls.filter((call) => String(call[0]).startsWith('/api/inquiries'))).toHaveLength(2)
+  })
+
   it('loads all inquiries (no status param) on initial render', async () => {
     const calls = mockFetch(() => [makeInquiry()])
     render(<InquiriesPage />)

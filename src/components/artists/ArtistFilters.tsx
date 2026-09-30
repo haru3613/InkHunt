@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import type { Style } from '@/types/database'
 import {
@@ -73,6 +73,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('artists')
+  const en = useLocale() === 'en'
 
   // HAR-757: option values come from the shared label maps (which the
   // listing.ts allowlists type-check), with each select's clear/default
@@ -126,7 +127,9 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
         params.delete(key)
       }
       params.delete('page')
-      router.push(`/artists?${params.toString()}`)
+      const next = params.toString()
+      if (next === searchParams.toString()) return
+      router.push(next ? `/artists?${next}` : '/artists')
     },
     [router, searchParams],
   )
@@ -135,13 +138,20 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
   // burst of keystrokes only writes the URL once. The box is the user-visible
   // consumer of HAR-455's `?q=` backend parsing.
   const [query, setQuery] = useState(activeQuery ?? '')
-  // Skip the debounce push on the initial mount — the seeded value reflects the
-  // URL already, so writing it back would be a redundant (and looping) push.
-  const isFirstRender = useRef(true)
+  const skipNextDebounce = useRef(false)
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
+    const nextQuery = activeQuery ?? ''
+    setQuery((current) => {
+      if (current === nextQuery) return current
+      skipNextDebounce.current = true
+      return nextQuery
+    })
+  }, [activeQuery])
+
+  useEffect(() => {
+    if (skipNextDebounce.current) {
+      skipNextDebounce.current = false
       return
     }
     const handle = setTimeout(() => {
@@ -224,7 +234,7 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
         className="w-full sm:max-w-xs"
       />
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <FilterSelect
           items={cityItems}
           defaultValue={activeCity ?? 'all'}
@@ -232,32 +242,22 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
           label={t('selectRegion')}
         />
         <FilterSelect
-          items={sortItems}
-          defaultValue={activeSort ?? 'featured'}
-          onValueChange={handleSortChange}
-          label={t('sortLabel')}
-        />
-        <FilterSelect
           items={budgetItems}
           defaultValue={activeBudget ?? 'any'}
           onValueChange={handleBudgetChange}
           label={t('budgetLabel')}
         />
-        <FilterSelect
-          items={serviceItems}
-          defaultValue={activeService ?? 'all'}
-          onValueChange={handleServiceChange}
-          label={t('serviceLabel')}
-        />
-        <FilterSelect
-          items={ratingItems}
-          defaultValue={activeMinRating ?? 'all'}
-          onValueChange={handleMinRatingChange}
-          label={t('ratingLabel')}
-        />
+      </div>
 
-        {/* HAR-481: boolean healed-work facet — a toggle, not a Select. */}
-        <button
+      <details className="rounded-lg border border-border bg-card px-3 py-2">
+        <summary className="min-h-11 cursor-pointer content-center text-sm font-medium text-foreground">
+          {en ? 'More filters' : '更多篩選'}
+        </summary>
+        <div className="flex flex-wrap gap-3 pt-3">
+          <FilterSelect items={sortItems} defaultValue={activeSort ?? 'featured'} onValueChange={handleSortChange} label={t('sortLabel')} />
+          <FilterSelect items={serviceItems} defaultValue={activeService ?? 'all'} onValueChange={handleServiceChange} label={t('serviceLabel')} />
+          <FilterSelect items={ratingItems} defaultValue={activeMinRating ?? 'all'} onValueChange={handleMinRatingChange} label={t('ratingLabel')} />
+          <button
           type="button"
           onClick={handleHealedToggle}
           aria-pressed={activeHealed}
@@ -268,10 +268,10 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
           }`}
         >
           {t('filterHealed')}
-        </button>
+          </button>
 
         {/* HAR-585: boolean new-artist freshness facet — a toggle, mirrors healed. */}
-        <button
+          <button
           type="button"
           onClick={handleNewToggle}
           aria-pressed={activeNew}
@@ -282,8 +282,9 @@ export function ArtistFilters({ styles }: ArtistFiltersProps) {
           }`}
         >
           {t('filterNew')}
-        </button>
-      </div>
+          </button>
+        </div>
+      </details>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
         <button

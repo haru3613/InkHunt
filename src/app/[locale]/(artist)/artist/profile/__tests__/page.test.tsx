@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+vi.mock('@/i18n/navigation', () => ({ Link: ({href, children}: {href:string;children:React.ReactNode}) => <a href={href}>{children}</a> }))
+
 
 /**
  * Page-layer test for ProfilePage (HAR-666): this page had 0% coverage.
@@ -67,7 +69,7 @@ describe('ProfilePage', () => {
   it('loads styles + the artist by slug + templates, then renders the edit form', async () => {
     mockFetchByUrl({
       '/api/styles': { ok: true, json: { data: [{ id: 1, name: 'Traditional' }] } },
-      '/api/artists/test-artist': { ok: true, json: ARTIST },
+      '/api/artists/me/profile': { ok: true, json: ARTIST },
       '/api/artists/me/templates': { ok: true, json: { templates: [] } },
     })
 
@@ -87,23 +89,23 @@ describe('ProfilePage', () => {
 
     render(<ProfilePage />)
 
-    await waitFor(() => expect(screen.getByText('申請成為刺青師')).toBeInTheDocument())
-    expect(fetchMock.mock.calls.some(([u]) => String(u).startsWith('/api/artists/test-artist'))).toBe(false)
+    await waitFor(() => expect(screen.getByText('先建立你的刺青師資料')).toBeInTheDocument())
+    expect(fetchMock.mock.calls.some(([u]) => String(u).startsWith('/api/artists/me/profile'))).toBe(false)
   })
 
-  it('degrades to the apply heading (no crash) when a load fetch rejects', async () => {
+  it('shows a recoverable error instead of a blank application form when loading fails', async () => {
     const fetchMock = vi.fn(() => Promise.reject(new Error('network down')))
     vi.stubGlobal('fetch', fetchMock)
 
     render(<ProfilePage />)
 
-    await waitFor(() => expect(screen.getByText('申請成為刺青師')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('無法載入個人資料'))
   })
 
   it('PUTs the locally-added template and shows the saved state on success', async () => {
     mockFetchByUrl({
       '/api/styles': { ok: true, json: { data: [] } },
-      '/api/artists/test-artist': { ok: true, json: ARTIST },
+      '/api/artists/me/profile': { ok: true, json: ARTIST },
       '/api/artists/me/templates': { ok: true, json: { templates: [] } },
     })
     const user = userEvent.setup()
@@ -142,7 +144,7 @@ describe('ProfilePage', () => {
   it('propagates a non-ok PUT response as a thrown error for the child to display', async () => {
     mockFetchByUrl({
       '/api/styles': { ok: true, json: { data: [] } },
-      '/api/artists/test-artist': { ok: true, json: ARTIST },
+      '/api/artists/me/profile': { ok: true, json: ARTIST },
       '/api/artists/me/templates': { ok: true, json: { templates: [] } },
     })
     const user = userEvent.setup()

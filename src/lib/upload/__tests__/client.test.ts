@@ -94,7 +94,18 @@ describe('uploadFile', () => {
       bucket: 'inquiries',
       filename: 'test.jpg',
       content_type: 'image/jpeg',
+      file_size: file.size,
     })
+  })
+
+  it('rejects inquiry images above the private bucket 5 MB limit', async () => {
+    const file = new File(['content'], 'large.jpg', { type: 'image/jpeg' })
+    Object.defineProperty(file, 'size', { value: 5 * 1024 * 1024 + 1 })
+
+    await expect(uploadFile('inquiries', file)).rejects.toThrow(
+      'File too large: large.jpg (max 5 MB)',
+    )
+    expect(global.fetch).not.toHaveBeenCalled()
   })
 
   it('uses correct Content-Type header in PUT request', async () => {

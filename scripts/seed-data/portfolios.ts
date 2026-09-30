@@ -17,7 +17,7 @@ export interface SeedPortfolioItem {
 }
 
 // Deterministic UUIDs for portfolio items
-const pid = (n: number) => `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbb${String(n).padStart(3, '0')}`
+const pid = (n: number) => `bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbb${String(n).padStart(3, '0')}`
 
 const picsum = (seed: string, w = 800, h = 600) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`

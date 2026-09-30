@@ -1,3 +1,4 @@
+import { deferLineNotification } from '@/lib/line/defer'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import { getInquiryById } from '@/lib/supabase/queries/inquiries'
@@ -6,8 +7,9 @@ import {
   createQuote,
   respondToQuote,
   markQuoteViewed,
+  QuoteMutationError,
 } from '@/lib/supabase/queries/quotes'
-import { pushQuoteNotification } from '@/lib/line/messaging'
+import { pushQuoteNotification, pushQuoteResponseNotification } from '@/lib/line/messaging'
 
 export async function POST(
   request: NextRequest,
@@ -46,12 +48,21 @@ export async function POST(
       validation.data,
     )
 
-    pushQuoteNotification(inquiry, quote, artist.display_name).catch(() => {
-      // LINE notification failure is non-fatal
-    })
+    deferLineNotification(() => pushQuoteNotification(inquiry, quote, artist.display_name))
 
     return NextResponse.json({ quote, message }, { status: 201 })
   } catch (err) {
+    if (err instanceof QuoteMutationError) {
+      const status = err.code === 'INQUIRY_NOT_FOUND'
+        ? 404
+        : err.code === 'QUOTE_FORBIDDEN'
+          ? 403
+          : 409
+      return NextResponse.json(
+        { error: err.message, code: err.code },
+        { status },
+      )
+    }
     return handleApiError(err)
   }
 }
@@ -84,22 +95,24 @@ export async function PATCH(
       return NextResponse.json(quote ?? { status: 'already_viewed' })
     }
 
-    try {
-      const quote = await respondToQuote(quote_id, id, status, inquiry.status)
-      if (!quote) {
-        return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
-      }
-      return NextResponse.json(quote)
-    } catch (err) {
-      if (err instanceof Error && err.message === 'Inquiry is already accepted') {
-        return NextResponse.json(
-          { error: 'Inquiry is already accepted' },
-          { status: 409 },
-        )
-      }
-      throw err
+    const quote = await respondToQuote(quote_id, id, status, user.lineUserId)
+    if (!quote) {
+      return NextResponse.json({ error: 'Quote not found', code: 'QUOTE_NOT_FOUND' }, { status: 404 })
     }
+    deferLineNotification(() => pushQuoteResponseNotification(inquiry, status, user.displayName))
+    return NextResponse.json(quote)
   } catch (err) {
+    if (err instanceof QuoteMutationError) {
+      const status = err.code === 'INQUIRY_NOT_FOUND'
+        ? 404
+        : err.code === 'QUOTE_FORBIDDEN'
+          ? 403
+          : 409
+      return NextResponse.json(
+        { error: err.message, code: err.code },
+        { status },
+      )
+    }
     return handleApiError(err)
   }
 }

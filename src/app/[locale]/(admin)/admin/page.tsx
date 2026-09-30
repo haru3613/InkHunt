@@ -35,7 +35,8 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    fetchArtists()
+    const timer = setTimeout(() => { void fetchArtists() }, 0)
+    return () => clearTimeout(timer)
   }, [fetchArtists])
 
   const handleStatusChange = useCallback(
@@ -80,18 +81,18 @@ export default function AdminPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-[#F5F0EB]/40">
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F6F2] text-[#20241F]/40">
         Loading...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F7F6F2] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl font-bold text-[#C8A97E]">InkHunt Admin</h1>
-          <div className="flex gap-1 rounded-lg bg-[#141414] p-1">
+          <h1 className="text-xl font-bold text-[#53614A]">InkHunt Admin</h1>
+          <div className="flex gap-1 rounded-lg bg-[#FFFFFF] p-1">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -99,8 +100,8 @@ export default function AdminPage() {
                 className={cn(
                   'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                   statusFilter === tab.key
-                    ? 'bg-[#C8A97E]/20 text-[#C8A97E]'
-                    : 'text-[#F5F0EB]/40 hover:text-[#F5F0EB]/60',
+                    ? 'bg-[#53614A]/20 text-[#53614A]'
+                    : 'text-[#20241F]/40 hover:text-[#20241F]/60',
                 )}
               >
                 {tab.label}
@@ -120,7 +121,7 @@ export default function AdminPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜尋刺青師名稱或城市..."
-            className="w-full rounded-lg border border-[#1F1F1F] bg-[#141414] px-4 py-2.5 text-sm text-[#F5F0EB] placeholder:text-[#F5F0EB]/20 focus:border-[#C8A97E]/50 focus:outline-none"
+            className="w-full rounded-lg border border-[#DEDFD7] bg-[#FFFFFF] px-4 py-2.5 text-sm text-[#20241F] placeholder:text-[#20241F]/20 focus:border-[#53614A]/50 focus:outline-none"
           />
         </div>
 

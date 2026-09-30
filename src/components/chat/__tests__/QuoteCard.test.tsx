@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QuoteCard } from '../QuoteCard'
 
+vi.mock('next-intl', () => ({ useLocale: () => 'zh-TW' }))
+
 describe('QuoteCard', () => {
   it('renders the price formatted with NT$ and thousands separator', () => {
     render(
@@ -57,8 +59,8 @@ describe('QuoteCard', () => {
         isOwn={false}
       />,
     )
-    expect(screen.getByRole('button', { name: '接受' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '拒絕' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '接受報價' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '婉拒' })).toBeInTheDocument()
   })
 
   it('does not show action buttons when isOwn is true', () => {
@@ -89,7 +91,7 @@ describe('QuoteCard', () => {
         onAction={onAction}
       />,
     )
-    await userEvent.click(screen.getByRole('button', { name: '接受' }))
+    await userEvent.click(screen.getByRole('button', { name: '接受報價' }))
     expect(onAction).toHaveBeenCalledWith('q-42', 'accepted')
   })
 
@@ -106,7 +108,7 @@ describe('QuoteCard', () => {
         onAction={onAction}
       />,
     )
-    await userEvent.click(screen.getByRole('button', { name: '拒絕' }))
+    await userEvent.click(screen.getByRole('button', { name: '婉拒' }))
     expect(onAction).toHaveBeenCalledWith('q-42', 'rejected')
   })
 
@@ -122,6 +124,30 @@ describe('QuoteCard', () => {
       />,
     )
     expect(screen.queryByRole('button', { name: '接受' })).not.toBeInTheDocument()
-    expect(screen.getByText('已接受')).toBeInTheDocument()
+    expect(screen.getByText(/已接受報價，請在聊天室安排預約日期/)).toBeInTheDocument()
+  })
+
+  it('allows an unread viewed quote to be accepted', () => {
+    render(<QuoteCard quoteId="q-viewed" price={5000} note={null} availableDates={null} status="viewed" isOwn={false} onAction={vi.fn()} />)
+    expect(screen.getByRole('button', { name: '接受報價' })).toBeInTheDocument()
+  })
+
+  it('disables both actions synchronously while a request is in flight', async () => {
+    let resolveAction!: () => void
+    const onAction = vi.fn(() => new Promise<void>((resolve) => { resolveAction = resolve }))
+    render(<QuoteCard quoteId="q-pending" price={5000} note={null} availableDates={null} status="sent" isOwn={false} onAction={onAction} />)
+    await userEvent.click(screen.getByRole('button', { name: '接受報價' }))
+    await userEvent.click(screen.getByRole('button', { name: '婉拒' }))
+    expect(onAction).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: '處理中…' })).toBeDisabled()
+    resolveAction()
+  })
+
+  it('keeps actions available and reports an action error for retry', async () => {
+    const onAction = vi.fn().mockRejectedValue(new Error('offline'))
+    render(<QuoteCard quoteId="q-retry" price={5000} note={null} availableDates={null} status="sent" isOwn={false} onAction={onAction} />)
+    await userEvent.click(screen.getByRole('button', { name: '接受報價' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('更新報價狀態失敗')
+    expect(screen.getByRole('button', { name: '接受報價' })).not.toBeDisabled()
   })
 })

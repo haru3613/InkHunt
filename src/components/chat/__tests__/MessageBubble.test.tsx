@@ -74,6 +74,17 @@ describe('MessageBubble', () => {
     expect(img).toHaveAttribute('alt', 'Shared image')
   })
 
+  it('renders legacy inquiry Storage images through the protected app endpoint', async () => {
+    const { MessageBubble } = await import('../MessageBubble')
+    const path = 'U-legacy/123e4567-e89b-12d3-a456-426614174000.jpg'
+    const message = makeMessage({
+      message_type: 'image',
+      content: `https://project.supabase.co/storage/v1/object/public/inquiries/${path}`,
+    })
+    render(<MessageBubble message={message} isOwn={false} />)
+    expect(screen.getByRole('img')).toHaveAttribute('src', `/api/media/inquiries/${path}`)
+  })
+
   it('renders system message with centred layout', async () => {
     const { MessageBubble } = await import('../MessageBubble')
     const message = makeMessage({

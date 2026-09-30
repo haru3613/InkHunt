@@ -273,6 +273,7 @@ async function getArtistLineId(artistId: string): Promise<string | null> {
 export async function pushNewInquiryNotification(
   inquiry: Inquiry,
 ): Promise<void> {
+  if (process.env.INKHUNT_LOCAL_TEST === 'true' && process.env.NEXT_PUBLIC_SUPABASE_URL === 'http://127.0.0.1:56321') return
   try {
     const lineUserId = await getArtistLineId(inquiry.artist_id)
     if (!lineUserId) return
@@ -291,6 +292,7 @@ export async function pushReviewOutcomeNotification(
   artist: Artist,
   outcome: 'approved' | 'rejected',
 ): Promise<void> {
+  if (process.env.INKHUNT_LOCAL_TEST === 'true' && process.env.NEXT_PUBLIC_SUPABASE_URL === 'http://127.0.0.1:56321') return
   try {
     const lineUserId = artist.line_user_id
     if (!lineUserId) return
@@ -310,6 +312,7 @@ export async function pushQuoteNotification(
   quote: Quote,
   artistName: string,
 ): Promise<void> {
+  if (process.env.INKHUNT_LOCAL_TEST === 'true' && process.env.NEXT_PUBLIC_SUPABASE_URL === 'http://127.0.0.1:56321') return
   try {
     const client = getMessagingClient()
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
@@ -335,6 +338,7 @@ export async function pushNewMessageNotification(
   senderType: 'consumer' | 'artist',
   senderName: string,
 ): Promise<void> {
+  if (process.env.INKHUNT_LOCAL_TEST === 'true' && process.env.NEXT_PUBLIC_SUPABASE_URL === 'http://127.0.0.1:56321') return
   try {
     let recipientLineId: string
     if (senderType === 'consumer') {
@@ -358,5 +362,26 @@ export async function pushNewMessageNotification(
   } catch (err) {
     // LINE notification failure is non-fatal — do not propagate to API handler
     reportError('line-messaging', err, { fn: 'pushNewMessageNotification' })
+  }
+}
+
+/** Tell the artist that a consumer responded, so appointment coordination can start. */
+export async function pushQuoteResponseNotification(
+  inquiry: Inquiry,
+  status: 'accepted' | 'rejected',
+  consumerName: string,
+): Promise<void> {
+  if (process.env.INKHUNT_LOCAL_TEST === 'true' && process.env.NEXT_PUBLIC_SUPABASE_URL === 'http://127.0.0.1:56321') return
+  try {
+    const recipient = await getArtistLineId(inquiry.artist_id)
+    if (!recipient) return
+    const action = status === 'accepted' ? '已接受報價，可以開始安排預約時間。' : '已婉拒這次報價。'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!
+    await getMessagingClient().pushMessage({
+      to: recipient,
+      messages: [{ type: 'text', text: `${consumerName}${action}\n${baseUrl}/zh-TW/artist/inquiries` }],
+    })
+  } catch (error) {
+    reportError('line-messaging', error, { fn: 'pushQuoteResponseNotification' })
   }
 }

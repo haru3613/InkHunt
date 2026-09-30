@@ -19,10 +19,14 @@ vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: vi.fn(),
 }))
 
-vi.mock('@/lib/line/auth', () => ({
-  exchangeCodeForTokens: vi.fn(),
-  getLineProfile: vi.fn(),
-}))
+vi.mock('@/lib/line/auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/line/auth')>()
+  return {
+    ...actual,
+    exchangeCodeForTokens: vi.fn(),
+    getLineProfile: vi.fn(),
+  }
+})
 
 const mockReportError = vi.fn()
 vi.mock('@/lib/observability', () => ({
@@ -53,18 +57,31 @@ function makeRequest(searchParams: Record<string, string>): NextRequest {
 function makeSupabaseClient({
   signInWithIdTokenError = null as unknown,
   signInWithPasswordError = null as unknown,
+  getUserError = null as unknown,
   getUserResult = {
     id: 'user-uuid-123',
     app_metadata: { line_user_id: 'Utest123', provider: 'line' },
     user_metadata: {},
   } as Record<string, unknown> | null,
+  getUserResultAfterRefresh = getUserResult as Record<string, unknown> | null,
+  refreshSessionError = null as unknown,
 } = {}) {
+  const getUser = vi.fn()
+    .mockResolvedValueOnce({
+      data: { user: getUserResult },
+      error: getUserError,
+    })
+    .mockResolvedValue({
+      data: { user: getUserResultAfterRefresh },
+      error: null,
+    })
+
   return {
     auth: {
       signInWithIdToken: vi.fn().mockResolvedValue({ error: signInWithIdTokenError }),
       signInWithPassword: vi.fn().mockResolvedValue({ error: signInWithPasswordError }),
-      getUser: vi.fn().mockResolvedValue({ data: { user: getUserResult } }),
-      refreshSession: vi.fn().mockResolvedValue({ error: null }),
+      getUser,
+      refreshSession: vi.fn().mockResolvedValue({ error: refreshSessionError }),
     },
   }
 }
@@ -72,10 +89,12 @@ function makeSupabaseClient({
 function makeAdminClient({
   createUserError = null as unknown,
   updateUserError = null as unknown,
+  listUsersError = null as unknown,
   listUsersPage1 = [{ id: 'user-uuid-123', email: 'utest@line.inkhunt.local' }] as Array<{ id: string; email: string }>,
 } = {}) {
   const listUsers = vi.fn().mockResolvedValue({
     data: { users: listUsersPage1 },
+    error: listUsersError,
   })
   return {
     auth: {
@@ -130,7 +149,7 @@ describe('GET /api/auth/line/callback', () => {
     mockGetLineProfile.mockResolvedValue(PROFILE)
   })
 
-  // ---------- early error returns (no cookie access needed) ------------------
+  // ---------- early error returns preserve the intended destination ------------------
 
   it('redirects with auth_error param when error query param is present', async () => {
     const request = makeRequest({ error: 'access_denied', code: 'some-code', state: 'some-state' })
@@ -140,7 +159,7 @@ describe('GET /api/auth/line/callback', () => {
     expect(response.status).toBe(307)
     // NextResponse.redirect normalises bare origins by appending a trailing slash.
     expect(response.headers.get('location')).toBe(
-      `${BASE_URL}/?auth_error=access_denied`,
+      `${BASE_URL}/?auth_error=access_denied&returnTo=%2Fartist%2Fdashboard`,
     )
   })
 
@@ -151,7 +170,7 @@ describe('GET /api/auth/line/callback', () => {
 
     expect(response.status).toBe(307)
     expect(response.headers.get('location')).toBe(
-      `${BASE_URL}/?auth_error=no_code`,
+      `${BASE_URL}/?auth_error=no_code&returnTo=%2Fartist%2Fdashboard`,
     )
   })
 
@@ -225,6 +244,11 @@ describe('GET /api/auth/line/callback', () => {
       getUserResult: {
         id: 'user-uuid-123',
         app_metadata: { provider: 'email' },
+        user_metadata: {},
+      },
+      getUserResultAfterRefresh: {
+        id: 'user-uuid-123',
+        app_metadata: { provider: 'line', line_user_id: PROFILE.userId },
         user_metadata: {},
       },
     })
@@ -401,6 +425,108 @@ describe('GET /api/auth/line/callback', () => {
     expect(response.headers.get('location')).toBe(`${BASE_URL}/`)
   })
 
+  it.each([
+    ['an absolute URL', 'https://evil.example/steal'],
+    ['a protocol-relative URL', '//evil.example/steal'],
+    ['a backslash path', '/\\evil.example/steal'],
+    ['an encoded protocol-relative path', '/%2F%2Fevil.example/steal'],
+    ['a double-encoded protocol-relative path', '/%252F%252Fevil.example/steal'],
+  ])('redirects to "/" when the redirect cookie contains %s', async (_label, redirect) => {
+    mockCookieGet.mockImplementation((name: string) => {
+      const values: Record<string, string> = {
+        line_auth_state: 'valid-state-123',
+        line_auth_nonce: 'valid-nonce-456',
+        line_auth_redirect: redirect,
+      }
+      return values[name] ? { value: values[name] } : undefined
+    })
+
+    const supabase = makeSupabaseClient({ signInWithIdTokenError: null })
+    mockCreateServerClient.mockResolvedValue(supabase as never)
+
+    const response = await GET(
+      makeRequest({ code: 'auth-code-abc', state: 'valid-state-123' }),
+    )
+
+    expect(response.headers.get('location')).toBe(`${BASE_URL}/`)
+  })
+
+  it('fails without clearing auth cookies when retry password sign-in fails', async () => {
+    const retryError = { message: 'Invalid login credentials' }
+    const signInWithPassword = vi.fn()
+      .mockResolvedValueOnce({ error: { message: 'User not found' } })
+      .mockResolvedValueOnce({ error: retryError })
+    const supabase = {
+      auth: {
+        signInWithIdToken: vi.fn().mockResolvedValue({ error: { message: 'OIDC failed' } }),
+        signInWithPassword,
+        getUser: vi.fn(),
+        refreshSession: vi.fn(),
+      },
+    }
+    mockCreateServerClient.mockResolvedValue(supabase as never)
+    mockCreateAdminClient.mockReturnValue(makeAdminClient() as never)
+
+    const response = await GET(
+      makeRequest({ code: 'auth-code-abc', state: 'valid-state-123' }),
+    )
+
+    expect(response.headers.get('location')).toBe(
+      `${BASE_URL}/?auth_error=callback_failed&returnTo=%2Fartist%2Fdashboard`,
+    )
+    expect(supabase.auth.getUser).not.toHaveBeenCalled()
+    expect(mockCookieDelete).not.toHaveBeenCalled()
+    expect(mockReportError).toHaveBeenCalledWith(
+      'line-callback',
+      expect.objectContaining({
+        message: 'LINE password sign-in failed after account provisioning',
+      }),
+    )
+  })
+
+  it('fails without clearing auth cookies when identity metadata persistence fails', async () => {
+    const supabase = makeSupabaseClient({
+      signInWithIdTokenError: { message: 'OIDC not configured' },
+      signInWithPasswordError: null,
+      getUserResult: {
+        id: 'user-uuid-123',
+        app_metadata: { provider: 'email' },
+        user_metadata: {},
+      },
+    })
+    mockCreateServerClient.mockResolvedValue(supabase as never)
+    mockCreateAdminClient.mockReturnValue(
+      makeAdminClient({ updateUserError: { message: 'Database unavailable' } }) as never,
+    )
+
+    const response = await GET(
+      makeRequest({ code: 'auth-code-abc', state: 'valid-state-123' }),
+    )
+
+    expect(response.headers.get('location')).toBe(
+      `${BASE_URL}/?auth_error=callback_failed&returnTo=%2Fartist%2Fdashboard`,
+    )
+    expect(supabase.auth.refreshSession).not.toHaveBeenCalled()
+    expect(mockCookieDelete).not.toHaveBeenCalled()
+  })
+
+  it('fails without clearing auth cookies when sign-in returns no verified user', async () => {
+    const supabase = makeSupabaseClient({
+      signInWithIdTokenError: null,
+      getUserResult: null,
+    })
+    mockCreateServerClient.mockResolvedValue(supabase as never)
+
+    const response = await GET(
+      makeRequest({ code: 'auth-code-abc', state: 'valid-state-123' }),
+    )
+
+    expect(response.headers.get('location')).toBe(
+      `${BASE_URL}/?auth_error=callback_failed&returnTo=%2Fartist%2Fdashboard`,
+    )
+    expect(mockCookieDelete).not.toHaveBeenCalled()
+  })
+
   // ---------- exception handling ---------------------------------------------
 
   it('redirects with callback_failed when exchangeCodeForTokens throws, and reports the error', async () => {
@@ -413,7 +539,7 @@ describe('GET /api/auth/line/callback', () => {
 
     expect(response.status).toBe(307)
     expect(response.headers.get('location')).toBe(
-      `${BASE_URL}/?auth_error=callback_failed`,
+      `${BASE_URL}/?auth_error=callback_failed&returnTo=%2Fartist%2Fdashboard`,
     )
     expect(mockReportError).toHaveBeenCalledWith('line-callback', netError)
   })
@@ -430,7 +556,7 @@ describe('GET /api/auth/line/callback', () => {
 
     expect(response.status).toBe(307)
     expect(response.headers.get('location')).toBe(
-      `${BASE_URL}/?auth_error=callback_failed`,
+      `${BASE_URL}/?auth_error=callback_failed&returnTo=%2Fartist%2Fdashboard`,
     )
   })
 })

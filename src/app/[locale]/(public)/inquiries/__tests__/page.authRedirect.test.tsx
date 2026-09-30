@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 
 /**
  * HAR-666: page.test.tsx (if present) covers the logged-in list; this file
@@ -9,9 +9,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 
 vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
+  Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }))
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'zh-TW',
   useTranslations: () => (key: string) => key,
 }))
 
@@ -33,12 +35,13 @@ describe('ConsumerInquiriesPage — logged-out redirect', () => {
     loginWithRedirect.mockClear()
   })
 
-  it('sends a logged-out visitor to LINE login and back to /inquiries, without fetching', async () => {
+  it('shows a guest login prompt without automatically redirecting or fetching', async () => {
     render(<ConsumerInquiriesPage />)
 
-    await waitFor(() => expect(loginWithRedirect).toHaveBeenCalledWith('/inquiries'))
+    expect(loginWithRedirect).not.toHaveBeenCalled()
     expect(global.fetch).not.toHaveBeenCalled()
-    // Stays on the loading screen — never renders the inquiry list while redirecting.
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('把想法與回覆，留在同一個地方。')).toBeInTheDocument()
+    await screen.getByRole('button', { name: '使用 LINE 登入' }).click()
+    expect(loginWithRedirect).toHaveBeenCalledWith('/zh-TW/inquiries')
   })
 })
