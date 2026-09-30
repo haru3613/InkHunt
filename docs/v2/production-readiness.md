@@ -18,7 +18,7 @@ This audit distinguishes the implemented MVP from unverified hosted behavior. Th
 
 - Vercel account access succeeds; project `inkhunt` is linked to the existing production domain `ink-hunt.com`.
 - The production alias currently points to a READY deployment created on 2026-07-16, not this v2 candidate.
-- Production variables have real values; Supabase public styles returned HTTP 200.
+- Production variables have real values; Supabase public styles returned HTTP 200. The existing production OAuth entry returned 307 to access.line.me with callback `https://ink-hunt.com/api/auth/line/callback`; LINE accepted the authorization entry (302, no redirect-URI error). This does not prove a v2 authenticated cookie round trip.
 - Production LINE Messaging token returned HTTP 200 from the read-only bot-info endpoint. Its public account name is **Grok Bot**. This is a usable token, not evidence that this is the intended InkHunt Official Account or the same LINE provider as Login.
 - Preview variables exist by name but their retrieved values are empty; there is no configured working remote preview database.
 - Supabase has no development branch for this project.

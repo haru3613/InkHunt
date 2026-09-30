@@ -50,3 +50,14 @@ Image inspection used `view_image` on both `concepts/discovery.png` and the late
 ## Rollout boundary
 
 This is a locally verified MVP candidate, not a production deployment receipt. Remaining environment verification: real LINE OAuth callback and cookie round trip, real LINE push delivery, production Storage/RLS after migrations, deployed domain/canonical URLs, Google indexing/Search Console. No external publishing, production DB mutation, or real user notification occurred in this task. Google ranking and supply acquisition are not guaranteed by technical SEO.
+
+
+## Follow-up production audit (2026-10-01)
+
+- Source checkpoint: `e38a262` (full v2 MVP plus notification/OAuth reliability fixes).
+- Updated full suite: 185 files / 1,706 tests passed; 88.22% statements, 80.30% branches, 81.52% functions, 90.09% lines. Original thresholds retained.
+- `npx eslint src/`: zero errors; `npx tsc --noEmit`: passed.
+- `npm run test:v2:acceptance`: 48 real HTTP checks passed again after deferred notifications were introduced; local pushes remained disabled.
+- A detached build-only worktree at `e38a262`, with no `.env.local` and exactly the public placeholder variables from CI, passed plain `npm run build` using Turbopack (8.5s compilation, 58 static pages). Missing database-secret reads degraded as designed; real database behavior is covered by the separate HTTP/SQL receipts. The build-only worktree was removed after completion.
+- Browser inspected `?auth_error=callback_failed&returnTo=...`: readable recovery alert and retry link preserve the original inquiry destination. Screenshot: `evidence/auth-recovery.jpg`.
+- Actual cloud checks and unresolved account/destination decisions are in `production-readiness.md`. No v2 deployment or production migration is claimed.
