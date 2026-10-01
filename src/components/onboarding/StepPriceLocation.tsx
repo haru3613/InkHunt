@@ -46,7 +46,25 @@ export function StepPriceLocation({
   onNext,
   onBack,
 }: StepPriceLocationProps) {
-  const isValid = data.cities.length > 0 && data.price_min.trim().length > 0
+  const minValue = Number(data.price_min)
+  const maxValue = Number(data.price_max)
+  const hasMinimumPrice = data.price_min.trim().length > 0
+  const hasMaximumPrice = data.price_max.trim().length > 0
+  const isMinimumPriceValid = hasMinimumPrice && Number.isFinite(minValue) && minValue >= 0
+  const isMaximumPriceValid = !hasMaximumPrice || (Number.isFinite(maxValue) && maxValue >= 0)
+  const isPriceRangeValid = isMinimumPriceValid && isMaximumPriceValid && (!hasMaximumPrice || maxValue >= minValue)
+  const isValid = data.cities.length > 0 && isPriceRangeValid
+  const validationMessage = data.cities.length === 0
+    ? '請至少選擇 1 個服務城市。'
+    : !hasMinimumPrice
+      ? '請填寫參考起始價格。'
+      : !isMinimumPriceValid
+        ? '參考起始價格必須是 0 或以上的有效數字。'
+        : !isMaximumPriceValid
+          ? '參考上限必須是 0 或以上的有效數字。'
+          : maxValue < minValue
+            ? '參考上限不能低於參考起始價格。'
+            : null
 
   function toggleCity(city: string) {
     const next = data.cities.includes(city)
@@ -71,12 +89,12 @@ export function StepPriceLocation({
 
       <div className="space-y-4">
         {/* Cities — multi-select grouped */}
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-[#20241F]/70">
+        <fieldset className="space-y-3">
+          <legend className="block text-sm font-medium text-[#20241F]/70">
             服務城市
             <span className="ml-1 text-[#53614A]">*</span>
             <span className="ml-2 text-xs text-[#20241F]/30">可複選</span>
-          </label>
+          </legend>
 
           {CITY_GROUPS.map((group) => (
             <div key={group.label}>
@@ -88,6 +106,7 @@ export function StepPriceLocation({
                   <button
                     key={city}
                     type="button"
+                    aria-pressed={data.cities.includes(city)}
                     onClick={() => toggleCity(city)}
                     className={`rounded-lg border py-2 text-sm font-medium transition-colors ${
                       data.cities.includes(city)
@@ -101,15 +120,16 @@ export function StepPriceLocation({
               </div>
             </div>
           ))}
-        </div>
+        </fieldset>
 
         {/* District */}
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-[#20241F]/70">
+          <label htmlFor="artist-district" className="block text-sm font-medium text-[#20241F]/70">
             區域
             <span className="ml-1.5 text-xs text-[#20241F]/30">選填</span>
           </label>
           <Input
+            id="artist-district"
             value={data.district}
             onChange={(e) => handleField('district', e.target.value)}
             placeholder="例：大安區、信義區"
@@ -119,41 +139,54 @@ export function StepPriceLocation({
 
         {/* Price range */}
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-[#20241F]/70">
-            最低收費（NT$）
+          <label htmlFor="artist-price-min" className="block text-sm font-medium text-[#20241F]/70">
+            參考起始價格（NT$）
             <span className="ml-1 text-[#53614A]">*</span>
           </label>
           <Input
+            id="artist-price-min"
             type="number"
             min={0}
             value={data.price_min}
             onChange={(e) => handleField('price_min', e.target.value)}
             placeholder="例：2000"
+            aria-describedby="artist-price-min-hint"
+            aria-invalid={hasMinimumPrice && !isMinimumPriceValid}
             className="h-10 border-[#DEDFD7] bg-[#FFFFFF] text-[#20241F] placeholder:text-[#20241F]/25 focus-visible:border-[#53614A] focus-visible:ring-[#53614A]/20"
           />
+          <p id="artist-price-min-hint" className="text-xs text-[#20241F]/45">
+            顯示給客人的最低參考費用；實際報價可依設計內容另行確認。
+          </p>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-[#20241F]/70">
-            最高收費（NT$）
+          <label htmlFor="artist-price-max" className="block text-sm font-medium text-[#20241F]/70">
+            參考上限（NT$）
             <span className="ml-1.5 text-xs text-[#20241F]/30">選填</span>
           </label>
           <Input
+            id="artist-price-max"
             type="number"
             min={0}
             value={data.price_max}
             onChange={(e) => handleField('price_max', e.target.value)}
             placeholder="例：8000"
+            aria-describedby="artist-price-max-hint"
+            aria-invalid={hasMaximumPrice && (!isMaximumPriceValid || maxValue < minValue)}
             className="h-10 border-[#DEDFD7] bg-[#FFFFFF] text-[#20241F] placeholder:text-[#20241F]/25 focus-visible:border-[#53614A] focus-visible:ring-[#53614A]/20"
           />
+          <p id="artist-price-max-hint" className="text-xs text-[#20241F]/45">
+            選填；若填寫，金額不可低於參考起始價格。
+          </p>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-[#20241F]/70">
+          <label htmlFor="artist-pricing-note" className="block text-sm font-medium text-[#20241F]/70">
             收費說明
             <span className="ml-1.5 text-xs text-[#20241F]/30">選填</span>
           </label>
           <Textarea
+            id="artist-pricing-note"
             value={data.pricing_note}
             onChange={(e) => handleField('pricing_note', e.target.value)}
             placeholder="例：依據尺寸及複雜度另議，實際報價面談後確認..."
@@ -162,6 +195,12 @@ export function StepPriceLocation({
           />
         </div>
       </div>
+
+      {validationMessage && (
+        <p id="price-location-validation" role="status" className="text-sm text-[#20241F]/55">
+          {validationMessage} 修正後即可繼續。
+        </p>
+      )}
 
       <div className="flex gap-3">
         <Button
@@ -174,6 +213,7 @@ export function StepPriceLocation({
         <Button
           onClick={onNext}
           disabled={!isValid}
+          aria-describedby={validationMessage ? 'price-location-validation' : undefined}
           className="h-11 flex-[2] rounded-lg bg-[#53614A] text-[#F7F6F2] font-semibold hover:bg-[#53614A]/90 disabled:opacity-40"
         >
           下一步

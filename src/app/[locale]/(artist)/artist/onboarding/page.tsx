@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 
 export default function OnboardingPage() {
-  const { isLoading, isLoggedIn, user, artist } = useAuth()
+  const { isLoading, isLoggedIn, user, artist, refetch } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function OnboardingPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F7F6F2]">
-        <div className="text-[#20241F]/40">Loading...</div>
+        <div role="status" className="text-muted-foreground">正在確認登入狀態…</div>
       </div>
     )
   }
@@ -35,18 +35,30 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F6F2] px-4 py-10">
-      <div className="mx-auto w-full max-w-lg">
+      <div className="mx-auto w-full max-w-2xl">
         {/* Header */}
         <div className="mb-8">
-          <p className="mb-1 text-xs font-medium tracking-widest text-[#53614A] uppercase">
-            InkHunt
-          </p>
           <h1 className="text-2xl font-bold tracking-tight text-[#20241F]">
             建立你的刺青師檔案
           </h1>
         </div>
 
-        <OnboardingWizard prefillName={user?.displayName ?? ''} />
+        {user && <OnboardingWizard
+          key={user.lineUserId}
+          accountId={user.lineUserId}
+          prefillName={user.displayName}
+          initialArtistSlug={artist?.slug}
+          recoverExistingProfile={async () => {
+            const refreshed = await refetch()
+            return refreshed?.user?.lineUserId === user.lineUserId ? refreshed.artist?.slug ?? null : null
+          }}
+          onProfileCreated={async (slug) => {
+            const refreshed = await refetch()
+            if (refreshed?.user?.lineUserId !== user.lineUserId || refreshed.artist?.slug !== slug) {
+              throw new Error('申請已保存，但帳號狀態尚未更新。請重試同步，不會重複建立申請。')
+            }
+          }}
+        />}
       </div>
     </div>
   )

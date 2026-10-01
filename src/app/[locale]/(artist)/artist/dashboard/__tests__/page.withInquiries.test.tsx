@@ -62,8 +62,11 @@ describe('Artist calendar dashboard', () => {
     const user = userEvent.setup()
     render(<DashboardPage />)
     await screen.findByText('47')
-    await user.click(screen.getByRole('combobox', { name: '統計期間' }))
-    await user.click(screen.getByRole('option', { name: '近 7 天' }))
+    // Open through the native keyboard interaction, independent of JSDOM
+    // pointer geometry, then wait for Base UI's asynchronous portal mount.
+    screen.getByRole('combobox', { name: '統計期間' }).focus()
+    await user.keyboard('{ArrowDown}')
+    await user.click(await screen.findByRole('option', { name: '近 7 天' }))
     await waitFor(() => expect(fetch).toHaveBeenLastCalledWith(expect.stringContaining('&period=7'), expect.anything()))
   })
 

@@ -27,7 +27,7 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   loginWithRedirect: (redirectTo?: string) => void
   logout: () => Promise<void>
-  refetch: () => Promise<void>
+  refetch: () => Promise<AuthState | null>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const mountedRef = useRef(false)
   const generationRef = useRef(0)
   const requestIdRef = useRef(0)
-  const automaticRequestRef = useRef<Promise<void> | null>(null)
+  const automaticRequestRef = useRef<Promise<AuthState | null> | null>(null)
   const controllersRef = useRef(new Set<AbortController>())
   const sessionIdentityRef = useRef<string | null | undefined>(undefined)
 
@@ -84,27 +84,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const request = (async () => {
       try {
         const response = await fetch('/api/auth/me', { signal: controller.signal })
-        if (!canApply()) return
+        if (!canApply()) return null
 
         if (!response.ok) {
           setState(LOGGED_OUT)
-          return
+          return null
         }
 
         const data = await response.json()
-        if (!canApply()) return
+        if (!canApply()) return null
 
-        setState({
+        const nextState: AuthState = {
           isLoading: false,
           isLoggedIn: !!data.user,
           isAdmin: Boolean(data.isAdmin),
           user: data.user,
           artist: data.artist,
-        })
+        }
+        setState(nextState)
+        return nextState
       } catch {
         if (canApply()) {
           setState(LOGGED_OUT)
         }
+        return null
       } finally {
         controllersRef.current.delete(controller)
       }

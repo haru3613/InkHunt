@@ -2,18 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { StepStylePicker, StylePickerData } from '../StepStylePicker'
 
-vi.mock('../StyleCard', () => ({
-  StyleCard: ({ name, selected, onToggle }: { name: string; selected: boolean; onToggle: () => void }) => (
-    <button
-      data-testid={`style-${name}`}
-      data-selected={selected}
-      onClick={onToggle}
-    >
-      {name}
-    </button>
-  ),
-}))
-
 const emptyData: StylePickerData = {
   selectedSlugs: [],
   canCover: false,
@@ -62,10 +50,10 @@ describe('StepStylePicker', () => {
       <StepStylePicker data={emptyData} onChange={onChange} onNext={onNext} onBack={onBack} />,
     )
 
-    expect(screen.getByTestId('style-極簡線條')).toBeInTheDocument()
-    expect(screen.getByTestId('style-日式傳統')).toBeInTheDocument()
-    expect(screen.getByTestId('style-水彩')).toBeInTheDocument()
-    expect(screen.getByTestId('style-字體')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /極簡線條/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /日式傳統/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /水彩/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /字體/ })).toBeInTheDocument()
   })
 
   it('clicking style calls onChange with updated selectedSlugs', () => {
@@ -73,7 +61,7 @@ describe('StepStylePicker', () => {
       <StepStylePicker data={emptyData} onChange={onChange} onNext={onNext} onBack={onBack} />,
     )
 
-    fireEvent.click(screen.getByTestId('style-極簡線條'))
+    fireEvent.click(screen.getByRole('button', { name: /極簡線條/ }))
 
     expect(onChange).toHaveBeenCalledOnce()
     expect(onChange).toHaveBeenCalledWith({
@@ -93,7 +81,7 @@ describe('StepStylePicker', () => {
     )
 
     // Clicking a 6th style (anime is not in fiveSelectedData) should not call onChange
-    fireEvent.click(screen.getByTestId('style-漫畫/動漫'))
+    fireEvent.click(screen.getByRole('button', { name: /漫畫\/動漫/ }))
 
     expect(onChange).not.toHaveBeenCalled()
   })
@@ -109,7 +97,7 @@ describe('StepStylePicker', () => {
     )
 
     // fine-line is already selected — clicking it again should deselect
-    fireEvent.click(screen.getByTestId('style-極簡線條'))
+    fireEvent.click(screen.getByRole('button', { name: /極簡線條/ }))
 
     expect(onChange).toHaveBeenCalledOnce()
     expect(onChange).toHaveBeenCalledWith({
@@ -213,7 +201,7 @@ describe('StepStylePicker', () => {
     expect(onBack).toHaveBeenCalledOnce()
   })
 
-  it('selected style card receives data-selected=true', () => {
+  it('selected style control exposes pressed state', () => {
     render(
       <StepStylePicker
         data={oneSelectedData}
@@ -223,11 +211,10 @@ describe('StepStylePicker', () => {
       />,
     )
 
-    const selectedCard = screen.getByTestId('style-極簡線條')
-    expect(selectedCard).toHaveAttribute('data-selected', 'true')
+    expect(screen.getByRole('button', { name: /極簡線條/ })).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('unselected style card receives data-selected=false', () => {
+  it('unselected style control exposes pressed state', () => {
     render(
       <StepStylePicker
         data={oneSelectedData}
@@ -237,7 +224,16 @@ describe('StepStylePicker', () => {
       />,
     )
 
-    const unselectedCard = screen.getByTestId('style-微刺青')
-    expect(unselectedCard).toHaveAttribute('data-selected', 'false')
+    expect(screen.getByRole('button', { name: /微刺青/ })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('communicates the one-to-five selection requirement when disabled', () => {
+    render(
+      <StepStylePicker data={emptyData} onChange={onChange} onNext={onNext} onBack={onBack} />,
+    )
+
+    expect(screen.getByText('請選擇 1 至 5 個最能代表你的風格。')).toBeInTheDocument()
+    expect(screen.getByText('已選 0 / 5 個')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('請至少選擇 1 個刺青風格，才能繼續。')
   })
 })

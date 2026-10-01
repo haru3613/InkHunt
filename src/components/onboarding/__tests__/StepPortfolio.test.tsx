@@ -74,8 +74,8 @@ describe('StepPortfolio', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: '送出審核' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '跳過' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '送出申請，稍後補作品' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '先送出資料，稍後補作品' })).not.toBeInTheDocument()
   })
 
   it('submit button shows 送出審核 when not submitting', () => {
@@ -90,7 +90,7 @@ describe('StepPortfolio', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: '送出審核' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '送出申請，稍後補作品' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '送出中...' })).not.toBeInTheDocument()
   })
 
@@ -107,7 +107,7 @@ describe('StepPortfolio', () => {
     )
 
     expect(screen.getByRole('button', { name: '送出中...' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '送出審核' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '送出申請，稍後補作品' })).not.toBeInTheDocument()
   })
 
   it('all buttons disabled when isSubmitting', () => {
@@ -123,7 +123,7 @@ describe('StepPortfolio', () => {
     )
 
     expect(screen.getByRole('button', { name: '送出中...' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: '跳過' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: '先送出資料，稍後補作品' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '上一步' })).toBeDisabled()
   })
 
@@ -139,8 +139,8 @@ describe('StepPortfolio', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: '送出審核' })).not.toBeDisabled()
-    expect(screen.getByRole('button', { name: '跳過' })).not.toBeDisabled()
+    expect(screen.getByRole('button', { name: '送出申請，稍後補作品' })).not.toBeDisabled()
+    expect(screen.queryByRole('button', { name: '先送出資料，稍後補作品' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '上一步' })).not.toBeDisabled()
   })
 
@@ -156,7 +156,7 @@ describe('StepPortfolio', () => {
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '送出審核' }))
+    fireEvent.click(screen.getByRole('button', { name: '送出申請，稍後補作品' }))
 
     expect(onSubmit).toHaveBeenCalledOnce()
   })
@@ -164,7 +164,7 @@ describe('StepPortfolio', () => {
   it('calls onSkip when skip button clicked', () => {
     render(
       <StepPortfolio
-        data={emptyData}
+        data={{ files: [makeImageFile('work.jpg')], previewUrls: ['blob:work'] }}
         onChange={onChange}
         onSubmit={onSubmit}
         onSkip={onSkip}
@@ -173,7 +173,7 @@ describe('StepPortfolio', () => {
       />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '跳過' }))
+    fireEvent.click(screen.getByRole('button', { name: '先送出資料，稍後補作品' }))
 
     expect(onSkip).toHaveBeenCalledOnce()
   })
@@ -288,7 +288,7 @@ describe('StepPortfolio', () => {
     )
 
     // Remove buttons are rendered as ✕ characters
-    const removeButtons = screen.getAllByRole('button', { name: /\u2715/ })
+    const removeButtons = screen.getAllByRole('button', { name: /移除作品/ })
     // Click first remove button (index 0)
     fireEvent.click(removeButtons[0])
 
@@ -312,7 +312,7 @@ describe('StepPortfolio', () => {
       />,
     )
 
-    const removeButtons = screen.getAllByRole('button', { name: /\u2715/ })
+    const removeButtons = screen.getAllByRole('button', { name: /移除作品/ })
     // Click second remove button (index 1)
     fireEvent.click(removeButtons[1])
 
