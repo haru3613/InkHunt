@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
+import { Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export interface PortfolioData {
@@ -16,6 +17,8 @@ interface StepPortfolioProps {
   onSkip: () => void
   onBack: () => void
   isSubmitting: boolean
+  profileCreated?: boolean
+  managePreviews?: boolean
 }
 
 export function StepPortfolio({
@@ -25,22 +28,31 @@ export function StepPortfolio({
   onSkip,
   onBack,
   isSubmitting,
+  profileCreated = false,
+  managePreviews = false,
 }: StepPortfolioProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
   const addFiles = useCallback(
     (incoming: File[]) => {
-      const imageFiles = incoming.filter((f) => f.type.startsWith('image/'))
+      if (isSubmitting || profileCreated) return
+      const imageFiles = incoming.filter(f => ['image/jpeg', 'image/png', 'image/webp'].includes(f.type) && f.size <= 10 * 1024 * 1024)
+      if (imageFiles.length !== incoming.length) setFileError('請選擇 JPG、PNG 或 WebP，每張不超過 10 MB。')
+      else setFileError(null)
       if (imageFiles.length === 0) return
-
-      const newUrls = imageFiles.map((f) => URL.createObjectURL(f))
+      if (data.files.length + imageFiles.length > 20 || [...data.files, ...imageFiles].reduce((sum, f) => sum + f.size, 0) > 100 * 1024 * 1024) {
+        setFileError('最多選擇 20 張作品，合計不超過 100 MB。')
+        return
+      }
+      const newUrls = managePreviews ? [] : imageFiles.map(f => URL.createObjectURL(f))
       onChange({
         files: [...data.files, ...imageFiles],
         previewUrls: [...data.previewUrls, ...newUrls],
       })
     },
-    [data, onChange],
+    [data, onChange, isSubmitting, profileCreated, managePreviews],
   )
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -56,7 +68,8 @@ export function StepPortfolio({
   }
 
   function removeFile(index: number) {
-    URL.revokeObjectURL(data.previewUrls[index])
+    if (isSubmitting || profileCreated) return
+    if (!managePreviews) URL.revokeObjectURL(data.previewUrls[index])
     onChange({
       files: data.files.filter((_, i) => i !== index),
       previewUrls: data.previewUrls.filter((_, i) => i !== index),
@@ -67,14 +80,17 @@ export function StepPortfolio({
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-[#20241F]">上傳作品集</h2>
-        <p className="mt-1 text-sm text-[#20241F]/50">
+        <p className="mt-1 text-sm text-muted-foreground">
           讓客人看到你的風格，請上傳你創作或已取得授權的作品。
         </p>
       </div>
 
+      <p className="text-sm text-muted-foreground">可以先送出基本資料，稍後再補作品。未通過審核前，檔案不會公開接案。</p>
+      {fileError && <p role="alert" className="text-sm text-destructive">{fileError}</p>}
       {/* Drop zone */}
       <button
         type="button"
+        disabled={isSubmitting || profileCreated}
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
         onDragLeave={() => setIsDragging(false)}
@@ -85,30 +101,20 @@ export function StepPortfolio({
             : 'border-[#DEDFD7] bg-[#FFFFFF] hover:border-[#3A3A3A]'
         }`}
       >
-        <svg
-          width="36"
-          height="36"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          className="text-[#20241F]/20"
-        >
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
+        <Upload aria-hidden="true" className="size-9 text-muted-foreground" />
         <div className="text-center">
-          <p className="text-sm font-medium text-[#20241F]/60">
+          <p className="text-sm font-medium text-muted-foreground">
             拖拉圖片至此，或{' '}
             <span className="text-[#53614A]">點擊選擇</span>
           </p>
-          <p className="mt-1 text-xs text-[#20241F]/30">JPG、PNG、WebP，最大 10 MB</p>
+          <p className="mt-1 text-xs text-muted-foreground">JPG、PNG、WebP，最大 10 MB</p>
         </div>
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
+          aria-label="選擇作品圖片"
+          disabled={isSubmitting || profileCreated}
           multiple
           className="hidden"
           onChange={handleInputChange}
@@ -129,41 +135,44 @@ export function StepPortfolio({
               />
               <button
                 type="button"
+                aria-label={`移除作品 ${i + 1}`}
+                disabled={isSubmitting || profileCreated}
                 onClick={() => removeFile(i)}
-                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] text-white hover:bg-black"
+                className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-[10px] text-white hover:bg-black"
               >
-                &#x2715;
+                <X aria-hidden="true" className="size-4" />
               </button>
             </div>
           ))}
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button
           onClick={onBack}
           variant="outline"
-          disabled={isSubmitting}
-          className="h-11 flex-1 rounded-lg border-[#DEDFD7] bg-transparent text-[#20241F]/60 hover:bg-[#FFFFFF] hover:text-[#20241F]"
+          disabled={isSubmitting || profileCreated}
+          className="h-11 flex-1 rounded-lg border-[#DEDFD7] bg-transparent text-muted-foreground hover:bg-[#FFFFFF] hover:text-[#20241F]"
         >
           上一步
         </Button>
-        <Button
+        {data.files.length > 0 && <Button
           onClick={onSkip}
           variant="outline"
           disabled={isSubmitting}
-          className="h-11 flex-1 rounded-lg border-[#DEDFD7] bg-transparent text-[#20241F]/60 hover:bg-[#FFFFFF] hover:text-[#20241F]"
+          className="min-h-11 h-auto w-full whitespace-normal rounded-lg border-border px-3 py-2 text-muted-foreground sm:order-last"
         >
-          跳過
-        </Button>
+          先送出資料，稍後補作品
+        </Button>}
         <Button
           onClick={onSubmit}
           disabled={isSubmitting}
           className="h-11 flex-[2] rounded-lg bg-[#53614A] text-[#F7F6F2] font-semibold hover:bg-[#53614A]/90 disabled:opacity-40"
         >
-          {isSubmitting ? '送出中...' : '送出審核'}
+          {isSubmitting ? '送出中...' : profileCreated ? '重試完成申請' : data.files.length === 0 ? '送出申請，稍後補作品' : '送出審核'}
         </Button>
       </div>
+      {data.files.length > 0 && <p className="text-xs text-muted-foreground">選擇「稍後補作品」不會上傳目前尚未完成的圖片。</p>}
     </div>
   )
 }

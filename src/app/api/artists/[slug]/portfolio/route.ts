@@ -5,6 +5,7 @@ import { revalidateArtistPage } from '@/lib/cache/revalidate-artist'
 import { z } from 'zod'
 
 const createPortfolioSchema = z.object({
+  idempotency_key: z.uuid().optional(),
   image_url: z.string().url(),
   thumbnail_url: z.string().url().nullable().optional(),
   title: z.string().max(200).nullable().optional(),
@@ -49,6 +50,11 @@ export async function POST(
   try {
     const user = await requireAuth()
     const { slug } = await params
+    const artist = await getArtistForUser(user.lineUserId)
+    if (!artist || artist.slug !== slug) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const body = await request.json()
     const validation = createPortfolioSchema.safeParse(body)
 
@@ -59,12 +65,22 @@ export async function POST(
       )
     }
 
-    const artist = await getArtistForUser(user.lineUserId)
-    if (!artist || artist.slug !== slug) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const admin = createAdminClient()
+    const { idempotency_key: idempotencyKey, ...portfolioData } = validation.data
+
+    if (idempotencyKey) {
+      const { data: existingItem, error: existingItemError } = await admin
+        .from('portfolio_items')
+        .select('*')
+        .eq('id', idempotencyKey)
+        .eq('artist_id', artist.id)
+        .maybeSingle()
+
+      if (existingItemError) {
+        return NextResponse.json({ error: existingItemError.message }, { status: 500 })
+      }
+      if (existingItem) return NextResponse.json(existingItem)
+    }
 
     const { data: maxOrder } = await admin
       .from('portfolio_items')
@@ -79,14 +95,39 @@ export async function POST(
     const { data, error } = await admin
       .from('portfolio_items')
       .insert({
+        ...(idempotencyKey ? { id: idempotencyKey } : {}),
         artist_id: artist.id,
-        ...validation.data,
+        ...portfolioData,
         sort_order: nextOrder,
       })
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error) {
+      if (idempotencyKey && error.code === '23505') {
+        // A retry can race the original request between the lookup and insert.
+        // Scope the recovery lookup to the authenticated artist so a UUID owned
+        // by another artist can never be returned as the retry result.
+        const { data: existingItem, error: existingItemError } = await admin
+          .from('portfolio_items')
+          .select('*')
+          .eq('id', idempotencyKey)
+          .eq('artist_id', artist.id)
+          .maybeSingle()
+
+        if (existingItemError) {
+          return NextResponse.json({ error: existingItemError.message }, { status: 500 })
+        }
+        if (existingItem) return NextResponse.json(existingItem)
+
+        return NextResponse.json(
+          { error: 'Idempotency key conflict', code: 'IDEMPOTENCY_KEY_CONFLICT' },
+          { status: 409 },
+        )
+      }
+
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
 
     // HAR-664: the public slug page is statically cached — revalidate it so
     // a new portfolio item is visible without waiting for the next deploy.

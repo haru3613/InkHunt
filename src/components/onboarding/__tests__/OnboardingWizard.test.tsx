@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 
+const { draftStore, draftStorageFails } = vi.hoisted(() => ({ draftStore: new Map(), draftStorageFails: { value: false } }))
+vi.mock('@/lib/onboarding-draft', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/onboarding-draft')>(),
+  acquireOnboardingDraftLock: vi.fn(async () => () => {}),
+  readOnboardingDraft: vi.fn(async (accountId: string) => { if (draftStorageFails.value) throw new Error('storage blocked'); return draftStore.get(accountId) ?? null }),
+  writeOnboardingDraft: vi.fn(async (accountId: string, draft: unknown) => { if (draftStorageFails.value) throw new Error('storage blocked'); draftStore.set(accountId, draft) }),
+  clearOnboardingDraft: vi.fn(async (accountId: string) => { draftStore.delete(accountId) }),
+}))
+
 // --- Module mocks (must be hoisted before component import) ---
 
 vi.mock('@/lib/upload/client', () => ({ uploadFile: vi.fn() }))
@@ -42,6 +51,7 @@ vi.mock('../StepBasicInfo', () => ({
 }))
 
 vi.mock('../StepStylePicker', () => ({
+  onboardingStyleLabel: (slug: string) => slug,
   StepStylePicker: ({
     onChange,
     onNext,
@@ -179,6 +189,134 @@ async function navigateToStep4() {
 describe('OnboardingWizard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    draftStore.clear()
+    draftStorageFails.value = false
+  })
+
+  it('refreshes the artist identity before exposing the completion actions', async () => {
+    let finishRefresh!: () => void
+    const onProfileCreated = vi.fn(() => new Promise<void>(resolve => { finishRefresh = resolve }))
+    mockFetch.mockResolvedValue(makeOkResponse({ slug: 'new-artist' }))
+    render(<OnboardingWizard onProfileCreated={onProfileCreated} />)
+    await navigateToStep4()
+    fireEvent.click(screen.getByTestId('submit'))
+    await waitFor(() => expect(onProfileCreated).toHaveBeenCalledWith('new-artist'))
+    expect(screen.queryByTestId('complete')).not.toBeInTheDocument()
+    await act(async () => finishRefresh())
+    expect(await screen.findByTestId('complete')).toBeInTheDocument()
+  })
+
+  it('restores the fourth step, text and selected image bytes after a remount', async () => {
+    const first = render(<OnboardingWizard accountId="account-a" prefillName="A" />)
+    await screen.findByTestId('name-input')
+    fireEvent.change(screen.getByTestId('name-input'), { target: { value: '恢復我的草稿' } })
+    fireEvent.click(screen.getByTestId('next-1'))
+    fireEvent.click(screen.getByTestId('select-style'))
+    fireEvent.click(screen.getByTestId('next-2'))
+    fireEvent.click(screen.getByTestId('set-city'))
+    fireEvent.click(screen.getByTestId('next-3'))
+    fireEvent.click(screen.getByTestId('add-portfolio-file'))
+    await waitFor(() => expect(draftStore.get('account-a')?.files).toHaveLength(1))
+    first.unmount()
+    render(<OnboardingWizard accountId="account-a" prefillName="A" />)
+    expect(await screen.findByTestId('step-portfolio')).toBeInTheDocument()
+    expect(screen.getByTestId('progress')).toHaveTextContent('4/4')
+    expect(draftStore.get('account-a').files[0].size).toBe(5)
+    fireEvent.click(screen.getByTestId('back-4'))
+    fireEvent.click(screen.getByTestId('back-3'))
+    fireEvent.click(screen.getByTestId('back-2'))
+    expect(screen.getByTestId('name-input')).toHaveValue('恢復我的草稿')
+  })
+
+  it('never restores another account draft', async () => {
+    const first = render(<OnboardingWizard accountId="account-a" />)
+    await screen.findByTestId('name-input')
+    fireEvent.change(screen.getByTestId('name-input'), { target: { value: 'A private draft' } })
+    await waitFor(() => expect(draftStore.get('account-a')?.basicInfo.display_name).toBe('A private draft'))
+    first.unmount()
+    render(<OnboardingWizard accountId="account-b" prefillName="B" />)
+    expect(await screen.findByTestId('name-input')).toHaveValue('B')
+  })
+
+  it('warns when browser storage is unavailable without blocking input', async () => {
+    draftStorageFails.value = true
+    render(<OnboardingWizard accountId="blocked-storage" />)
+    expect(await screen.findByTestId('name-input')).toBeInTheDocument()
+    expect(await screen.findByText(/目前無法保存草稿/)).toBeInTheDocument()
+  })
+
+  it('clears the draft only after the profile and identity refresh complete', async () => {
+    mockFetch.mockResolvedValue(makeOkResponse({ slug: 'created' }))
+    render(<OnboardingWizard accountId="account-a" onProfileCreated={async () => {}} />)
+    await screen.findByTestId('name-input')
+    await navigateToStep4()
+    await waitFor(() => expect(draftStore.has('account-a')).toBe(true))
+    fireEvent.click(screen.getByTestId('submit'))
+    expect(await screen.findByTestId('complete')).toBeInTheDocument()
+    expect(draftStore.has('account-a')).toBe(false)
+  })
+
+  it('retries identity sync without creating a second application', async () => {
+    mockFetch.mockResolvedValue(makeOkResponse({ slug: 'created' }))
+    const sync = vi.fn().mockRejectedValueOnce(new Error('Retry identity sync')).mockResolvedValueOnce(undefined)
+    render(<OnboardingWizard onProfileCreated={sync} />)
+    await navigateToStep4()
+    fireEvent.click(screen.getByTestId('submit'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Retry identity sync')
+    fireEvent.click(screen.getByTestId('submit'))
+    expect(await screen.findByTestId('complete')).toBeInTheDocument()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(sync).toHaveBeenCalledTimes(2)
+  })
+
+  it('stops later uploads when a server-saved file checkpoint cannot be persisted', async () => {
+    vi.mocked(uploadFile).mockResolvedValue('https://example.com/file.jpg')
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url === '/api/artists') return makeOkResponse({ slug: 'created' })
+      draftStorageFails.value = true
+      return makeOkResponse({ id: 'saved-work' })
+    })
+    render(<OnboardingWizard accountId="checkpoint-failure" />)
+    await screen.findByTestId('name-input')
+    await navigateToStep4()
+    fireEvent.click(screen.getByTestId('add-portfolio-file'))
+    fireEvent.click(screen.getByTestId('add-portfolio-file'))
+    await waitFor(() => expect(draftStore.get('checkpoint-failure')?.files).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('submit'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('已停止後續上傳')
+    expect(uploadFile).toHaveBeenCalledTimes(1)
+  })
+
+  it('recovers an owned profile after the original create response was lost', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('Connection lost'))
+      .mockResolvedValueOnce({ ...makeErrorResponse({ error: 'Already applied' }), status: 409 })
+    const recover = vi.fn().mockResolvedValue('already-created')
+    const sync = vi.fn().mockResolvedValue(undefined)
+    render(<OnboardingWizard recoverExistingProfile={recover} onProfileCreated={sync} />)
+    await navigateToStep4()
+    fireEvent.click(screen.getByTestId('submit'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Connection lost')
+    fireEvent.click(screen.getByTestId('submit'))
+    expect(await screen.findByTestId('complete')).toBeInTheDocument()
+    expect(recover).toHaveBeenCalledOnce()
+    expect(sync).toHaveBeenCalledWith('already-created')
+  })
+
+  it('keeps selected files when a server profile exists but its create checkpoint was lost', async () => {
+    const first = render(<OnboardingWizard accountId="lost-checkpoint" />)
+    await screen.findByTestId('name-input')
+    await navigateToStep4()
+    fireEvent.click(screen.getByTestId('add-portfolio-file'))
+    await waitFor(() => expect(draftStore.get('lost-checkpoint')?.files).toHaveLength(1))
+    first.unmount()
+    mockFetch.mockResolvedValue(makeOkResponse({ id: 'portfolio-item' }))
+    vi.mocked(uploadFile).mockResolvedValue('https://example.com/image.jpg')
+    render(<OnboardingWizard accountId="lost-checkpoint" initialArtistSlug="owned-existing" />)
+    expect(await screen.findByTestId('step-portfolio')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('submit'))
+    expect(await screen.findByTestId('complete')).toBeInTheDocument()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/artists/owned-existing/portfolio')
   })
 
   it('starts on step 1 with progress 1/4', () => {

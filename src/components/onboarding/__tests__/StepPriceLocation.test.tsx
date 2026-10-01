@@ -67,6 +67,15 @@ describe('StepPriceLocation', () => {
     })
   })
 
+  it('exposes city selection state to assistive technology', () => {
+    render(
+      <StepPriceLocation data={validData} onChange={onChange} onNext={onNext} onBack={onBack} />,
+    )
+
+    expect(screen.getByRole('button', { name: '台北市' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '新北市' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
   it('clicking selected city deselects it (removes from cities)', () => {
     render(
       <StepPriceLocation
@@ -138,6 +147,29 @@ describe('StepPriceLocation', () => {
     )
 
     expect(screen.getByRole('button', { name: '下一步' })).toBeDisabled()
+  })
+
+  it('explains the missing requirement and reference-price meaning', () => {
+    render(
+      <StepPriceLocation data={emptyData} onChange={onChange} onNext={onNext} onBack={onBack} />,
+    )
+
+    expect(screen.getByText('請至少選擇 1 個服務城市。 修正後即可繼續。')).toBeInTheDocument()
+    expect(screen.getByText(/顯示給客人的最低參考費用/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/參考上限/)).toBeInTheDocument()
+  })
+
+  it.each([
+    ['negative minimum', { ...validData, price_min: '-1' }],
+    ['nonfinite maximum', { ...validData, price_max: 'Infinity' }],
+    ['maximum below minimum', { ...validData, price_max: '1999' }],
+  ])('does not proceed with %s', (_case, data) => {
+    render(<StepPriceLocation data={data} onChange={onChange} onNext={onNext} onBack={onBack} />)
+
+    const next = screen.getByRole('button', { name: '下一步' })
+    expect(next).toBeDisabled()
+    fireEvent.click(next)
+    expect(onNext).not.toHaveBeenCalled()
   })
 
   it('Next button enabled when city and price_min are filled', () => {
