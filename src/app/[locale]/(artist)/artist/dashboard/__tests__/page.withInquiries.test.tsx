@@ -63,7 +63,8 @@ describe('Artist calendar dashboard', () => {
     render(<DashboardPage />)
     await screen.findByText('47')
     await user.click(screen.getByRole('combobox', { name: '統計期間' }))
-    await user.click(screen.getByRole('option', { name: '近 7 天' }))
+    // Base UI mounts the portalled list asynchronously after opening.
+    await user.click(await screen.findByRole('option', { name: '近 7 天' }))
     await waitFor(() => expect(fetch).toHaveBeenLastCalledWith(expect.stringContaining('&period=7'), expect.anything()))
   })
 
