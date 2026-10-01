@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
 import { ChatList } from '@/components/chat/ChatList'
@@ -37,12 +38,20 @@ const STATUS_FILTERS: { value: StatusFilter; label: string; emptyCopy: string }[
 ]
 
 export default function InquiriesPage() {
-  const { user } = useAuth()
+  return <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">載入詢價中…</div>}><InquiriesContent /></Suspense>
+}
+
+function InquiriesContent() {
+  const { user, artist } = useAuth()
+  const requestedInquiry = useSearchParams()?.get('inquiry') ?? null
+  const appliedInquiry = useRef<string | null>(null)
+  const loadController = useRef<AbortController | null>(null)
   const tSort = useTranslations('inquiry.inboxSort')
   const [inquiries, setInquiries] = useState<ChatListItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [deepLinkError, setDeepLinkError] = useState<string | null>(null)
   const [quoteModalOpen, setQuoteModalOpen] = useState(false)
   const [templates, setTemplates] = useState<QuoteTemplate[]>([])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -52,6 +61,11 @@ export default function InquiriesPage() {
   const [templatesError, setTemplatesError] = useState<string | null>(null)
 
   const fetchInquiries = useCallback(async () => {
+    if (requestedInquiry && !artist?.id) return
+    loadController.current?.abort()
+    const controller = new AbortController()
+    loadController.current = controller
+    const isCurrent = () => !controller.signal.aborted && loadController.current === controller
     setIsLoading(true)
     setLoadError(null)
     try {
@@ -59,11 +73,37 @@ export default function InquiriesPage() {
         statusFilter === 'all'
           ? '/api/inquiries?role=artist'
           : `/api/inquiries?role=artist&status=${statusFilter}`
-      const response = await fetch(url)
+      const response = await fetch(url, { signal: controller.signal })
       if (!response.ok) throw new Error(`Unable to load inquiries (${response.status})`)
       const data = await response.json()
+      if (!isCurrent()) return
+      const rows: Inquiry[] = data.data ?? []
+      // Calendar links may address an older case beyond the first inbox page.
+      // Fetch it through the existing participant-authorized detail endpoint.
+      if (requestedInquiry && appliedInquiry.current !== requestedInquiry) {
+        try {
+          let requested = rows.find(inquiry => inquiry.id === requestedInquiry)
+          if (!requested) {
+            const detailResponse = await fetch(`/api/inquiries/${encodeURIComponent(requestedInquiry)}`, { signal: controller.signal })
+            if (!detailResponse.ok) throw new Error('Unable to open requested inquiry')
+            const detail: { inquiry: Inquiry } = await detailResponse.json()
+            if (!isCurrent()) return
+            if (detail.inquiry.artist_id !== artist?.id) throw new Error('Inquiry belongs to another artist')
+            requested = detail.inquiry
+            rows.unshift(requested)
+          }
+          setSelectedId(requested.id)
+          setDeepLinkError(null)
+        } catch {
+          if (!isCurrent()) return
+          setSelectedId(null)
+          setDeepLinkError('無法開啟指定詢價，請從列表選擇其他對話。')
+        }
+        appliedInquiry.current = requestedInquiry
+      }
+      if (!isCurrent()) return
       setInquiries(
-        (data.data ?? []).map((inq: Inquiry) => ({
+        rows.map((inq: Inquiry) => ({
           inquiry: inq,
           artist_display_name: '',
           artist_avatar_url: null,
@@ -74,15 +114,15 @@ export default function InquiriesPage() {
         })),
       )
     } catch {
-      setLoadError('無法載入詢價，請檢查連線後重新載入。')
+      if (isCurrent()) setLoadError('無法載入詢價，請檢查連線後重新載入。')
     } finally {
-      setIsLoading(false)
+      if (isCurrent()) setIsLoading(false)
     }
-  }, [statusFilter])
+  }, [statusFilter, requestedInquiry, artist?.id])
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void fetchInquiries() }, 0)
-    return () => window.clearTimeout(timer)
+    return () => { window.clearTimeout(timer); loadController.current?.abort() }
   }, [fetchInquiries])
 
   useEffect(() => {
@@ -91,9 +131,10 @@ export default function InquiriesPage() {
         if (!res.ok) throw new Error('Unable to load quote templates')
         return res.json()
       })
-      .then((data: { templates?: QuoteTemplate[] }) =>
-        setTemplates(data.templates ?? []),
-      )
+      .then((data: { templates?: QuoteTemplate[] }) => {
+        if (data.templates != null && !Array.isArray(data.templates)) throw new Error('Invalid quote templates')
+        setTemplates(data.templates ?? [])
+      })
       .catch(() => setTemplatesError('常用報價範本暫時無法載入，仍可手動建立報價。'))
   }, [])
 
@@ -248,6 +289,7 @@ export default function InquiriesPage() {
             })}
           </div>
         </div>
+        {deepLinkError && <p role="alert" className="border-b border-border bg-muted px-4 py-3 text-sm text-muted-foreground">{deepLinkError}</p>}
         {inquiries.length === 0 ? (
           <div className="p-8 text-center text-[#20241F]/40 text-sm">
             {activeFilter.emptyCopy}

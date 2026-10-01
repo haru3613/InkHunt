@@ -8,6 +8,8 @@ const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NE
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
+  // Keep the local review badge from covering the mobile bottom navigation.
+  devIndicators: localHarness ? false : undefined,
   experimental: { cpus: 2 },
   outputFileTracingRoot: process.cwd(),
   turbopack: { root: process.cwd() },

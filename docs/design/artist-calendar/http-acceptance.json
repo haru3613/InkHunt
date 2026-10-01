@@ -1,0 +1,233 @@
+{
+  "fixtureVersion": 1,
+  "environment": "http://127.0.0.1:3210",
+  "database": "isolated local Supabase :56321",
+  "localNotificationGuard": true,
+  "timestamp": "2026-10-01T01:52:26.765Z",
+  "selectedDate": "2026-10-01",
+  "weeks": {
+    "current": {
+      "start": "2026-09-28",
+      "endExclusive": "2026-10-05"
+    },
+    "next": {
+      "start": "2026-10-05",
+      "endExclusive": "2026-10-12"
+    }
+  },
+  "fixtures": [
+    {
+      "key": "current-week-confirmed-plant",
+      "inquiryId": "2ddb0244-15fa-4cea-8fdf-f695ecf149bd",
+      "quoteId": null,
+      "appointmentId": "32fb7377-06e5-48a8-9325-424a92bf8c73",
+      "startsAt": "2026-10-02T03:00:00+00:00",
+      "bodyPart": "左前臂・植物藤蔓",
+      "location": "InkHunt 台北工作室・植物席",
+      "status": "confirmed",
+      "localStartsAt": "2026-10-02T11:00:00+08:00"
+    },
+    {
+      "key": "current-week-proposed-geometry",
+      "inquiryId": "120fc3be-cc33-4e8a-9a14-afbda26e244c",
+      "quoteId": null,
+      "appointmentId": "a67d3ba9-96e3-45c9-bc47-d0f1ec362011",
+      "startsAt": "2026-10-03T06:30:00+00:00",
+      "bodyPart": "右上臂・幾何圖騰",
+      "location": "InkHunt 台北工作室・幾何席",
+      "status": "proposed",
+      "localStartsAt": "2026-10-03T14:30:00+08:00"
+    },
+    {
+      "key": "current-week-cancelled-moon",
+      "inquiryId": "2b7f5283-07a9-46af-b832-ab8276fe68d3",
+      "quoteId": null,
+      "appointmentId": "6a99aba8-b75b-4be5-952e-8ccf92b312ad",
+      "startsAt": "2026-10-04T08:00:00+00:00",
+      "bodyPart": "左肩・月亮與星芒",
+      "location": "InkHunt 台北工作室・月亮席",
+      "status": "cancelled",
+      "localStartsAt": "2026-10-04T16:00:00+08:00"
+    },
+    {
+      "key": "next-week-confirmed-moth",
+      "inquiryId": "3d53e6a0-f30d-42d4-8174-f9aca688eb88",
+      "quoteId": null,
+      "appointmentId": "aad4852a-d8b2-474c-ab5f-69ea466f21f5",
+      "startsAt": "2026-10-05T05:30:00+00:00",
+      "bodyPart": "右小腿・夜蛾植物",
+      "location": "InkHunt 台北工作室・夜蛾席",
+      "status": "confirmed",
+      "localStartsAt": "2026-10-05T13:30:00+08:00"
+    }
+  ],
+  "pagingFixtures": [
+    {
+      "key": "paging-sample-01",
+      "inquiryId": "c3e24802-78fd-4cc8-91bb-0952327f7a79",
+      "bodyPart": "手腕・植物葉片"
+    },
+    {
+      "key": "paging-sample-02",
+      "inquiryId": "7ec86c73-a7fe-4557-848d-33f5e48b5cc3",
+      "bodyPart": "前臂・幾何線條"
+    },
+    {
+      "key": "paging-sample-03",
+      "inquiryId": "ecfa8e13-984c-4d9f-9194-f571f912b998",
+      "bodyPart": "鎖骨・月相圖案"
+    },
+    {
+      "key": "paging-sample-04",
+      "inquiryId": "8676efb0-1825-4ffb-b3cf-1601df709baa",
+      "bodyPart": "小腿・花卉構圖"
+    }
+  ],
+  "expectedFixtureMetricContribution": {
+    "newInquiries": 8,
+    "quotedInquiries": 4,
+    "acceptedInquiries": 4,
+    "confirmedAppointments": 0,
+    "upcomingConfirmedAppointments": 2
+  },
+  "fixtureFreeBaselineMetrics": {
+    "newInquiries": 13,
+    "quotedInquiries": 7,
+    "acceptedInquiries": 6,
+    "confirmedAppointments": 0,
+    "upcomingConfirmedAppointments": 0
+  },
+  "baselineMetrics": {
+    "newInquiries": 21,
+    "quotedInquiries": 11,
+    "acceptedInquiries": 10,
+    "awaitingQuoteResponse": 1,
+    "quoteAcceptanceRate": 91,
+    "confirmedAppointments": 0,
+    "upcomingConfirmedAppointments": 2
+  },
+  "finalMetrics": {
+    "newInquiries": 21,
+    "quotedInquiries": 11,
+    "acceptedInquiries": 10,
+    "awaitingQuoteResponse": 1,
+    "quoteAcceptanceRate": 91,
+    "confirmedAppointments": 0,
+    "upcomingConfirmedAppointments": 2
+  },
+  "otherArtistBaselineMetrics": {
+    "newInquiries": 4,
+    "quotedInquiries": 4,
+    "acceptedInquiries": 1,
+    "awaitingQuoteResponse": 3,
+    "quoteAcceptanceRate": 25,
+    "confirmedAppointments": 0,
+    "upcomingConfirmedAppointments": 0
+  },
+  "visibleAppointmentIds": {
+    "currentWeek": [
+      "32fb7377-06e5-48a8-9325-424a92bf8c73",
+      "a67d3ba9-96e3-45c9-bc47-d0f1ec362011"
+    ],
+    "nextWeek": [
+      "aad4852a-d8b2-474c-ab5f-69ea466f21f5"
+    ]
+  },
+  "checks": 20,
+  "results": [
+    {
+      "check": "guest cannot access artist dashboard",
+      "status": "passed",
+      "httpStatus": 401
+    },
+    {
+      "check": "consumer without artist profile is denied",
+      "status": "passed",
+      "httpStatus": 404
+    },
+    {
+      "check": "invalid calendar date is rejected",
+      "status": "passed",
+      "httpStatus": 400
+    },
+    {
+      "check": "invalid metric period is rejected",
+      "status": "passed",
+      "httpStatus": 400
+    },
+    {
+      "check": "fixture artist is available locally",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "owner can load dashboard before fixtures",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "other artist can load only their dashboard",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "owner inquiry page 1 loads",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "owner inquiry page 2 loads",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "reuse four persisted calendar fixtures",
+      "status": "passed"
+    },
+    {
+      "check": "owner inquiry page 1 loads",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "owner inquiry page 2 loads",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "owner loads current week after fixtures",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "owner changes to next week",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "other artist reload remains isolated",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "check": "current week includes confirmed and proposed but excludes cancelled",
+      "status": "passed"
+    },
+    {
+      "check": "week change returns next-week appointment only",
+      "status": "passed"
+    },
+    {
+      "check": "other artist cannot see fixture IDs",
+      "status": "passed"
+    },
+    {
+      "check": "dashboard aggregation includes more than first 20 inquiries",
+      "status": "passed"
+    },
+    {
+      "check": "aggregate metrics retain the expected fixture cohort contribution",
+      "status": "passed"
+    }
+  ]
+}

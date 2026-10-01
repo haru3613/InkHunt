@@ -20,8 +20,13 @@ const PROTECTED_API_ROUTES = [
 ]
 
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request)
   const pathname = request.nextUrl.pathname
+  // This GET is an identical public taxonomy for every visitor. Avoid a
+  // session refresh/Set-Cookie on a response eligible for the public CDN.
+  if (pathname === '/api/styles' && request.method === 'GET') {
+    return NextResponse.next()
+  }
+  const { response, user } = await updateSession(request)
   const locales = routing.locales
 
   // E2E test mode: skip auth redirects, auth is mocked at the API layer

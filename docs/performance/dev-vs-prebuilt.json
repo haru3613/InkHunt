@@ -1,0 +1,159 @@
+{
+  "timestamp": "2026-10-01T04:53:56.157Z",
+  "database": "isolated local Supabase :56321",
+  "notes": "HTTP response timings, not browser rendering; local results do not prove hosted region/CDN gains.",
+  "results": [
+    {
+      "base": "http://127.0.0.1:3210",
+      "route": "/zh-TW/artist/dashboard",
+      "firstMs": 1403.7,
+      "warmMedianMs": 64.4,
+      "warmMinMs": 56.7,
+      "warmMaxMs": 86.5,
+      "samplesMs": [
+        1403.7,
+        86.5,
+        69.5,
+        65.8,
+        62.9,
+        56.7,
+        62.6
+      ],
+      "browserCache": "no-cache, must-revalidate",
+      "edgeCache": null
+    },
+    {
+      "base": "http://127.0.0.1:3210",
+      "route": "/api/artist/dashboard",
+      "firstMs": 2451.1,
+      "warmMedianMs": 90.9,
+      "warmMinMs": 84.8,
+      "warmMaxMs": 99.3,
+      "samplesMs": [
+        2451.1,
+        84.8,
+        92.7,
+        88.6,
+        99.3,
+        94.8,
+        89.1
+      ],
+      "browserCache": "private, no-store",
+      "edgeCache": null
+    },
+    {
+      "base": "http://127.0.0.1:3210",
+      "route": "/api/auth/me",
+      "firstMs": 679.9,
+      "warmMedianMs": 77.5,
+      "warmMinMs": 65,
+      "warmMaxMs": 108.2,
+      "samplesMs": [
+        679.9,
+        65,
+        88,
+        84,
+        108.2,
+        70.9,
+        66.3
+      ],
+      "browserCache": null,
+      "edgeCache": null
+    },
+    {
+      "base": "http://127.0.0.1:3210",
+      "route": "/api/styles",
+      "firstMs": 1767.5,
+      "warmMedianMs": 35.7,
+      "warmMinMs": 21,
+      "warmMaxMs": 151.4,
+      "samplesMs": [
+        1767.5,
+        29.6,
+        41.8,
+        151.4,
+        64.6,
+        28.1,
+        21
+      ],
+      "browserCache": "public, max-age=60",
+      "edgeCache": "public, s-maxage=300, stale-while-revalidate=60"
+    },
+    {
+      "base": "http://127.0.0.1:3211",
+      "route": "/zh-TW/artist/dashboard",
+      "firstMs": 206.4,
+      "warmMedianMs": 45.2,
+      "warmMinMs": 35.8,
+      "warmMaxMs": 50.9,
+      "samplesMs": [
+        206.4,
+        46.4,
+        50.9,
+        45.1,
+        39.1,
+        35.8,
+        45.3
+      ],
+      "browserCache": "s-maxage=31536000",
+      "edgeCache": null
+    },
+    {
+      "base": "http://127.0.0.1:3211",
+      "route": "/api/artist/dashboard",
+      "firstMs": 114.6,
+      "warmMedianMs": 73.1,
+      "warmMinMs": 64.2,
+      "warmMaxMs": 123.4,
+      "samplesMs": [
+        114.6,
+        123.4,
+        88.1,
+        71.3,
+        74.9,
+        64.2,
+        69.3
+      ],
+      "browserCache": "private, no-store",
+      "edgeCache": null
+    },
+    {
+      "base": "http://127.0.0.1:3211",
+      "route": "/api/auth/me",
+      "firstMs": 67.9,
+      "warmMedianMs": 61.8,
+      "warmMinMs": 59.3,
+      "warmMaxMs": 70.2,
+      "samplesMs": [
+        67.9,
+        70.2,
+        61.5,
+        60.6,
+        62.1,
+        66.5,
+        59.3
+      ],
+      "browserCache": null,
+      "edgeCache": null
+    },
+    {
+      "base": "http://127.0.0.1:3211",
+      "route": "/api/styles",
+      "firstMs": 35.6,
+      "warmMedianMs": 33.7,
+      "warmMinMs": 31.3,
+      "warmMaxMs": 36.8,
+      "samplesMs": [
+        35.6,
+        32.1,
+        36.4,
+        31.3,
+        34.3,
+        36.8,
+        33.1
+      ],
+      "browserCache": null,
+      "edgeCache": null
+    }
+  ]
+}

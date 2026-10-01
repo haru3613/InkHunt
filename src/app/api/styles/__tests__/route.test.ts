@@ -27,6 +27,9 @@ describe('GET /api/styles', () => {
 
     expect(response.status).toBe(200)
     expect(body.data).toEqual(mockStyles)
+    expect(mockGetAllStyles).toHaveBeenCalledWith({ throwOnError: true })
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=60')
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toContain('s-maxage=300')
   })
 
   it('returns empty array when no styles', async () => {
@@ -47,5 +50,7 @@ describe('GET /api/styles', () => {
 
     expect(response.status).toBe(500)
     expect(body.error).toBeDefined()
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
+    expect(response.headers.has('Vercel-CDN-Cache-Control')).toBe(false)
   })
 })

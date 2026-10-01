@@ -73,6 +73,25 @@ afterEach(() => {
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 describe('API route protection', () => {
+  it('does not refresh auth or emit cookies for the public style taxonomy GET', async () => {
+    const result = await middleware(createMockRequest('/api/styles', 'GET'))
+    expect(result.status).toBe(200)
+    expect(mockUpdateSession).not.toHaveBeenCalled()
+    expect(result.headers.has('set-cookie')).toBe(false)
+  })
+
+  it.each(['/api/auth/me', '/api/artist/dashboard', '/api/styles/private'])('keeps session processing for %s', async path => {
+    mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: null })
+    await middleware(createMockRequest(path))
+    expect(mockUpdateSession).toHaveBeenCalledOnce()
+  })
+
+  it('does not bypass session processing for a non-GET style request', async () => {
+    mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: null })
+    await middleware(createMockRequest('/api/styles', 'POST'))
+    expect(mockUpdateSession).toHaveBeenCalledOnce()
+  })
+
   describe('POST /api/inquiries', () => {
     it('returns 401 when unauthenticated user POSTs to /api/inquiries', async () => {
       mockUpdateSession.mockResolvedValue({ response: makeSessionResponse(), user: null })
