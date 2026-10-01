@@ -19,7 +19,7 @@ Scope: repair the production onboarding findings recorded on 2026-10-01. The pro
 5. Browser (Chrome, actual local database): selected a local test image, reloaded at step 4, and observed the same name, city, prices, style and image. Submitted, then clicked continue and reached portfolio management with one saved item without a reload. Phone viewport width and scroll width both 390 px.
 6. Cross-tab browser check: the second same-account tab displayed the editing-lock explanation; closing it left the first draft intact. An initial check during hot reload transferred ownership to the newly mounted tab; the stable-version recheck confirmed the intended single-writer behavior.
 
-Screenshots in this directory record desktop/mobile styles, restored mobile draft, cross-tab protection and successful handoff. `http-acceptance.json`, when present, records the real local API idempotency, ownership and price-validation checks.
+Screenshots in this directory record desktop/mobile styles, restored mobile draft, cross-tab protection and successful handoff. `http-acceptance.json` records six passing real local API checks: concurrent create, lost-response retry, one persisted keyed row, other-account denial, invalid UUID rejection and inverted-price rejection. The script removed only its newly created row afterward.
 
 ## Operational evidence and limits
 
@@ -28,3 +28,11 @@ The development server's compilation slowed severely under host memory pressure 
 Selected image bytes stay only in this browser's local IndexedDB until submission. Clearing site data or browser storage eviction can remove drafts; an unavailable store is never reported as saved. A lost Storage-upload response may leave an orphan object because the existing signed-upload endpoint generates random paths. Stable portfolio row IDs prevent duplicate portfolio entries; this change does not claim exactly-once Storage writes or cleanup historical orphan objects.
 
 No production deployment or admin approval is part of this repair. Shared navigation, public discovery and the calendar dashboard are preserved.
+
+## Final local receipt
+
+- `npm run build` succeeded (Turbopack compiled in 26.8 s). The production-mode preview runs on port 3220 under launchd job `com.harvey.inkhunt-onboarding-review`, with logs in `/tmp/inkhunt-onboarding-review.stdout.log` and `/tmp/inkhunt-onboarding-review.stderr.log`. Keep this worktree while that job is active.
+- `node scripts/onboarding-recovery-acceptance.mjs`: 6 checks passed against the real isolated database, with fixture-row cleanup confirmed. Fixture login uses the guarded development server on port 3200; all assertions use the new build on 3220.
+- Browser account switch verified isolation: a different local account entered step 1 with its own name and no previous account's draft. That account is left at the compact style-selection step for user review.
+- Final desktop (1440x1000) and mobile (390x844) screenshots show the compact controls and visible sticky next/back actions. Mobile client width and scroll width were both 375 px (390 px including the scrollbar). Temporary viewport override was reset.
+- Production-mode core flow had no framework overlay. Browser warning/error inspection distinguished unrelated wallet-extension messages from application behavior; the development-only pre-existing smooth-scroll warning was not treated as a product exception.

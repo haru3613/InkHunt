@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-10-01T07:56:27.239Z",
+  "environment": "isolated local Supabase :56321 + preview :3220",
+  "results": [
+    {
+      "check": "Concurrent identical submissions create one portfolio row",
+      "status": "passed"
+    },
+    {
+      "check": "Lost-response retry returns original row without overwriting",
+      "status": "passed"
+    },
+    {
+      "check": "Database-backed read contains exactly one keyed row",
+      "status": "passed"
+    },
+    {
+      "check": "Another account cannot use the owner endpoint",
+      "status": "passed"
+    },
+    {
+      "check": "Invalid idempotency key rejected",
+      "status": "passed"
+    },
+    {
+      "check": "Server rejects an inverted reference-price range",
+      "status": "passed"
+    }
+  ],
+  "cleanup": "Created row removed; browser fixture retained"
+}
