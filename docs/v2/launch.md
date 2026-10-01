@@ -21,4 +21,6 @@ Use the development-only **Dev Login** picker. 小美 is a consumer, InkedWolf i
 
 ## Runtime operations
 
+On macOS, run `scripts/v2-preview start` to serve the local review at `http://127.0.0.1:3200/zh-TW`, `scripts/v2-preview status` to check its process and HTTP response, and `scripts/v2-preview stop` to stop it. The launchd job survives the agent terminal closing for the current login session; run start again after logout/reboot. It requires the local environment, installed dependencies, and the local database stack below. Logs are in `/tmp/inkhunt-v2-preview.{stdout,stderr}.log`.
+
 Use `scripts/v2-supabase-down` to stop only the local v2 services while preserving its volume. `scripts/v2-supabase-up` starts the minimum required stack; Studio/mail/edge/logging extras are omitted. This machine required clearing regenerable build/package caches and reducing build workers to two due disk/swap pressure. Project files and existing shared database volumes were retained.
