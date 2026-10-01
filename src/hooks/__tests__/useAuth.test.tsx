@@ -4,9 +4,14 @@ import type { ReactNode } from 'react'
 
 // Supabase client mock — set up before any import that reaches @/lib/supabase/client
 const mockUnsubscribe = vi.fn()
-const mockOnAuthStateChange = vi.fn(() => ({
-  data: { subscription: { unsubscribe: mockUnsubscribe } },
-}))
+type AuthStateChangeCallback = (event: string, session: { user?: { id?: string } } | null) => void
+
+let authStateChangeCallback: AuthStateChangeCallback | undefined
+const mockOnAuthStateChange = vi.fn((callback: AuthStateChangeCallback) => {
+  authStateChangeCallback = callback
+  callback('INITIAL_SESSION', null)
+  return { data: { subscription: { unsubscribe: mockUnsubscribe } } }
+})
 const mockSignOut = vi.fn()
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -26,6 +31,13 @@ const mockedIsSupabaseConfigured = vi.mocked(isSupabaseConfigured)
 
 function wrapper({ children }: { children: ReactNode }) {
   return <AuthProvider>{children}</AuthProvider>
+}
+
+function emitAuthStateChange(event: string, session: { user?: { id?: string } } | null) {
+  if (!authStateChangeCallback) {
+    throw new Error('Expected Supabase auth callback to be registered')
+  }
+  authStateChangeCallback(event, session)
 }
 
 const mockUserResponse = {
@@ -49,8 +61,11 @@ describe('useAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockedIsSupabaseConfigured.mockReturnValue(true)
-    mockOnAuthStateChange.mockReturnValue({
-      data: { subscription: { unsubscribe: mockUnsubscribe } },
+    authStateChangeCallback = undefined
+    mockOnAuthStateChange.mockImplementation((callback: AuthStateChangeCallback) => {
+      authStateChangeCallback = callback
+      callback('INITIAL_SESSION', null)
+      return { data: { subscription: { unsubscribe: mockUnsubscribe } } }
     })
     mockSignOut.mockResolvedValue(undefined)
     // Default: no session
@@ -226,5 +241,111 @@ describe('useAuth', () => {
 
     expect(mockSignOut).not.toHaveBeenCalled()
     expect(result.current.isLoggedIn).toBe(false)
+  })
+
+  it('uses the initial auth event and coalesces duplicate automatic refreshes while it is in flight', async () => {
+    let resolveResponse!: (value: { ok: boolean; json: () => Promise<typeof mockUserResponse> }) => void
+    global.fetch = vi.fn().mockReturnValue(new Promise((resolve) => {
+      resolveResponse = resolve
+    }))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    expect(global.fetch).toHaveBeenCalledOnce()
+    act(() => {
+      emitAuthStateChange('INITIAL_SESSION', null)
+      emitAuthStateChange('SIGNED_IN', null)
+    })
+    expect(global.fetch).toHaveBeenCalledOnce()
+
+    await act(async () => {
+      resolveResponse({ ok: true, json: async () => mockUserResponse })
+    })
+    expect(result.current.user).toEqual(mockUserResponse.user)
+  })
+
+  it('runs an explicit refetch even when an automatic request is still in flight', async () => {
+    let resolveAutomatic!: (value: { ok: boolean; json: () => Promise<typeof mockUserResponse> }) => void
+    const refreshedResponse = {
+      ...mockUserResponse,
+      user: { ...mockUserResponse.user, displayName: 'Updated User' },
+    }
+    global.fetch = vi.fn()
+      .mockReturnValueOnce(new Promise((resolve) => { resolveAutomatic = resolve }))
+      .mockResolvedValueOnce({ ok: true, json: async () => refreshedResponse })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {
+      await result.current.refetch()
+    })
+    expect(global.fetch).toHaveBeenCalledTimes(2)
+    expect(result.current.user?.displayName).toBe('Updated User')
+
+    await act(async () => {
+      resolveAutomatic({ ok: true, json: async () => mockUserResponse })
+    })
+    expect(result.current.user?.displayName).toBe('Updated User')
+  })
+
+  it('does not let a request that started before logout restore the user', async () => {
+    let resolveResponse!: (value: { ok: boolean; json: () => Promise<typeof mockUserResponse> }) => void
+    global.fetch = vi.fn().mockReturnValue(new Promise((resolve) => {
+      resolveResponse = resolve
+    }))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {
+      await result.current.logout()
+    })
+    await act(async () => {
+      resolveResponse({ ok: true, json: async () => mockUserResponse })
+    })
+
+    expect(result.current.isLoggedIn).toBe(false)
+    expect(result.current.user).toBeNull()
+  })
+
+  it('invalidates a pending response when the browser session identity changes', async () => {
+    let resolveFirst!: (value: { ok: boolean; json: () => Promise<typeof mockUserResponse> }) => void
+    let resolveSecond!: (value: { ok: boolean; json: () => Promise<typeof mockUserResponse> }) => void
+    global.fetch = vi.fn()
+      .mockReturnValueOnce(new Promise((resolve) => { resolveFirst = resolve }))
+      .mockReturnValueOnce(new Promise((resolve) => { resolveSecond = resolve }))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    act(() => {
+      emitAuthStateChange('SIGNED_IN', { user: { id: 'new-session-user' } })
+    })
+    expect(global.fetch).toHaveBeenCalledTimes(2)
+
+    await act(async () => {
+      resolveFirst({ ok: true, json: async () => mockUserResponse })
+    })
+    expect(result.current.user).toBeNull()
+
+    await act(async () => {
+      resolveSecond({ ok: true, json: async () => mockUserResponse })
+    })
+    expect(result.current.user).toEqual(mockUserResponse.user)
+  })
+
+  it('invalidates pending responses and unsubscribes on unmount', async () => {
+    let resolveResponse!: (value: { ok: boolean; json: () => Promise<typeof mockUserResponse> }) => void
+    global.fetch = vi.fn().mockReturnValue(new Promise((resolve) => {
+      resolveResponse = resolve
+    }))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const { unmount } = renderHook(() => useAuth(), { wrapper })
+    unmount()
+    await act(async () => {
+      resolveResponse({ ok: true, json: async () => mockUserResponse })
+    })
+
+    expect(mockUnsubscribe).toHaveBeenCalledOnce()
+    expect(consoleSpy).not.toHaveBeenCalled()
+    consoleSpy.mockRestore()
   })
 })

@@ -62,7 +62,7 @@ describe('getAllStyles', () => {
     const result = await getAllStyles()
 
     expect(mockFrom).toHaveBeenCalledWith('styles')
-    expect(chain.select).toHaveBeenCalledWith('*')
+    expect(chain.select).toHaveBeenCalledWith('id, slug, name, icon, name_en, description, subtitle, group_name, color_profile, popularity, sort_order')
     expect(chain.order).toHaveBeenCalledWith('sort_order', { ascending: true })
     expect(result).toEqual(styles)
   })
@@ -84,6 +84,13 @@ describe('getAllStyles', () => {
     const result = await getAllStyles()
 
     expect(result).toEqual([])
+  })
+
+  it('fails explicitly for cacheable callers when the database is unavailable', async () => {
+    mockFrom.mockReturnValue(chainQueryList([], { message: 'unavailable' }))
+    await expect(getAllStyles({ throwOnError: true })).rejects.toThrow('Failed to fetch styles')
+    vi.mocked(createAdminClient).mockImplementationOnce(() => { throw new Error('not configured') })
+    await expect(getAllStyles({ throwOnError: true })).rejects.toThrow('Styles service unavailable')
   })
 })
 

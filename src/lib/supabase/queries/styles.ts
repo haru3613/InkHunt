@@ -3,16 +3,22 @@ import { safeAdminClient } from '@/lib/supabase/admin'
 
 type StyleRow = Database['public']['Tables']['styles']['Row']
 
-export async function getAllStyles(): Promise<StyleRow[]> {
+export async function getAllStyles(options: { throwOnError?: boolean } = {}): Promise<StyleRow[]> {
   const supabase = safeAdminClient()
-  if (!supabase) return []
+  if (!supabase) {
+    if (options.throwOnError) throw new Error('Styles service unavailable')
+    return []
+  }
 
   const { data, error } = await supabase
     .from('styles')
-    .select('*')
+    .select('id, slug, name, icon, name_en, description, subtitle, group_name, color_profile, popularity, sort_order')
     .order('sort_order', { ascending: true })
 
-  if (error) return []
+  if (error) {
+    if (options.throwOnError) throw new Error('Failed to fetch styles')
+    return []
+  }
 
   return data
 }
