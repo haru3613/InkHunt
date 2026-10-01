@@ -1,5 +1,7 @@
 # V2 launch handoff
 
+Current release preparation and user decisions: [release.md](release.md). In particular, resolve the independent main-push migration/deployment race before any production promotion.
+
 ## Product scope
 
 Free artist registration and consumer discovery/inquiry/appointment coordination. No payment processing, commission, subscription or paid placement. Artists propose a time and location after quote acceptance; consumers confirm. There is no public instant-availability calendar or payment/deposit collection. Both participants can cancel a proposed/confirmed arrangement; closing the inquiry cancels any active arrangement and preserves history.

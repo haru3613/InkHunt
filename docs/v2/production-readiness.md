@@ -24,12 +24,12 @@ This audit distinguishes the implemented MVP from unverified hosted behavior. Th
 - Supabase has no development branch for this project.
 - No live migration, deployment promotion, real user registration, Official Account follow action, or real push message was performed.
 
-## Decisions currently requested
+## Decisions updated during release preparation
 
-1. Deliver on an independent hosted acceptance URL, replace ink-hunt.com directly, or finish local acceptance first.
-2. Use a dedicated InkHunt Official Account, intentionally reuse Grok Bot, or keep reminders in-app for now.
+1. Local v2 acceptance is approved. The user requested release preparation; the proposed destination is the existing ink-hunt.com, with actual cutover approval still pending.
+2. The user explicitly selected the existing Grok Bot Messaging API account and requested renaming it InkHunt and redesigning the icon after release. Actual LINE login and received pushes are required release acceptance outcomes.
 
-These decisions affect the public destination and connected account. They are not implied by a green unit suite or valid token. Do not silently publish v2 with local fixture accounts or direct customers to an unrelated Official Account.
+The current candidate, live inventory, CI evidence, cutover/recovery plan and remaining blockers are in [release.md](release.md). Do not publish local fixture accounts or claim that a valid token proves real notification delivery.
 
 ## Code corrections from this audit
 
