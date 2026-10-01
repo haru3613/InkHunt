@@ -29,6 +29,10 @@ The user approved the local v2 experience and requested release preparation. Thi
 
 Vercel connector inventory did not expose InkHunt in this session; the authenticated CLI did. Use the project ID above and verify the linked project before any mutation. Never select the unrelated CardDex project returned by the connector.
 
+Release preparation opened [PR #197](https://github.com/haru3613/InkHunt/pull/197). Its first CI run ([36795546555](https://github.com/haru3613/InkHunt/actions/runs/36795546555)) passed lint/typecheck but found one timing-dependent test failure: the quote comparison test waited for an always-visible heading before checking asynchronously loaded quotes (1,705 passed / 1 failed). The test now waits for the actual count/total content; product code is unchanged. The failed run remains part of the evidence, and the repaired candidate requires fresh remote CI. The PR migration job skipped remote drift checking because `SUPABASE_REMOTE_ENABLED` is unset. Vercel's green GitHub status corresponds to a canceled preview (`dpl_7KFzC4SoEFPv846xojcoNsYc3jTP`), not a working hosted artifact.
+
+Additional live read-only preflight: inquiries = 0, quote_requests = 0, messages = 0; inquiry Storage objects = 2, both matching the v2 two-segment image-path shape. The new appointments table, unique artist-identity index and inquiry-creation RPC are absent, as expected for history ending at 018. Preserve both objects. The local seed contains some JSONB string `"[]"` values instead of arrays; do not treat fixture acceptance as a production-data upgrade rehearsal. Recheck reference shapes and object existence if production data changes before cutover.
+
 ## Cutover plan (execution pending approval)
 
 1. Finish PR CI and integrate to staging. Record the final commit and the release diff, including the two staging changes since main. Prepare the exact hosted artifact with production-equivalent settings; exclude local `.env` files, `INKHUNT_LOCAL_TEST`, dev login, and seed scripts.
