@@ -61,7 +61,7 @@ describe('ArtistEntryPage states', () => {
     authState.isLoggedIn = true
     authState.artist = { status: 'pending' }
     render(<ArtistEntryPage />)
-    expect(screen.getByText('你的作品，已經送出審核。')).toBeInTheDocument()
+    expect(screen.getByText('你的入駐申請，正在審核中。')).toBeInTheDocument()
   })
 
   it('redirects to onboarding when logged in with no artist record', () => {

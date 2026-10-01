@@ -19,4 +19,6 @@ export const createArtistSchema = z.object({
   can_cover: z.boolean().optional(),
   accept_custom: z.boolean().optional(),
   has_flash_designs: z.boolean().optional(),
+}).refine(data => data.price_min == null || data.price_max == null || data.price_max >= data.price_min, {
+  path: ['price_max'], message: '參考上限不可低於起價',
 })

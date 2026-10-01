@@ -4,6 +4,7 @@ const MAX_INQUIRY_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
 export async function uploadFile(
   bucket: 'portfolio' | 'inquiries' | 'avatars',
   file: File,
+  signal?: AbortSignal,
 ): Promise<string> {
   const maximum = bucket === 'inquiries' ? MAX_INQUIRY_FILE_SIZE : MAX_FILE_SIZE
   if (file.size > maximum) {
@@ -12,6 +13,7 @@ export async function uploadFile(
 
   const res = await fetch('/api/upload/signed-url', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       bucket,
@@ -29,6 +31,7 @@ export async function uploadFile(
 
   const putRes = await fetch(signed_url, {
     method: 'PUT',
+    ...(signal ? { signal } : {}),
     headers: { 'Content-Type': file.type },
     body: file,
   })

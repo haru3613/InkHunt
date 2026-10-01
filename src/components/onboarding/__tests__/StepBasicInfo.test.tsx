@@ -31,6 +31,15 @@ describe('StepBasicInfo', () => {
     expect(screen.getByPlaceholderText('描述你的刺青風格、理念或經歷...')).toBeInTheDocument()
   })
 
+  it('associates labels and explains the disabled required field', () => {
+    render(<StepBasicInfo data={emptyData} onChange={onChange} onNext={onNext} />)
+
+    expect(screen.getByLabelText(/藝名 \/ 名字/)).toHaveAttribute('id', 'artist-display-name')
+    expect(screen.getByLabelText(/Instagram 帳號/)).toHaveAttribute('id', 'artist-instagram')
+    expect(screen.getAllByText('選填')).toHaveLength(2)
+    expect(screen.getByRole('status')).toHaveTextContent('請填寫藝名或名字，才能繼續。')
+  })
+
   it('Next button disabled when display_name is empty', () => {
     render(<StepBasicInfo data={emptyData} onChange={onChange} onNext={onNext} />)
 
