@@ -10,9 +10,10 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(),
 }))
 
-vi.mock('@/lib/line/auth', () => ({
-  getLineAuthUrl: vi.fn(),
-}))
+vi.mock('@/lib/line/auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/line/auth')>()
+  return { ...actual, getLineAuthUrl: vi.fn() }
+})
 
 import { GET } from '../route'
 import { cookies } from 'next/headers'
@@ -115,6 +116,25 @@ describe('GET /api/auth/line', () => {
         maxAge: 600,
         path: '/',
       }),
+    )
+  })
+
+  it.each([
+    ['an absolute URL', 'https://evil.example/steal'],
+    ['a protocol-relative URL', '//evil.example/steal'],
+    ['a backslash path', '/\\evil.example/steal'],
+    ['an encoded protocol-relative path', '/%2F%2Fevil.example/steal'],
+    ['a double-encoded protocol-relative path', '/%252F%252Fevil.example/steal'],
+  ])('stores "/" instead of %s', async (_label, redirect) => {
+    const url = new URL('http://localhost:3000/api/auth/line')
+    url.searchParams.set('redirect', redirect)
+
+    await GET(makeRequest(url.toString()))
+
+    expect(mockCookieSet).toHaveBeenCalledWith(
+      'line_auth_redirect',
+      '/',
+      expect.any(Object),
     )
   })
 

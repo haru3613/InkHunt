@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const { bucket, filename, content_type } = validation.data
     const result = await createSignedUploadUrl(
       bucket,
-      user.lineUserId,
+      user.supabaseId,
       filename,
       content_type,
     )

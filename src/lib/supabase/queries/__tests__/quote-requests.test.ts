@@ -1,20 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockFrom = vi.fn()
-const mockClient = { from: mockFrom }
+const mockRpc = vi.fn()
+const mockClient = { from: mockFrom, rpc: mockRpc }
 
 vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => mockClient,
 }))
 
-vi.mock('@/lib/supabase/queries/inquiries', () => ({
-  createInquiry: vi.fn(),
-}))
-
 import { createQuoteRequest, getQuoteRequestWithQuotes } from '../quote-requests'
-import { createInquiry } from '@/lib/supabase/queries/inquiries'
-
-const mockCreateInquiry = vi.mocked(createInquiry)
 
 // Build a chainable Supabase query mock that resolves to `result` at await.
 // Each method returns the same chain, and `.single()` resolves to `result`.
@@ -77,20 +71,16 @@ describe('createQuoteRequest', () => {
   })
 
   it('returns quoteRequest and inquiries on success', async () => {
-    // First from() call: insert into quote_requests → .select().single()
-    let fromCallCount = 0
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'quote_requests') {
-        return makeThenable({ data: BASE_QUOTE_REQUEST, error: null })
-      }
-      // table === 'inquiries' → update().eq() chain for linking
-      fromCallCount++
-      return makeThenable({ error: null })
+    mockRpc.mockResolvedValueOnce({
+      data: {
+        quoteRequest: BASE_QUOTE_REQUEST,
+        inquiries: [
+          { ...BASE_INQUIRY, id: 'inq-001' },
+          { ...BASE_INQUIRY, id: 'inq-002', artist_id: 'artist-uuid-2' },
+        ],
+      },
+      error: null,
     })
-
-    mockCreateInquiry
-      .mockResolvedValueOnce({ inquiry: { ...BASE_INQUIRY, id: 'inq-001' }, messages: [] })
-      .mockResolvedValueOnce({ inquiry: { ...BASE_INQUIRY, id: 'inq-002', artist_id: 'artist-uuid-2' }, messages: [] })
 
     const result = await createQuoteRequest('Uabc123', '測試消費者', VALID_INPUT)
 
@@ -99,68 +89,61 @@ describe('createQuoteRequest', () => {
     expect(result.inquiries).toHaveLength(2)
     expect(result.inquiries[0].id).toBe('inq-001')
     expect(result.inquiries[1].id).toBe('inq-002')
+    expect(mockFrom).not.toHaveBeenCalled()
   })
 
-  it('calls createInquiry once per artist_id', async () => {
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'quote_requests') {
-        return makeThenable({ data: BASE_QUOTE_REQUEST, error: null })
-      }
-      return makeThenable({ error: null })
+  it('passes every selected artist and the server caller identity to one RPC', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: { quoteRequest: BASE_QUOTE_REQUEST, inquiries: [] },
+      error: null,
     })
-
-    mockCreateInquiry
-      .mockResolvedValueOnce({ inquiry: { ...BASE_INQUIRY, id: 'inq-001' }, messages: [] })
-      .mockResolvedValueOnce({ inquiry: { ...BASE_INQUIRY, id: 'inq-002', artist_id: 'artist-uuid-2' }, messages: [] })
 
     await createQuoteRequest('Uabc123', '測試消費者', VALID_INPUT)
 
-    expect(mockCreateInquiry).toHaveBeenCalledTimes(2)
-    expect(mockCreateInquiry).toHaveBeenCalledWith('Uabc123', '測試消費者', expect.objectContaining({
-      artist_id: 'artist-uuid-1',
-    }))
-    expect(mockCreateInquiry).toHaveBeenCalledWith('Uabc123', '測試消費者', expect.objectContaining({
-      artist_id: 'artist-uuid-2',
-    }))
+    expect(mockRpc).toHaveBeenCalledWith(
+      'create_quote_request_transaction',
+      expect.objectContaining({
+        p_consumer_line_id: 'Uabc123',
+        p_consumer_name: '測試消費者',
+        p_artist_ids: ['artist-uuid-1', 'artist-uuid-2'],
+        p_description: VALID_INPUT.description,
+        p_summary_content: expect.stringContaining(VALID_INPUT.description),
+      }),
+    )
   })
 
   it('accepts null consumerName', async () => {
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'quote_requests') {
-        return makeThenable({ data: { ...BASE_QUOTE_REQUEST, consumer_name: null }, error: null })
-      }
-      return makeThenable({ error: null })
+    mockRpc.mockResolvedValueOnce({
+      data: {
+        quoteRequest: { ...BASE_QUOTE_REQUEST, consumer_name: null },
+        inquiries: [BASE_INQUIRY],
+      },
+      error: null,
     })
-
-    mockCreateInquiry.mockResolvedValueOnce({ inquiry: BASE_INQUIRY, messages: [] })
 
     const result = await createQuoteRequest('Uabc123', null, { ...VALID_INPUT, artist_ids: ['artist-uuid-1'] })
 
     expect(result.quoteRequest.consumer_name).toBeNull()
   })
 
-  it('throws when quote_request insert fails', async () => {
-    mockFrom.mockReturnValue(makeThenable({ data: null, error: { message: 'DB constraint violation' } }))
+  it('surfaces an atomic fanout rejection without attempting direct writes', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'INKHUNT_ARTIST_NOT_ACTIVE' },
+    })
 
     await expect(
       createQuoteRequest('Uabc123', '測試消費者', VALID_INPUT),
-    ).rejects.toThrow('Failed to create quote request: DB constraint violation')
+    ).rejects.toThrow('Failed to create quote request: INKHUNT_ARTIST_NOT_ACTIVE')
+    expect(mockFrom).not.toHaveBeenCalled()
   })
 
-  it('throws when linking inquiry to quote_request fails', async () => {
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'quote_requests') {
-        return makeThenable({ data: BASE_QUOTE_REQUEST, error: null })
-      }
-      // inquiries update link fails
-      return makeThenable({ error: { message: 'Foreign key violation' } })
-    })
-
-    mockCreateInquiry.mockResolvedValue({ inquiry: BASE_INQUIRY, messages: [] })
+  it('rejects an invalid transaction response', async () => {
+    mockRpc.mockResolvedValueOnce({ data: { quoteRequest: BASE_QUOTE_REQUEST }, error: null })
 
     await expect(
-      createQuoteRequest('Uabc123', '測試消費者', { ...VALID_INPUT, artist_ids: ['artist-uuid-1'] }),
-    ).rejects.toThrow('Failed to link inquiry to quote request: Foreign key violation')
+      createQuoteRequest('Uabc123', '測試消費者', VALID_INPUT),
+    ).rejects.toThrow('Failed to create quote request: invalid transaction response')
   })
 })
 

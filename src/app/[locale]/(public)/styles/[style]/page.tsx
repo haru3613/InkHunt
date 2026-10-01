@@ -10,8 +10,8 @@ import { generateStyleCollectionJsonLd } from '@/lib/seo'
 import { JsonLd } from '@/components/shared/JsonLd'
 import { ArtistCard } from '@/components/artists/ArtistCard'
 import { Link } from '@/i18n/navigation'
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
+import { buildLocalizedAlternates } from '@/lib/metadata'
+import { hasPublicArtistCount } from '@/lib/public-supply'
 
 export async function generateStaticParams() {
   const styles = await getAllStyles()
@@ -40,13 +40,7 @@ export async function generateMetadata({ params }: StylePageProps): Promise<Meta
     twitter: {
       card: 'summary',
     },
-    alternates: {
-      canonical: `${baseUrl}/${locale}/styles/${slug}`,
-      languages: {
-        'zh-TW': `${baseUrl}/zh-TW/styles/${slug}`,
-        'en': `${baseUrl}/en/styles/${slug}`,
-      },
-    },
+    alternates: buildLocalizedAlternates(locale, `/styles/${slug}`),
   }
 }
 
@@ -84,9 +78,11 @@ export default async function StylePage({ params }: StylePageProps) {
             <h1 className="font-display mt-2 text-2xl font-bold text-foreground lg:text-3xl">
               {t('recommendTitle', { styleName: style.name })}
             </h1>
-            <p className="mt-1 text-muted-foreground">
-              {t('totalArtists', { count: artistCount })}
-            </p>
+            {hasPublicArtistCount(artistCount) ? (
+              <p className="mt-1 text-muted-foreground">
+                {t('totalArtists', { count: artistCount })}
+              </p>
+            ) : null}
           </div>
 
           {artists.length > 0 ? (

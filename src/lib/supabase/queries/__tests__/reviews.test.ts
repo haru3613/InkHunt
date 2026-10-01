@@ -84,13 +84,13 @@ describe('getReviewsByArtistId', () => {
     expect(result[0]).toEqual({
       rating: 5,
       comment: '非常滿意',
-      author_line_user_id: 'U_b',
+      author_line_user_id: null,
       created_at: NEWEST,
     })
     expect(result[1]).toEqual({
       rating: 3,
       comment: null,
-      author_line_user_id: 'U_a',
+      author_line_user_id: null,
       created_at: OLDEST,
     })
     // does NOT leak DB-only columns into the presentational shape

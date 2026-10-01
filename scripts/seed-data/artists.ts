@@ -3,17 +3,15 @@
  * 7 artists: 3 active, 2 pending, 1 suspended, 1 admin-artist
  */
 
-import { USER_IDS } from './users'
-
 // Deterministic artist UUIDs
 export const ARTIST_IDS = {
-  INKED_WOLF: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa001',
-  SAKURA_INK: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa002',
-  SHADOW_LINE: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa003',
-  NEW_TALENT: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa004',
-  BARE_BONES: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa005',
-  SUSPENDED: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa006',
-  HARVEY: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaa007',
+  INKED_WOLF: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001',
+  SAKURA_INK: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa002',
+  SHADOW_LINE: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa003',
+  NEW_TALENT: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa004',
+  BARE_BONES: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa005',
+  SUSPENDED: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa006',
+  HARVEY: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa007',
 } as const
 
 export interface SeedArtist {

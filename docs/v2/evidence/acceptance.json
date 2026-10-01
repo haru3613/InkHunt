@@ -1,0 +1,201 @@
+{
+  "environment": "http://localhost:3200",
+  "database": "isolated local Supabase :56321",
+  "timestamp": "2026-09-30T19:04:19.514Z",
+  "inquiryId": "33c2ef67-e035-457e-acac-c1fe394830c3",
+  "checks": 48,
+  "results": [
+    {
+      "check": "guest cannot list private inquiries",
+      "status": "passed"
+    },
+    {
+      "check": "approved artist is publicly discoverable",
+      "status": "passed"
+    },
+    {
+      "check": "consumer can sign a private reference upload",
+      "status": "passed"
+    },
+    {
+      "check": "private reference bytes uploaded",
+      "status": "passed"
+    },
+    {
+      "check": "uploader can read its reference",
+      "status": "passed"
+    },
+    {
+      "check": "artist cannot read unattached reference",
+      "status": "passed"
+    },
+    {
+      "check": "guest cannot read reference",
+      "status": "passed"
+    },
+    {
+      "check": "foreign reference cannot be attached",
+      "status": "passed"
+    },
+    {
+      "check": "consumer creates persisted guided inquiry",
+      "status": "passed"
+    },
+    {
+      "check": "artist can read the attached private reference",
+      "status": "passed"
+    },
+    {
+      "check": "unrelated user cannot read attached reference",
+      "status": "passed"
+    },
+    {
+      "check": "unrelated user cannot read conversation",
+      "status": "passed"
+    },
+    {
+      "check": "artist sends persisted reply",
+      "status": "passed"
+    },
+    {
+      "check": "consumer reload sees persisted conversation",
+      "status": "passed"
+    },
+    {
+      "check": "artist submits quote",
+      "status": "passed"
+    },
+    {
+      "check": "unrelated user cannot accept quote",
+      "status": "passed"
+    },
+    {
+      "check": "consumer accepts quote",
+      "status": "passed"
+    },
+    {
+      "check": "quote cards reflect accepted status after reload",
+      "status": "passed"
+    },
+    {
+      "check": "duplicate quote acceptance rejected",
+      "status": "passed"
+    },
+    {
+      "check": "consumer cannot impersonate appointment proposer",
+      "status": "passed"
+    },
+    {
+      "check": "artist proposes appointment",
+      "status": "passed"
+    },
+    {
+      "check": "artist cannot self-confirm appointment",
+      "status": "passed"
+    },
+    {
+      "check": "consumer confirms appointment",
+      "status": "passed"
+    },
+    {
+      "check": "appointment survives reload",
+      "status": "passed"
+    },
+    {
+      "check": "outsider cannot inspect appointment details",
+      "status": "passed"
+    },
+    {
+      "check": "consumer cancels confirmed appointment",
+      "status": "passed"
+    },
+    {
+      "check": "artist can propose a new time after cancellation",
+      "status": "passed"
+    },
+    {
+      "check": "artist closes inquiry",
+      "status": "passed"
+    },
+    {
+      "check": "closing inquiry atomically cancels active appointment",
+      "status": "passed"
+    },
+    {
+      "check": "closed inquiry cannot accept a new appointment",
+      "status": "passed"
+    },
+    {
+      "check": "closed inquiry cannot receive a new quote",
+      "status": "passed"
+    },
+    {
+      "check": "new artist submits pending application",
+      "status": "passed"
+    },
+    {
+      "check": "pending artist can edit their private profile",
+      "status": "passed"
+    },
+    {
+      "check": "artist can sign a public portfolio upload",
+      "status": "passed"
+    },
+    {
+      "check": "pending artist persists a portfolio work",
+      "status": "passed"
+    },
+    {
+      "check": "pending artist reads own portfolio",
+      "status": "passed"
+    },
+    {
+      "check": "artist edits work metadata",
+      "status": "passed"
+    },
+    {
+      "check": "outsider cannot edit another portfolio",
+      "status": "passed"
+    },
+    {
+      "check": "portfolio editor cannot change ownership",
+      "status": "passed"
+    },
+    {
+      "check": "duplicate artist application rejected",
+      "status": "passed"
+    },
+    {
+      "check": "pending artist is not public",
+      "status": "passed"
+    },
+    {
+      "check": "consumer cannot approve artists",
+      "status": "passed"
+    },
+    {
+      "check": "admin approves artist",
+      "status": "passed"
+    },
+    {
+      "check": "approved artist becomes public",
+      "status": "passed"
+    },
+    {
+      "check": "artist deletes owned portfolio work",
+      "status": "passed"
+    },
+    {
+      "check": "admin suspension removes listing",
+      "status": "passed"
+    },
+    {
+      "check": "suspended artist is no longer public",
+      "status": "passed"
+    },
+    {
+      "check": "suspended artist cannot receive new inquiries",
+      "status": "passed"
+    }
+  ]
+}

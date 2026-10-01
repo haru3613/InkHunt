@@ -1,3 +1,4 @@
+import { deferLineNotification } from '@/lib/line/defer'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, getArtistForUser, handleApiError } from '@/lib/auth/helpers'
 import {
@@ -5,6 +6,7 @@ import {
   createInquiry,
   getInquiriesForArtist,
   getInquiriesForConsumer,
+  InquiryMutationError,
 } from '@/lib/supabase/queries/inquiries'
 import { getUnreadCountsForUser } from '@/lib/supabase/queries/messages'
 import { pushNewInquiryNotification } from '@/lib/line/messaging'
@@ -13,7 +15,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth()
     const body = await request.json()
-    const validation = validateInquiryCreate(body)
+    const validation = validateInquiryCreate(body, user.supabaseId)
 
     if (!validation.success) {
       return NextResponse.json(
@@ -24,12 +26,17 @@ export async function POST(request: NextRequest) {
 
     const { inquiry } = await createInquiry(user.lineUserId, user.displayName, validation.data)
 
-    pushNewInquiryNotification(inquiry).catch(() => {
-      // LINE notification failure is non-fatal
-    })
+    deferLineNotification(() => pushNewInquiryNotification(inquiry))
 
     return NextResponse.json({ id: inquiry.id }, { status: 201 })
   } catch (err) {
+    if (err instanceof InquiryMutationError) {
+      const status = err.code === 'ARTIST_NOT_FOUND' ? 404 : 409
+      return NextResponse.json(
+        { error: err.message, code: err.code },
+        { status },
+      )
+    }
     return handleApiError(err)
   }
 }

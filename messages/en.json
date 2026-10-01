@@ -12,7 +12,8 @@
     "openMenu": "Open menu",
     "login": "Sign in",
     "becomeArtist": "Become an Artist",
-    "admin": "Admin"
+    "admin": "Admin",
+    "myInquiries": "Inquiries"
   },
   "home": {
     "heroTitle": "Find Your Tattoo Artist",
@@ -93,7 +94,8 @@
     "coldStartLabel": "Coming soon",
     "coldStartTitle": "Artists are on the way",
     "coldStartHelp": "The marketplace is cold-starting. Apply as an artist, or head home to explore styles.",
-    "coldStartCta": "Become an artist"
+    "coldStartCta": "Become an artist",
+    "coldStartBrowseCta": "Explore tattoo styles"
   },
   "artistProfile": {
     "portfolio": "Portfolio",
@@ -234,7 +236,7 @@
   },
   "metadata": {
     "defaultTitle": "InkHunt — Find Your Tattoo Artist",
-    "defaultDescription": "Taiwan's first tattoo artist marketplace. Filter by style, browse portfolios, transparent pricing, one-click inquiry.",
+    "defaultDescription": "Find tattoo artists in Taiwan, explore their work and discuss your next appointment. Free for clients and artists. No commission.",
     "artistsTitle": "Find Artists | InkHunt",
     "artistsDescription": "Filter Taiwan's tattoo artists by style and region, browse portfolios, get quotes",
     "artistPortfolio": "{name} — Tattoo Portfolio",
@@ -243,7 +245,7 @@
   "about": {
     "title": "About InkHunt",
     "missionTitle": "Our Mission",
-    "missionBody": "InkHunt is Taiwan's first tattoo artist marketplace. Our goal is to make finding a tattoo artist easy — no more endless scrolling on IG or awkward DMs. Filter by style, browse portfolios, and get transparent pricing.",
+    "missionBody": "InkHunt helps people discover tattoo artists through their work. Artists can create a portfolio and receive inquiries; clients can explore, ask questions and arrange appointments. Both sides use the platform for free, with no commission or paid placement.",
     "whyTitle": "Why InkHunt?",
     "why1": "Filter by style and location — no more guesswork",
     "why2": "Full portfolio showcase — what you see is what you get",

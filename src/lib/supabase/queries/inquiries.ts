@@ -1,12 +1,74 @@
 import { z } from 'zod'
 import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { BUDGET_RANGES } from '@/lib/validations/inquiry'
-import type { Json, Inquiry, Message } from '@/types/database'
+import {
+  isOwnedInquiryMediaUrl,
+  parseInquiryMediaPath,
+} from '@/lib/upload/inquiry-media'
+import type { Inquiry, Message } from '@/types/database'
+
+export type InquiryMutationCode =
+  | 'ARTIST_NOT_FOUND'
+  | 'ARTIST_NOT_ACTIVE'
+  | 'SELF_INQUIRY'
+  | 'INQUIRY_NOT_FOUND'
+  | 'INQUIRY_FORBIDDEN'
+  | 'INVALID_INQUIRY_STATUS'
+
+export class InquiryMutationError extends Error {
+  constructor(
+    public readonly code: InquiryMutationCode,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'InquiryMutationError'
+  }
+}
+
+interface RpcError {
+  message: string
+}
+
+interface InquiryTransactionResult {
+  inquiry: Inquiry
+  messages: Message[]
+}
+
+interface InquiryRpcClient {
+  rpc(
+    functionName: string,
+    args: Record<string, unknown>,
+  ): Promise<{ data: unknown; error: RpcError | null }>
+}
+
+function mapInquiryRpcError(error: RpcError, fallback: string): Error {
+  if (error.message.includes('INKHUNT_ARTIST_NOT_FOUND')) {
+    return new InquiryMutationError('ARTIST_NOT_FOUND', 'Artist not found')
+  }
+  if (error.message.includes('INKHUNT_ARTIST_NOT_ACTIVE')) {
+    return new InquiryMutationError('ARTIST_NOT_ACTIVE', 'Artist is not accepting inquiries')
+  }
+  if (error.message.includes('INKHUNT_SELF_INQUIRY')) {
+    return new InquiryMutationError('SELF_INQUIRY', 'Artists cannot inquire with themselves')
+  }
+  if (error.message.includes('INKHUNT_INQUIRY_NOT_FOUND')) {
+    return new InquiryMutationError('INQUIRY_NOT_FOUND', 'Inquiry not found')
+  }
+  if (error.message.includes('INKHUNT_INQUIRY_FORBIDDEN')) {
+    return new InquiryMutationError('INQUIRY_FORBIDDEN', 'Forbidden')
+  }
+  return new Error(`${fallback}: ${error.message}`)
+}
 
 const inquiryCreateSchema = z.object({
   artist_id: z.string().uuid(),
   description: z.string().min(10, '請至少描述 10 個字').max(1000),
-  reference_images: z.array(z.string().url()).max(3).default([]),
+  reference_images: z.array(
+    z.string().refine(
+      (value) => parseInquiryMediaPath(value) !== null,
+      'Reference image must be a protected inquiry upload',
+    ),
+  ).max(3).default([]),
   body_part: z.string().min(1).optional(),
   size_estimate: z.string().min(1).optional(),
   budget_min: z.number().int().min(0).optional(),
@@ -22,8 +84,22 @@ const inquiryCreateSchema = z.object({
 
 export type InquiryCreateInput = z.infer<typeof inquiryCreateSchema>
 
-export function validateInquiryCreate(input: unknown) {
-  return inquiryCreateSchema.safeParse(input)
+export function validateInquiryCreate(input: unknown, ownerSupabaseId?: string) {
+  const schema = ownerSupabaseId
+    ? inquiryCreateSchema.superRefine((data, context) => {
+      data.reference_images.forEach((value, index) => {
+        if (!isOwnedInquiryMediaUrl(value, ownerSupabaseId)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Reference image is not owned by the current user',
+            path: ['reference_images', index],
+          })
+        }
+      })
+    })
+    : inquiryCreateSchema
+
+  return schema.safeParse(input)
 }
 
 export async function createInquiry(
@@ -32,27 +108,6 @@ export async function createInquiry(
   data: InquiryCreateInput,
 ): Promise<{ inquiry: Inquiry; messages: Message[] }> {
   const admin = createAdminClient()
-
-  const { data: inquiry, error: inquiryError } = await admin
-    .from('inquiries')
-    .insert({
-      artist_id: data.artist_id,
-      consumer_line_id: consumerLineId,
-      consumer_name: consumerName,
-      description: data.description,
-      reference_images: data.reference_images,
-      body_part: data.body_part ?? null,
-      size_estimate: data.size_estimate ?? null,
-      budget_min: data.budget_min ?? null,
-      budget_max: data.budget_max ?? null,
-      budget_range: data.budget_range ?? null,
-    })
-    .select()
-    .single()
-
-  if (inquiryError || !inquiry) {
-    throw new Error(`Failed to create inquiry: ${inquiryError?.message}`)
-  }
 
   const summaryParts = [
     '新詢價',
@@ -64,50 +119,30 @@ export async function createInquiry(
     `\n${data.description}`,
   ].filter(Boolean).join('\n')
 
-  const messagesToInsert: Array<{
-    inquiry_id: string
-    sender_type: 'system' | 'consumer'
-    sender_id: string | null
-    message_type: 'system' | 'image'
-    content: string
-    metadata: Json
-  }> = [
-    {
-      inquiry_id: inquiry.id,
-      sender_type: 'system',
-      sender_id: null,
-      message_type: 'system',
-      content: summaryParts,
-      metadata: {
-        body_part: data.body_part ?? null,
-        size_estimate: data.size_estimate ?? null,
-        budget_min: data.budget_min ?? null,
-        budget_max: data.budget_max ?? null,
-      } as Json,
-    },
-  ]
+  const rpcClient = admin as unknown as InquiryRpcClient
+  const { data: result, error } = await rpcClient.rpc('create_inquiry_transaction', {
+    p_consumer_line_id: consumerLineId,
+    p_consumer_name: consumerName,
+    p_artist_id: data.artist_id,
+    p_description: data.description,
+    p_reference_images: data.reference_images,
+    p_body_part: data.body_part ?? null,
+    p_size_estimate: data.size_estimate ?? null,
+    p_budget_min: data.budget_min ?? null,
+    p_budget_max: data.budget_max ?? null,
+    p_budget_range: data.budget_range ?? null,
+    p_summary_content: summaryParts,
+  })
 
-  for (const imageUrl of data.reference_images) {
-    messagesToInsert.push({
-      inquiry_id: inquiry.id,
-      sender_type: 'consumer',
-      sender_id: consumerLineId,
-      message_type: 'image',
-      content: imageUrl,
-      metadata: {} as Json,
-    })
+  if (error) {
+    throw mapInquiryRpcError(error, 'Failed to create inquiry')
   }
 
-  const { data: messages, error: msgError } = await admin
-    .from('messages')
-    .insert(messagesToInsert)
-    .select()
-
-  if (msgError) {
-    throw new Error(`Failed to create initial messages: ${msgError.message}`)
+  if (!result || typeof result !== 'object' || !('inquiry' in result) || !('messages' in result)) {
+    throw new Error('Failed to create inquiry: invalid transaction response')
   }
 
-  return { inquiry, messages: messages ?? [] }
+  return result as InquiryTransactionResult
 }
 
 type InquiryStatus = 'pending' | 'quoted' | 'accepted' | 'closed'
@@ -163,15 +198,25 @@ export async function getInquiryById(id: string): Promise<Inquiry | null> {
 export async function updateInquiryStatus(
   id: string,
   status: 'pending' | 'quoted' | 'accepted' | 'closed',
+  callerLineUserId: string,
 ): Promise<Inquiry> {
-  const admin = createAdminClient()
-  const { data, error } = await admin
-    .from('inquiries')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single()
+  if (status !== 'closed') {
+    throw new InquiryMutationError(
+      'INVALID_INQUIRY_STATUS',
+      'Only closing an inquiry is supported by this operation',
+    )
+  }
 
-  if (error || !data) throw new Error(`Failed to update inquiry: ${error?.message}`)
-  return data
+  const admin = createAdminClient()
+  const rpcClient = admin as unknown as InquiryRpcClient
+  const { data, error } = await rpcClient.rpc('close_inquiry_transaction', {
+    p_inquiry_id: id,
+    p_caller_line_id: callerLineUserId,
+  })
+
+  if (error) throw mapInquiryRpcError(error, 'Failed to update inquiry')
+  if (!data || typeof data !== 'object' || !('id' in data)) {
+    throw new Error('Failed to update inquiry: invalid transaction response')
+  }
+  return data as Inquiry
 }

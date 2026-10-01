@@ -36,8 +36,8 @@ export default function GlobalError({
           gap: "1.5rem",
           padding: "0 1.5rem",
           textAlign: "center",
-          background: "#0A0A0A",
-          color: "#F5F0EB",
+          background: "#F7F6F2",
+          color: "#20241F",
           fontFamily: "sans-serif",
         }}
       >
@@ -52,9 +52,9 @@ export default function GlobalError({
         <button
           onClick={unstable_retry}
           style={{
-            border: "1px solid #C8A97E",
+            border: "1px solid #53614A",
             background: "transparent",
-            color: "#C8A97E",
+            color: "#53614A",
             borderRadius: 4,
             padding: "0.5rem 1.25rem",
             fontSize: "0.875rem",

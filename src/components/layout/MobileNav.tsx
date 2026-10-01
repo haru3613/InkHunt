@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { HomeIcon, SearchIcon, HeartIcon, UserIcon } from "lucide-react"
+import { HomeIcon, SearchIcon, HeartIcon, MessageCircleIcon } from "lucide-react"
 import { Link, usePathname } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 
@@ -13,13 +13,13 @@ export function MobileNav() {
     { href: "/" as const, label: t("home"), icon: HomeIcon },
     { href: "/artists" as const, label: t("findArtist"), icon: SearchIcon },
     { href: "/favorites" as const, label: t("favorites"), icon: HeartIcon },
-    { href: "/artist" as const, label: t("artist"), icon: UserIcon },
+    { href: "/inquiries" as const, label: t("myInquiries"), icon: MessageCircleIcon },
   ]
 
   return (
     <nav
       aria-label="Mobile tab navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <div className="flex h-14 items-center justify-around">
         {tabs.map((tab) => {

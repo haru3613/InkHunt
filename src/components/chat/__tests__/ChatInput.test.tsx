@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ChatInput } from '../ChatInput'
 
@@ -69,6 +69,29 @@ describe('ChatInput', () => {
 
     expect(onSendMessage).toHaveBeenCalledOnce()
     expect(onSendMessage).toHaveBeenCalledWith('text', '按 Enter 送出')
+  })
+
+  it('does not send Enter while a Chinese IME composition is active', () => {
+    render(<ChatInput onSendMessage={onSendMessage} isArtist={false} />)
+    const input = screen.getByPlaceholderText('輸入訊息...')
+    fireEvent.change(input, { target: { value: '刺青' } })
+    fireEvent.compositionStart(input)
+    fireEvent.keyDown(input, { key: 'Enter', nativeEvent: { isComposing: true } })
+    expect(onSendMessage).not.toHaveBeenCalled()
+  })
+
+  it('sends once and preserves text typed while the first send is in flight', async () => {
+    let resolveSend!: () => void
+    const send = vi.fn(() => new Promise<void>((resolve) => { resolveSend = resolve }))
+    render(<ChatInput onSendMessage={send} isArtist={false} />)
+    const input = screen.getByPlaceholderText('輸入訊息...') as HTMLInputElement
+    await userEvent.type(input, 'first')
+    fireEvent.click(screen.getByRole('button', { name: '傳送訊息' }))
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(send).toHaveBeenCalledOnce()
+    fireEvent.change(input, { target: { value: 'draft while sending' } })
+    resolveSend()
+    await waitFor(() => expect(input.value).toBe('draft while sending'))
   })
 
   it('does not send when Shift+Enter is pressed', async () => {

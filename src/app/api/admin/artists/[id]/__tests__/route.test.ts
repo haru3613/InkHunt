@@ -341,3 +341,5 @@ describe('PATCH /api/admin/artists/[id]', () => {
     expect(body.status).toBe('active')
   })
 })
+
+vi.mock('@/lib/line/defer', () => ({ deferLineNotification: (task: () => Promise<void>) => { void task().catch(() => {}) } }))

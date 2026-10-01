@@ -8,7 +8,7 @@ type ReviewRow = Database['public']['Tables']['reviews']['Row']
 
 /** Columns selected for the public read path. */
 const REVIEW_PUBLIC_SELECT =
-  'id, artist_id, author_line_user_id, rating, comment, created_at' as const
+  'id, artist_id, rating, comment, created_at' as const
 
 /**
  * Map a DB review row to the presentational `ReviewListItem` shape that
@@ -21,7 +21,9 @@ function toReviewListItem(row: ReviewRow): ReviewListItem {
   return {
     rating: row.rating,
     comment: row.comment,
-    author_line_user_id: row.author_line_user_id,
+    // Public reviews are intentionally anonymous. The durable LINE identifier
+    // remains available only to service-role write/conflict handling.
+    author_line_user_id: null,
     created_at: row.created_at,
   }
 }

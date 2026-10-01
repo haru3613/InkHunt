@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/v2-local-lib.sh"
+
+# Deliberately omit --no-backup so local v2 data persists across restarts.
+supabase stop --project-id "${V2_PROJECT_ID}"

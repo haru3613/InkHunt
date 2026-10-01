@@ -3,6 +3,7 @@ import { Link } from '@/i18n/navigation'
 import Image from 'next/image'
 import type { Database } from '@/types/database'
 import { selectStylesForDiscovery } from '@/components/artists/selectStylesForDiscovery'
+import { hasPublicArtistCount } from '@/lib/public-supply'
 
 export { selectStylesForDiscovery } from '@/components/artists/selectStylesForDiscovery'
 
@@ -51,8 +52,6 @@ interface StyleCardProps {
   readonly artistCount: number
   readonly artistsLabel: string
   readonly sampleImage?: string
-  readonly isColdStart: boolean
-  readonly comingSoonLabel: string
 }
 
 function StyleCard({
@@ -60,8 +59,6 @@ function StyleCard({
   artistCount,
   artistsLabel,
   sampleImage,
-  isColdStart,
-  comingSoonLabel,
 }: StyleCardProps) {
   const imageUrl = sampleImage ?? STYLE_IMAGES[style.slug] ?? DEFAULT_IMAGE
 
@@ -75,18 +72,18 @@ function StyleCard({
         alt={style.name}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px"
-        className="object-cover brightness-[0.55] transition-[transform,filter] duration-300 ease-out motion-reduce:transition-none [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-105 [@media(hover:hover)_and_(pointer:fine)]:group-hover:brightness-[0.72]"
+        className="object-cover brightness-[0.72] transition-[transform,filter] duration-300 ease-out motion-reduce:transition-none [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-105 [@media(hover:hover)_and_(pointer:fine)]:group-hover:brightness-[0.82]"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
       <div className="absolute bottom-0 left-0 p-4">
         <p className="font-display text-base font-semibold text-foreground">
           {style.name}
         </p>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {isColdStart || artistCount === 0
-            ? comingSoonLabel
-            : `${artistCount} ${artistsLabel}`}
-        </p>
+        {hasPublicArtistCount(artistCount) ? (
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {artistCount} {artistsLabel}
+          </p>
+        ) : null}
       </div>
     </Link>
   )
@@ -104,8 +101,7 @@ export async function StyleGrid({
   sampleImages,
 }: StyleGridProps) {
   const t = await getTranslations('common')
-  const tHome = await getTranslations('home')
-  const { styles: visible, isColdStart } = selectStylesForDiscovery(
+  const { styles: visible } = selectStylesForDiscovery(
     styles,
     artistCounts,
   )
@@ -123,8 +119,6 @@ export async function StyleGrid({
           artistCount={artistCounts.get(style.slug) ?? 0}
           artistsLabel={t('artists')}
           sampleImage={sampleImages?.get(style.slug)}
-          isColdStart={isColdStart}
-          comingSoonLabel={tHome('styleComingSoon')}
         />
       ))}
     </div>

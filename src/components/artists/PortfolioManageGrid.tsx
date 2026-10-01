@@ -26,7 +26,7 @@ export function PortfolioManageGrid({ items, onDelete, onEdit }: PortfolioManage
 
   if (items.length === 0) {
     return (
-      <div className="py-12 text-center text-[#F5F0EB]/40">
+      <div className="py-12 text-center text-[#20241F]/40">
         還沒有任何作品，點擊上方按鈕開始上傳
       </div>
     )
@@ -37,7 +37,7 @@ export function PortfolioManageGrid({ items, onDelete, onEdit }: PortfolioManage
       {items.map((item) => (
         <div
           key={item.id}
-          className="group relative aspect-square overflow-hidden rounded-lg bg-[#141414]"
+          className="group relative aspect-square overflow-hidden rounded-lg bg-[#FFFFFF] focus-within:ring-2 focus-within:ring-[#53614A]"
         >
           <Image
             src={item.image_url}
@@ -46,7 +46,7 @@ export function PortfolioManageGrid({ items, onDelete, onEdit }: PortfolioManage
             className="object-cover"
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
-          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 opacity-0 transition-colors group-hover:bg-black/50 group-hover:opacity-100">
+          <div className="absolute inset-x-0 top-0 flex items-center justify-end gap-1 bg-gradient-to-b from-black/65 to-transparent p-2 opacity-100 transition-opacity md:inset-0 md:justify-center md:gap-2 md:bg-black/50 md:p-0 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <Button
               size="icon"
               variant="ghost"

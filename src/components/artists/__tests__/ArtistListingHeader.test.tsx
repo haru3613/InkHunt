@@ -27,6 +27,7 @@ const MESSAGES: Record<string, string> = {
   coldStartTitle: '刺青師即將上線',
   coldStartHelp: '平台正在冷啟動。',
   coldStartCta: '成為刺青師',
+  coldStartBrowseCta: '逛逛風格介紹',
 }
 
 vi.mock('next-intl', () => ({
@@ -45,6 +46,19 @@ describe('ArtistListingHeader (HAR-435 + cold-start)', () => {
     expect(screen.queryByTestId('artists-cold-start')).not.toBeInTheDocument()
   })
 
+  it('hides low-supply result counts below the public threshold', () => {
+    render(<ArtistListingHeader total={2} hasActiveFilters={false} />)
+
+    expect(screen.queryByText('找到 2 位刺青師')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('artists-cold-start')).not.toBeInTheDocument()
+  })
+
+  it('shows the result count at the public threshold', () => {
+    render(<ArtistListingHeader total={3} hasActiveFilters={false} />)
+
+    expect(screen.getByText('找到 3 位刺青師')).toBeInTheDocument()
+  })
+
   it('shows cold-start invite when total = 0 and no filters', () => {
     render(<ArtistListingHeader total={0} hasActiveFilters={false} />)
 
@@ -53,6 +67,10 @@ describe('ArtistListingHeader (HAR-435 + cold-start)', () => {
     expect(screen.getByText('成為刺青師').closest('a')).toHaveAttribute(
       'href',
       '/artist',
+    )
+    expect(screen.getByText('逛逛風格介紹').closest('a')).toHaveAttribute(
+      'href',
+      '/#styles',
     )
     // Do not show the filtered empty copy or "找到 0 位"
     expect(screen.queryByText('找不到符合條件的刺青師')).not.toBeInTheDocument()

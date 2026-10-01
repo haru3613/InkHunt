@@ -78,6 +78,7 @@ vi.mock('@/components/artists/PortfolioSection', () => ({
   PortfolioSection: () => <div data-testid="portfolio-section" />,
 }))
 vi.mock('@/components/artists/MobileCTA', () => ({ MobileCTA: () => null }))
+vi.mock('@/components/artists/FavoriteButton', () => ({ FavoriteButton: () => null }))
 
 // The write-path wrapper is a client component (useAuth/useRouter) — stub it to
 // a marker that echoes its wiring props so the page test stays a server render.

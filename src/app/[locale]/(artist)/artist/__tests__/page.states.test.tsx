@@ -12,8 +12,11 @@ import userEvent from '@testing-library/user-event'
 const mockPush = vi.fn()
 
 vi.mock('@/i18n/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ replace: mockPush }),
+  Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }))
+
+vi.mock('next-intl', () => ({ useLocale: () => 'zh-TW' }))
 
 const authState = vi.hoisted(() => ({
   isLoading: false,
@@ -40,25 +43,25 @@ describe('ArtistEntryPage states', () => {
   it('shows a loading screen while auth is resolving', () => {
     authState.isLoading = true
     render(<ArtistEntryPage />)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('正在準備你的工作室')
   })
 
   it('shows the landing screen with a LINE login CTA when logged out', async () => {
     authState.isLoggedIn = false
     render(<ArtistEntryPage />)
 
-    expect(screen.getByText('在 InkHunt 展示你的作品')).toBeInTheDocument()
-    const cta = screen.getByRole('button', { name: 'LINE 登入開始建立' })
+    expect(screen.getByRole('heading', { name: /讓懂你作品的人/ })).toBeInTheDocument()
+    const cta = screen.getByRole('button', { name: '使用 LINE 免費開始' })
 
     await userEvent.click(cta)
-    expect(authState.loginWithRedirect).toHaveBeenCalledWith('/artist')
+    expect(authState.loginWithRedirect).toHaveBeenCalledWith('/zh-TW/artist')
   })
 
   it('shows the pending-review screen for a pending artist', () => {
     authState.isLoggedIn = true
     authState.artist = { status: 'pending' }
     render(<ArtistEntryPage />)
-    expect(screen.getByText('申請審核中')).toBeInTheDocument()
+    expect(screen.getByText('你的作品，已經送出審核。')).toBeInTheDocument()
   })
 
   it('redirects to onboarding when logged in with no artist record', () => {

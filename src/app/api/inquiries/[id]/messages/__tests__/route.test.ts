@@ -351,13 +351,14 @@ describe('POST /api/inquiries/[id]/messages', () => {
   })
 
   it('returns 201 when sending an image message', async () => {
+    const protectedImageUrl = `/api/media/inquiries/${MOCK_CONSUMER_USER.supabaseId}/ref-image.jpg`
     const imageMessage = {
       id: 'msg-uuid-img',
       inquiry_id: INQUIRY_ID,
       sender_type: 'consumer',
       sender_id: 'Uconsumer123',
       message_type: 'image',
-      content: 'https://storage.example.com/ref-image.jpg',
+      content: protectedImageUrl,
       created_at: '2026-01-01T11:10:00Z',
     }
     mockRequireAuth.mockResolvedValueOnce(MOCK_CONSUMER_USER)
@@ -371,12 +372,39 @@ describe('POST /api/inquiries/[id]/messages', () => {
 
     const req = makeRequest('POST', `/api/inquiries/${INQUIRY_ID}/messages`, {
       message_type: 'image',
-      content: 'https://storage.example.com/ref-image.jpg',
+      content: protectedImageUrl,
     })
     const res = await POST(req, params)
 
     expect(res.status).toBe(201)
     const body = await res.json()
     expect(body.message_type).toBe('image')
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      INQUIRY_ID,
+      'consumer',
+      MOCK_CONSUMER_USER.lineUserId,
+      'image',
+      protectedImageUrl,
+    )
+  })
+
+  it('rejects an image path owned by another user before writing a message', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_CONSUMER_USER)
+
+    const req = makeRequest('POST', `/api/inquiries/${INQUIRY_ID}/messages`, {
+      message_type: 'image',
+      content: '/api/media/inquiries/another-user-id/forged.jpg',
+    })
+    const res = await POST(req, params)
+
+    expect(res.status).toBe(403)
+    await expect(res.json()).resolves.toEqual({
+      error: 'Image must be a protected upload owned by the current user',
+      code: 'MEDIA_NOT_OWNED',
+    })
+    expect(mockGetInquiryById).not.toHaveBeenCalled()
+    expect(mockSendMessage).not.toHaveBeenCalled()
   })
 })
+
+vi.mock('@/lib/line/defer', () => ({ deferLineNotification: (task: () => Promise<void>) => { void task().catch(() => {}) } }))

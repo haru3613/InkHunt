@@ -115,6 +115,26 @@ describe('StylePage', () => {
     expect(screen.getByTestId('json-ld')).toBeInTheDocument()
     expect(screen.getAllByTestId('artist-card')).toHaveLength(2)
     expect(screen.getByText('Artist A')).toBeInTheDocument()
+    expect(screen.queryByText(/totalArtists/)).not.toBeInTheDocument()
+  })
+
+  it('shows the style artist count at the public threshold', async () => {
+    getStyleBySlug.mockResolvedValue(STYLE)
+    getArtists.mockResolvedValue({
+      data: [
+        { id: 'a1', display_name: 'Artist A', slug: 'a' },
+        { id: 'a2', display_name: 'Artist B', slug: 'b' },
+        { id: 'a3', display_name: 'Artist C', slug: 'c' },
+      ],
+      total: 3,
+    })
+
+    const ui = await StylePage({
+      params: Promise.resolve({ locale: 'zh-TW', style: STYLE.slug }),
+    })
+    render(ui)
+
+    expect(screen.getByText(/totalArtists/)).toBeInTheDocument()
   })
 
   it('renders empty state when no artists', async () => {
@@ -127,6 +147,7 @@ describe('StylePage', () => {
     render(ui)
 
     expect(screen.getByText(/noArtists/)).toBeInTheDocument()
+    expect(screen.queryByText(/totalArtists/)).not.toBeInTheDocument()
   })
 
   it('calls notFound when style does not exist', async () => {

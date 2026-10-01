@@ -1,8 +1,10 @@
+import { deferLineNotification } from '@/lib/line/defer'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, authorizeInquiryAccess, handleApiError } from '@/lib/auth/helpers'
 import { getInquiryById } from '@/lib/supabase/queries/inquiries'
 import { getMessagesByInquiry, sendMessage, markMessagesAsRead } from '@/lib/supabase/queries/messages'
 import { pushNewMessageNotification } from '@/lib/line/messaging'
+import { isOwnedInquiryMediaUrl } from '@/lib/upload/inquiry-media'
 import { z } from 'zod'
 
 const sendMessageSchema = z.object({
@@ -52,6 +54,19 @@ export async function POST(
       )
     }
 
+    if (
+      validation.data.message_type === 'image'
+      && !isOwnedInquiryMediaUrl(validation.data.content, user.supabaseId)
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Image must be a protected upload owned by the current user',
+          code: 'MEDIA_NOT_OWNED',
+        },
+        { status: 403 },
+      )
+    }
+
     const inquiry = await getInquiryById(id)
     if (!inquiry) return NextResponse.json({ error: 'Inquiry not found' }, { status: 404 })
 
@@ -62,9 +77,7 @@ export async function POST(
       id, senderType, user.lineUserId, validation.data.message_type, validation.data.content,
     )
 
-    pushNewMessageNotification(inquiry, message, senderType, user.displayName).catch(() => {
-      // LINE notification failure is non-fatal
-    })
+    deferLineNotification(() => pushNewMessageNotification(inquiry, message, senderType, user.displayName))
 
     return NextResponse.json(message, { status: 201 })
   } catch (err) {

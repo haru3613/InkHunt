@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 // HAR-667: locale-aware router — bare next/navigation drops the locale segment.
-import { useRouter } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useRouter, Link } from '@/i18n/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import { useAuth } from '@/hooks/useAuth'
+import { LineNotificationHint } from '@/components/shared/LineNotificationHint'
 import { ChatList } from '@/components/chat/ChatList'
 import type { Inquiry } from '@/types/database'
 
@@ -24,6 +25,9 @@ export default function ConsumerInquiriesPage() {
   const { isLoggedIn, isLoading: authLoading, loginWithRedirect } = useAuth()
   const router = useRouter()
   const t = useTranslations('inquiry')
+  const locale = useLocale()
+  const en = locale === 'en'
+  const [error, setError] = useState(false)
   const [inquiries, setInquiries] = useState<
     ReadonlyArray<{
       inquiry: { id: string; [key: string]: unknown }
@@ -45,8 +49,9 @@ export default function ConsumerInquiriesPage() {
           ? '/api/inquiries?role=consumer'
           : `/api/inquiries?role=consumer&status=${statusFilter}`
       const res = await fetch(url)
-      if (!res.ok) return
+      if (!res.ok) throw new Error("Unable to load inquiries")
       const data = await res.json()
+      setError(false)
       setInquiries(
         (data.data ?? []).map((inq: Record<string, unknown>) => ({
           inquiry: inq,
@@ -59,7 +64,7 @@ export default function ConsumerInquiriesPage() {
         })),
       )
     } catch {
-      // Silently handle fetch failure; list remains empty
+      setError(true)
     } finally {
       setIsLoading(false)
     }
@@ -68,33 +73,36 @@ export default function ConsumerInquiriesPage() {
   useEffect(() => {
     if (authLoading) return
     if (!isLoggedIn) {
-      loginWithRedirect('/inquiries')
       return
     }
-    fetchInquiries()
+    const timer = setTimeout(() => { void fetchInquiries() }, 0)
+    return () => clearTimeout(timer)
   }, [isLoggedIn, authLoading, loginWithRedirect, fetchInquiries])
 
   const activeFilter =
     STATUS_FILTERS.find((f) => f.value === statusFilter) ?? STATUS_FILTERS[0]
 
+  if (!authLoading && !isLoggedIn) return <div className="v2-container py-14"><h1 className="text-3xl font-semibold">{t('myInquiries')}</h1><div className="mt-8 rounded-xl border border-border bg-card px-6 py-16 text-center"><h2 className="text-xl font-semibold">{en ? 'Keep your conversations in one place.' : '把想法與回覆，留在同一個地方。'}</h2><p className="mt-4 text-muted-foreground">{en ? 'Log in to view your inquiries and arrange appointments. It is free.' : '登入即可查看詢價、接收回覆並討論預約，全程免費。'}</p><button onClick={() => loginWithRedirect(`/${locale}/inquiries`)} className="v2-button mt-7">{en ? 'Log in with LINE' : '使用 LINE 登入'}</button></div></div>
+
   if (authLoading || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0A0A0A] text-[#F5F0EB]/40">
+      <div className="flex items-center justify-center min-h-screen bg-[#F7F6F2] text-[#20241F]/40">
         Loading...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A]">
-      <div className="max-w-lg mx-auto">
-        <div className="p-4 border-b border-[#1F1F1F]">
+    <div className="min-h-screen bg-[#F7F6F2]">
+      <div className="max-w-3xl mx-auto py-10">
+        <div className="p-4 border-b border-[#DEDFD7]">
           <div className="flex items-baseline justify-between gap-2">
-            <h1 className="text-lg font-semibold text-[#F5F0EB]">{t('myInquiries')}</h1>
-            <span className="text-[12px] text-[#F5F0EB]/40 shrink-0">
+            <h1 className="text-3xl font-semibold text-[#20241F]">{t('myInquiries')}</h1>
+            <span className="text-[12px] text-[#20241F]/40 shrink-0">
               {t(activeFilter.labelKey)} · {inquiries.length}
             </span>
           </div>
+          <LineNotificationHint />
           {/* Status filter chips */}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {STATUS_FILTERS.map((filter) => {
@@ -104,10 +112,10 @@ export default function ConsumerInquiriesPage() {
                   key={filter.value}
                   onClick={() => setStatusFilter(filter.value)}
                   aria-pressed={isActive}
-                  className={`px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                  className={`min-h-11 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors ${
                     isActive
-                      ? 'bg-[#C8A97E] text-[#0A0A0A]'
-                      : 'border border-[#2A2A2A] text-[#F5F0EB]/60 hover:text-[#F5F0EB]'
+                      ? 'bg-[#53614A] text-[#F7F6F2]'
+                      : 'border border-[#DEDFD7] text-[#20241F]/60 hover:text-[#20241F]'
                   }`}
                 >
                   {t(filter.labelKey)}
@@ -116,9 +124,10 @@ export default function ConsumerInquiriesPage() {
             })}
           </div>
         </div>
-        {inquiries.length === 0 ? (
-          <div className="p-8 text-center text-[#F5F0EB]/40 text-sm">
+        {error ? <div role="alert" className="p-8 text-center"><p>{en ? "Could not load inquiries. Your conversations are safe." : "無法載入詢價，請稍後重試。"}</p><button className="v2-button secondary mt-5" onClick={fetchInquiries}>{en ? "Retry" : "重試"}</button></div> : inquiries.length === 0 ? (
+          <div className="p-8 text-center text-[#20241F]/40 text-sm">
             {t(activeFilter.emptyKey)}
+            <Link href="/explore" className="mt-6 block text-primary underline">{en ? 'Explore work' : '先去看看作品'}</Link>
           </div>
         ) : (
           <ChatList

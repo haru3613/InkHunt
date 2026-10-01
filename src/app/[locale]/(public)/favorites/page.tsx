@@ -21,20 +21,21 @@ interface FavoritesPageProps {
 export default async function FavoritesPage({ params }: FavoritesPageProps) {
   const { locale } = await params
   setRequestLocale(locale)
+  const en = locale === "en"
 
   const user = await getCurrentUser()
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-6">
+      <div className="v2-container py-12">
         <h1 className="font-display mb-4 text-2xl font-bold text-foreground">
-          我的收藏
+          {en ? 'Saved artists' : '我的收藏'}
         </h1>
         <div
           data-testid="favorites-login-prompt"
           className="flex flex-col items-center gap-4 rounded-lg border border-border bg-card px-6 py-16 text-center"
         >
-          <p className="text-muted-foreground">登入後即可查看你收藏的刺青師</p>
+          <p className="text-muted-foreground">{en ? 'Log in to see your saved artists.' : '登入後即可查看你收藏的刺青師'}</p>
           {/* HAR-684: /login doesn't exist — LINE OAuth entry is the only login.
               Keep the locale prefix so the post-login redirect stays in the
               visitor's language. */}
@@ -42,7 +43,7 @@ export default async function FavoritesPage({ params }: FavoritesPageProps) {
             href={lineLoginUrl(`/${locale}/favorites`)}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
           >
-            登入
+            {en ? 'Log in' : '登入'}
           </a>
         </div>
       </div>
@@ -52,9 +53,9 @@ export default async function FavoritesPage({ params }: FavoritesPageProps) {
   const favorites = await getFavoriteArtists(user.lineUserId)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6">
+    <div className="v2-container py-12">
       <h1 className="font-display mb-4 text-2xl font-bold text-foreground">
-        我的收藏
+        {en ? 'Saved artists' : '我的收藏'}
       </h1>
 
       {favorites.length > 0 ? (
@@ -68,13 +69,13 @@ export default async function FavoritesPage({ params }: FavoritesPageProps) {
         </div>
       ) : (
         <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-card px-6 py-16 text-center">
-          <p className="text-muted-foreground">還沒有收藏的刺青師</p>
+          <p className="text-muted-foreground">{en ? 'No saved artists yet.' : '還沒有收藏的刺青師'}</p>
           <Link
             data-testid="favorites-empty-cta"
             href="/artists"
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-ink-accent-hover"
           >
-            探索刺青師
+            {en ? 'Explore artists' : '探索刺青師'}
           </Link>
         </div>
       )}

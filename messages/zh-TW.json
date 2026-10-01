@@ -12,7 +12,8 @@
     "openMenu": "開啟選單",
     "login": "登入",
     "becomeArtist": "成為刺青師",
-    "admin": "管理後台"
+    "admin": "管理後台",
+    "myInquiries": "我的詢價"
   },
   "home": {
     "heroTitle": "找到你的刺青師",
@@ -93,7 +94,8 @@
     "coldStartLabel": "即將開放",
     "coldStartTitle": "刺青師即將上線",
     "coldStartHelp": "平台正在冷啟動。先登記成為刺青師，或回到首頁探索風格。",
-    "coldStartCta": "成為刺青師"
+    "coldStartCta": "成為刺青師",
+    "coldStartBrowseCta": "逛逛風格介紹"
   },
   "artistProfile": {
     "portfolio": "作品集",
@@ -234,7 +236,7 @@
   },
   "metadata": {
     "defaultTitle": "InkHunt — 找到你的刺青師",
-    "defaultDescription": "台灣第一個刺青師媒合平台。按風格篩選、瀏覽作品集、價格透明、一鍵詢價。",
+    "defaultDescription": "探索台灣刺青作品，依風格與地區找到刺青師，免費詢價、討論預約。刺青師與使用者都免費，平台不抽成。",
     "artistsTitle": "找刺青師 | InkHunt",
     "artistsDescription": "按風格、地區篩選台灣刺青師，瀏覽作品集，一鍵詢價",
     "artistPortfolio": "{name} — 刺青作品集",
@@ -243,7 +245,7 @@
   "about": {
     "title": "關於 InkHunt",
     "missionTitle": "我們的使命",
-    "missionBody": "InkHunt 是台灣第一個刺青師垂直媒合平台。我們的目標是讓找刺青不再靠 IG 盲滑和私訊碰運氣，而是透過風格篩選、作品集瀏覽、價格透明化，幫助消費者找到最適合的刺青師。",
+    "missionBody": "InkHunt 希望讓喜歡作品的人與創作者找到彼此。刺青師可以免費建立作品頁、接收詢問；使用者可以探索作品、整理想法並討論預約。雙方都免費，平台不抽成，也不以付費決定曝光。",
     "whyTitle": "為什麼選擇 InkHunt？",
     "why1": "依風格和地區精準篩選，不再大海撈針",
     "why2": "完整作品集展示，所見即所得",

@@ -1,6 +1,58 @@
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/server'
-import type { Quote, Message, Json } from '@/types/database'
+import type { Quote, Message } from '@/types/database'
+
+export type QuoteMutationCode =
+  | 'ARTIST_NOT_ACTIVE'
+  | 'INQUIRY_NOT_FOUND'
+  | 'INQUIRY_NOT_OPEN'
+  | 'QUOTE_FORBIDDEN'
+  | 'QUOTE_NOT_ACTIONABLE'
+
+export class QuoteMutationError extends Error {
+  constructor(
+    public readonly code: QuoteMutationCode,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'QuoteMutationError'
+  }
+}
+
+interface RpcError {
+  message: string
+}
+
+interface QuoteTransactionResult {
+  quote: Quote
+  message: Message
+}
+
+interface QuoteRpcClient {
+  rpc(
+    functionName: string,
+    args: Record<string, unknown>,
+  ): Promise<{ data: unknown; error: RpcError | null }>
+}
+
+function mapQuoteRpcError(error: RpcError, fallback: string): Error {
+  if (error.message.includes('INKHUNT_ARTIST_NOT_ACTIVE')) {
+    return new QuoteMutationError('ARTIST_NOT_ACTIVE', 'Artist is not active')
+  }
+  if (error.message.includes('INKHUNT_INQUIRY_NOT_FOUND')) {
+    return new QuoteMutationError('INQUIRY_NOT_FOUND', 'Inquiry not found')
+  }
+  if (error.message.includes('INKHUNT_INQUIRY_NOT_OPEN')) {
+    return new QuoteMutationError('INQUIRY_NOT_OPEN', 'Inquiry is no longer open')
+  }
+  if (error.message.includes('INKHUNT_QUOTE_FORBIDDEN')) {
+    return new QuoteMutationError('QUOTE_FORBIDDEN', 'Forbidden')
+  }
+  if (error.message.includes('INKHUNT_QUOTE_NOT_ACTIONABLE')) {
+    return new QuoteMutationError('QUOTE_NOT_ACTIONABLE', 'Quote is no longer actionable')
+  }
+  return new Error(`${fallback}: ${error.message}`)
+}
 
 const quoteCreateSchema = z.object({
   price: z.number().int().min(1, 'Price must be positive'),
@@ -21,101 +73,47 @@ export async function createQuote(
   data: QuoteCreateInput,
 ): Promise<{ quote: Quote; message: Message }> {
   const admin = createAdminClient()
+  const rpcClient = admin as unknown as QuoteRpcClient
+  const { data: result, error } = await rpcClient.rpc('create_quote_transaction', {
+    p_inquiry_id: inquiryId,
+    p_artist_id: artistId,
+    p_sender_line_id: senderId,
+    p_price: data.price,
+    p_note: data.note ?? null,
+    p_available_dates: data.available_dates?.join(', ') ?? null,
+    p_available_dates_json: data.available_dates ?? null,
+    p_message_content: `報價 NT$${data.price.toLocaleString()}`,
+  })
 
-  const { data: quote, error: quoteError } = await admin
-    .from('quotes')
-    .insert({
-      inquiry_id: inquiryId,
-      artist_id: artistId,
-      price: data.price,
-      note: data.note ?? null,
-      available_dates: data.available_dates?.join(', ') ?? null,
-    })
-    .select()
-    .single()
-
-  if (quoteError || !quote) {
-    throw new Error(`Failed to create quote: ${quoteError?.message}`)
+  if (error) throw mapQuoteRpcError(error, 'Failed to create quote')
+  if (!result || typeof result !== 'object' || !('quote' in result) || !('message' in result)) {
+    throw new Error('Failed to create quote: invalid transaction response')
   }
 
-  const { data: message, error: msgError } = await admin
-    .from('messages')
-    .insert({
-      inquiry_id: inquiryId,
-      sender_type: 'artist' as const,
-      sender_id: senderId,
-      message_type: 'quote' as const,
-      content: `報價 NT$${data.price.toLocaleString()}`,
-      metadata: {
-        quote_id: quote.id,
-        price: data.price,
-        note: data.note ?? null,
-        available_dates: data.available_dates ?? null,
-        status: 'sent',
-      } as Json,
-    })
-    .select()
-    .single()
-
-  if (msgError || !message) {
-    throw new Error(`Failed to create quote message: ${msgError?.message}`)
-  }
-
-  await admin
-    .from('inquiries')
-    .update({ status: 'quoted' })
-    .eq('id', inquiryId)
-
-  return { quote, message }
+  return result as QuoteTransactionResult
 }
 
 export async function respondToQuote(
   quoteId: string,
   inquiryId: string,
   status: 'accepted' | 'rejected',
-  inquiryStatus?: string,
+  consumerLineId: string,
 ): Promise<Quote | null> {
   const admin = createAdminClient()
-
-  // State machine guard: prevent responding to quotes if inquiry is already accepted
-  if (inquiryStatus === 'accepted') {
-    throw new Error('Inquiry is already accepted')
-  }
-
-  // Scope by inquiry_id too (IDOR guard) — mirrors markQuoteViewed below.
-  // 0 rows matched (quote_id belongs to a different inquiry) → null, not an error.
-  const { data: quote, error } = await admin
-    .from('quotes')
-    .update({ status })
-    .eq('id', quoteId)
-    .eq('inquiry_id', inquiryId)
-    .select()
-    .maybeSingle()
-
-  if (error) {
-    throw new Error(`Failed to update quote: ${error.message}`)
-  }
-  if (!quote) {
-    return null
-  }
-
-  const statusText = status === 'accepted' ? '已接受報價' : '已拒絕報價'
-  await admin.from('messages').insert({
-    inquiry_id: inquiryId,
-    sender_type: 'system' as const,
-    sender_id: null,
-    message_type: 'system' as const,
-    content: statusText,
+  const rpcClient = admin as unknown as QuoteRpcClient
+  const { data: quote, error } = await rpcClient.rpc('respond_to_quote_transaction', {
+    p_quote_id: quoteId,
+    p_inquiry_id: inquiryId,
+    p_consumer_line_id: consumerLineId,
+    p_status: status,
   })
 
-  if (status === 'accepted') {
-    await admin
-      .from('inquiries')
-      .update({ status: 'accepted' })
-      .eq('id', inquiryId)
+  if (error) throw mapQuoteRpcError(error, 'Failed to update quote')
+  if (quote === null) return null
+  if (typeof quote !== 'object' || !('id' in quote)) {
+    throw new Error('Failed to update quote: invalid transaction response')
   }
-
-  return quote
+  return quote as Quote
 }
 
 export async function markQuoteViewed(quoteId: string, inquiryId: string) {

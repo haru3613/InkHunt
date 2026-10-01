@@ -24,6 +24,42 @@ interface LineProfile {
   pictureUrl?: string
 }
 
+const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/
+
+/**
+ * Accept only same-site absolute paths for the post-login redirect.
+ * Repeated decoding prevents encoded or double-encoded protocol-relative
+ * paths and backslashes from becoming cross-origin redirects downstream.
+ */
+export function getSafeLineRedirectPath(value: string | null | undefined): string {
+  if (!value || !value.startsWith('/')) return '/'
+
+  let decoded = value
+  for (let pass = 0; pass < 5; pass++) {
+    if (
+      decoded.startsWith('//') ||
+      decoded.includes('\\') ||
+      CONTROL_CHARACTER.test(decoded)
+    ) {
+      return '/'
+    }
+
+    let next: string
+    try {
+      next = decodeURIComponent(decoded)
+    } catch {
+      return '/'
+    }
+
+    if (next === decoded) return value
+    decoded = next
+  }
+
+  // Reject excessive nested encoding instead of guessing how another layer
+  // might interpret it.
+  return '/'
+}
+
 export function getLineAuthUrl(): LineAuthUrl {
   const state = randomBytes(16).toString('hex')
   const nonce = randomBytes(16).toString('hex')

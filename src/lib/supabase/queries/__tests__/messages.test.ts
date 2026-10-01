@@ -95,6 +95,21 @@ describe('getUnreadCountsForUser', () => {
 describe('getMessagesByInquiry', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
+  it('hydrates quote cards from persisted state, not creation-time metadata', async () => {
+    mockFrom.mockReturnValueOnce(makeThenable({ data: [{...BASE_MESSAGE, message_type:'quote', metadata:{quote_id:'q1',status:'sent',price:4500}}], error:null }))
+      .mockReturnValueOnce(makeThenable({ data:[{id:'q1',status:'accepted'}], error:null }))
+    const result = await getMessagesByInquiry('inq-1')
+    expect(result[0].metadata).toEqual({quote_id:'q1',status:'accepted',price:4500})
+    expect(mockFrom).toHaveBeenLastCalledWith('quotes')
+  })
+
+  it('does not offer actions when quote status cannot be loaded', async () => {
+    mockFrom.mockReturnValueOnce(makeThenable({ data: [{...BASE_MESSAGE,message_type:'quote',metadata:{quote_id:'q1',status:'sent'}}], error:null }))
+      .mockReturnValueOnce(makeThenable({ data:null,error:{message:'offline'} }))
+    await expect(getMessagesByInquiry('inq-1')).rejects.toThrow('Failed to fetch quote status')
+  })
+
+
   it('returns messages ordered by created_at ascending', async () => {
     const messages = [BASE_MESSAGE, { ...BASE_MESSAGE, id: 'msg-2' }]
     mockFrom.mockReturnValue(makeThenable({ data: messages, error: null }))

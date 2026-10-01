@@ -33,7 +33,7 @@ describe('selectStylesForDiscovery', () => {
     // floral / lettering preferred over unsplash-only entries in order
     expect(styles.map((s) => s.slug)).toContain('floral')
     expect(styles.map((s) => s.slug)).toContain('lettering')
-    expect(styles.length).toBeLessThanOrEqual(12)
+    expect(styles.length).toBeLessThanOrEqual(8)
   })
 
   it('with supply: only styles that have artists, sorted by count desc', () => {

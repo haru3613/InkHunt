@@ -1,3 +1,4 @@
+import { deferLineNotification } from '@/lib/line/defer'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, handleApiError } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
@@ -64,13 +65,10 @@ export async function PATCH(
     revalidateArtistPage((data as { slug: string }).slug)
 
     if ((prior as { status?: string } | null)?.status === 'pending') {
-      // Fire-and-forget: LINE push is non-fatal to the admin action.
-      pushReviewOutcomeNotification(
+      deferLineNotification(() => pushReviewOutcomeNotification(
         data as Artist,
         validation.data.status === 'active' ? 'approved' : 'rejected',
-      ).catch(() => {
-        // LINE notification failure is non-fatal
-      })
+      ))
     }
 
     return NextResponse.json(data)

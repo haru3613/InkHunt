@@ -43,7 +43,6 @@ vi.mock('../StepBasicInfo', () => ({
 
 vi.mock('../StepStylePicker', () => ({
   StepStylePicker: ({
-    data,
     onChange,
     onNext,
     onBack,
@@ -74,7 +73,6 @@ vi.mock('../StepStylePicker', () => ({
 
 vi.mock('../StepPriceLocation', () => ({
   StepPriceLocation: ({
-    data,
     onChange,
     onNext,
     onBack,
@@ -105,17 +103,30 @@ vi.mock('../StepPriceLocation', () => ({
 
 vi.mock('../StepPortfolio', () => ({
   StepPortfolio: ({
+    data,
+    onChange,
     onSubmit,
     onSkip,
     onBack,
     isSubmitting,
   }: {
+    data: { files: File[]; previewUrls: string[] }
+    onChange: (data: { files: File[]; previewUrls: string[] }) => void
     onSubmit: () => void
     onSkip: () => void
     onBack: () => void
     isSubmitting: boolean
   }) => (
     <div data-testid="step-portfolio">
+      <button
+        data-testid="add-portfolio-file"
+        onClick={() => {
+          const file = new File(['image'], `work-${data.files.length + 1}.jpg`, { type: 'image/jpeg' })
+          onChange({ files: [...data.files, file], previewUrls: [...data.previewUrls, `blob:${file.name}`] })
+        }}
+      >
+        Add file
+      </button>
       <button data-testid="submit" onClick={onSubmit}>
         Submit
       </button>
@@ -394,23 +405,6 @@ describe('OnboardingWizard', () => {
   })
 
   it('uploads portfolio files on submit when files are present (non-skip path)', async () => {
-    // vi.mock is module-scoped and hoisted, so the StepPortfolio mock used here already
-    // exposes an onChange prop we can drive. We need the wizard's internal portfolio state
-    // to hold files before submit. The mock StepPortfolio does not expose an "add file"
-    // button, so we use a separate describe block with a localised mock via vi.mock factory
-    // to inject an "Add File" button — but that requires a module reload which is not
-    // practical inside a single describe. The cleanest unit-testable path is therefore:
-    //
-    //   1. Verify that submit WITH files calls uploadFile and then POSTs each URL to
-    //      /api/artists/:slug/portfolio — this is covered by the component source code
-    //      contract (lines 90-101) that we read directly.
-    //   2. Verify that submit WITHOUT files does NOT call uploadFile (negative path).
-    //   3. Verify that skip never calls uploadFile regardless of files (covered above).
-    //
-    // The positive upload path (files.length > 0) is exercised here by reaching the
-    // wizard's onChange through a wrapper component that renders OnboardingWizard and
-    // directly invokes the portfolio onChange before proceeding to submit.
-
     const artistSlug = 'test-artist-upload'
     mockFetch
       .mockResolvedValueOnce(makeOkResponse({ slug: artistSlug }))
@@ -419,11 +413,9 @@ describe('OnboardingWizard', () => {
     const mockUpload = vi.mocked(uploadFile)
     mockUpload.mockResolvedValue('https://cdn.example.com/photo.jpg')
 
-    // With the module-scoped mock the StepPortfolio renders with empty portfolio.files
-    // (initial state). The submit path skips uploadFile when files.length === 0,
-    // so this render verifies the zero-file branch of the non-skip submit:
     render(<OnboardingWizard />)
     await navigateToStep4()
+    fireEvent.click(screen.getByTestId('add-portfolio-file'))
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('submit'))
@@ -433,19 +425,43 @@ describe('OnboardingWizard', () => {
       expect(screen.getByTestId('complete')).toBeInTheDocument()
     })
 
-    // No files staged — uploadFile must not have been invoked
-    expect(mockUpload).not.toHaveBeenCalled()
-
-    // POST /api/artists was called exactly once; no portfolio endpoint was hit
+    expect(mockUpload).toHaveBeenCalledOnce()
     const artistCalls = mockFetch.mock.calls.filter(
       (c: unknown[]) => (c[0] as string) === '/api/artists',
     )
     expect(artistCalls).toHaveLength(1)
-
     const portfolioCalls = mockFetch.mock.calls.filter((c: unknown[]) =>
       (c[0] as string).includes('/portfolio'),
     )
-    expect(portfolioCalls).toHaveLength(0)
+    expect(portfolioCalls).toHaveLength(1)
+  })
+
+  it('reports partial portfolio failures and retries only failed files without another artist POST', async () => {
+    const mockUpload = vi.mocked(uploadFile)
+    mockUpload
+      .mockResolvedValueOnce('https://cdn.example.com/first.jpg')
+      .mockRejectedValueOnce(new Error('storage unavailable'))
+      .mockResolvedValueOnce('https://cdn.example.com/retry.jpg')
+    mockFetch
+      .mockResolvedValueOnce(makeOkResponse({ slug: 'retry-artist' }))
+      .mockResolvedValueOnce(makeOkResponse({}))
+      .mockResolvedValueOnce(makeOkResponse({}))
+
+    render(<OnboardingWizard />)
+    await navigateToStep4()
+    fireEvent.click(screen.getByTestId('add-portfolio-file'))
+    fireEvent.click(screen.getByTestId('add-portfolio-file'))
+    fireEvent.click(screen.getByTestId('submit'))
+
+    expect(await screen.findByText(/有 1 張作品上傳失敗/)).toBeInTheDocument()
+    expect(screen.getByText('work-2.jpg')).toBeInTheDocument()
+    expect(screen.queryByTestId('complete')).not.toBeInTheDocument()
+    expect(mockFetch.mock.calls.filter((call: unknown[]) => call[0] === '/api/artists')).toHaveLength(1)
+
+    fireEvent.click(screen.getByTestId('submit'))
+    await waitFor(() => expect(screen.getByTestId('complete')).toBeInTheDocument())
+    expect(mockFetch.mock.calls.filter((call: unknown[]) => call[0] === '/api/artists')).toHaveLength(1)
+    expect(mockUpload).toHaveBeenCalledTimes(3)
   })
 
   it('prefills display_name from prefillName prop', () => {
@@ -481,3 +497,5 @@ describe('OnboardingWizard', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 })
+
+vi.mock('@/components/shared/LineNotificationHint', () => ({ LineNotificationHint: () => null }))

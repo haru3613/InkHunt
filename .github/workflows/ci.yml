@@ -28,7 +28,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npx --yes npm@11.6.2 ci
 
       - name: Lint
         run: npx eslint src/
@@ -48,7 +48,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npx --yes npm@11.6.2 ci
 
       - name: Unit tests
         run: npx vitest run --reporter=verbose
@@ -127,7 +127,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npx --yes npm@11.6.2 ci
 
       - name: Build
         run: npx next build
@@ -139,12 +139,24 @@ jobs:
     needs: [lint-and-typecheck, test, build, migration-check]
     steps:
       - name: Check results
+        env:
+          LINT: ${{ needs.lint-and-typecheck.result }}
+          TEST: ${{ needs.test.result }}
+          BUILD: ${{ needs.build.result }}
+          MIGRATION: ${{ needs.migration-check.result }}
+          BUILD_SKIP_ALLOWED: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref == 'staging' }}
+          MIGRATION_SKIP_ALLOWED: ${{ github.event_name != 'pull_request' }}
         run: |
-          LINT="${{ needs.lint-and-typecheck.result }}"
-          TEST="${{ needs.test.result }}"
-          BUILD="${{ needs.build.result }}"
-          if [[ "$LINT" == "failure" || "$TEST" == "failure" || "$BUILD" == "failure" ]]; then
-            echo "CI failed: lint=$LINT test=$TEST build=$BUILD"
+          if [[ "$LINT" != "success" || "$TEST" != "success" ]]; then
+            echo "CI failed: lint=$LINT test=$TEST"
             exit 1
           fi
-          echo "CI passed: lint=$LINT test=$TEST build=$BUILD"
+          if [[ "$BUILD" != "success" ]] && ! [[ "$BUILD" == "skipped" && "$BUILD_SKIP_ALLOWED" == "true" ]]; then
+            echo "CI failed: build=$BUILD"
+            exit 1
+          fi
+          if [[ "$MIGRATION" != "success" ]] && ! [[ "$MIGRATION" == "skipped" && "$MIGRATION_SKIP_ALLOWED" == "true" ]]; then
+            echo "CI failed: migration=$MIGRATION"
+            exit 1
+          fi
+          echo "CI passed: lint=$LINT test=$TEST build=$BUILD migration=$MIGRATION"

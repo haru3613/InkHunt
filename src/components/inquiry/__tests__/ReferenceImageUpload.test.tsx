@@ -103,6 +103,17 @@ describe('ReferenceImageUpload', () => {
       expect(thumbnails[1]).toHaveAttribute('src', images[1])
     })
 
+    it('normalizes legacy inquiry media to the protected same-origin endpoint', () => {
+      const path = 'U-legacy/123e4567-e89b-12d3-a456-426614174000.webp'
+      render(
+        <ReferenceImageUpload
+          images={[`https://project.supabase.co/storage/v1/object/public/inquiries/${path}`]}
+          onImagesChange={onImagesChange}
+        />,
+      )
+      expect(screen.getByRole('img')).toHaveAttribute('src', `/api/media/inquiries/${path}`)
+    })
+
     it('renders one fewer empty slot for each uploaded image', () => {
       const images = ['https://example.com/img1.jpg']
       render(

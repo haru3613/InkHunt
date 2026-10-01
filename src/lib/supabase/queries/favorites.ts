@@ -67,7 +67,7 @@ export async function getFavoriteArtists(
 
   return (data as unknown as FavoriteArtistJoinRow[])
     .map((row) => row.artists)
-    .filter((a): a is SupabaseArtistRow => a !== null)
+    .filter((a): a is SupabaseArtistRow => a !== null && a.status === 'active')
     .map(transformArtistRow)
 }
 

@@ -28,6 +28,7 @@ import {
   buildReviewOutcomeMessage,
   pushNewInquiryNotification,
   pushQuoteNotification,
+  pushQuoteResponseNotification,
   pushNewMessageNotification,
   pushReviewOutcomeNotification,
 } from '../messaging'
@@ -617,5 +618,22 @@ describe('pushReviewOutcomeNotification', () => {
       lineError,
       expect.objectContaining({ fn: 'pushReviewOutcomeNotification' }),
     )
+  })
+})
+
+
+describe('quote response notification', () => {
+  beforeEach(() => { vi.clearAllMocks(); vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://ink-hunt.com'); vi.stubEnv('INKHUNT_LOCAL_TEST', 'false') })
+  it('notifies the owning artist of acceptance with a workspace link', async () => {
+    mockAdminFrom.mockReturnValue(makeThenable({line_user_id:'artist-recipient'}))
+    mockPushMessage.mockResolvedValue(undefined)
+    await pushQuoteResponseNotification(makeInquiry(), 'accepted', '小美')
+    expect(mockPushMessage).toHaveBeenCalledWith({to:'artist-recipient',messages:[{type:'text',text:'小美已接受報價，可以開始安排預約時間。\nhttps://ink-hunt.com/zh-TW/artist/inquiries'}]})
+  })
+  it('records failures without failing quote settlement', async () => {
+    mockAdminFrom.mockReturnValue(makeThenable({line_user_id:'artist-recipient'}))
+    mockPushMessage.mockRejectedValue(new Error('offline'))
+    await expect(pushQuoteResponseNotification(makeInquiry(), 'rejected', '小美')).resolves.toBeUndefined()
+    expect(mockReportError).toHaveBeenCalledWith('line-messaging',expect.any(Error),{fn:'pushQuoteResponseNotification'})
   })
 })

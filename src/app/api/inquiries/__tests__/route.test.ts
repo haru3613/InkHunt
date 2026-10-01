@@ -15,6 +15,11 @@ vi.mock('@/lib/auth/helpers', () => ({
 }))
 
 vi.mock('@/lib/supabase/queries/inquiries', () => ({
+  InquiryMutationError: class InquiryMutationError extends Error {
+    constructor(public code: string, message: string) {
+      super(message)
+    }
+  },
   validateInquiryCreate: vi.fn(),
   createInquiry: vi.fn(),
   getInquiriesForArtist: vi.fn(),
@@ -37,6 +42,7 @@ import {
   createInquiry,
   getInquiriesForArtist,
   getInquiriesForConsumer,
+  InquiryMutationError,
 } from '@/lib/supabase/queries/inquiries'
 import { getUnreadCountsForUser } from '@/lib/supabase/queries/messages'
 
@@ -164,6 +170,33 @@ describe('POST /api/inquiries', () => {
       MOCK_USER.displayName,
       validData,
     )
+    expect(mockValidateInquiryCreate).toHaveBeenCalledWith(
+      validData,
+      MOCK_USER.supabaseId,
+    )
+  })
+
+  it('returns a structured conflict when the target artist is inactive', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    const validData = {
+      artist_id: 'artist-uuid-1',
+      description: '我想刺一個幾何圖案在背部中央位置',
+      reference_images: [],
+    }
+    mockValidateInquiryCreate.mockReturnValueOnce({
+      success: true,
+      data: validData,
+    } as ReturnType<typeof validateInquiryCreate>)
+    mockCreateInquiry.mockRejectedValueOnce(
+      new InquiryMutationError('ARTIST_NOT_ACTIVE' as never, 'Artist is not accepting inquiries'),
+    )
+
+    const res = await POST(makeRequest('POST', '/api/inquiries', validData))
+    expect(res.status).toBe(409)
+    await expect(res.json()).resolves.toEqual({
+      error: 'Artist is not accepting inquiries',
+      code: 'ARTIST_NOT_ACTIVE',
+    })
   })
 })
 
@@ -291,3 +324,5 @@ describe('GET /api/inquiries', () => {
     expect(mockGetInquiriesForConsumer).toHaveBeenCalledWith(MOCK_USER.lineUserId, undefined, 1)
   })
 })
+
+vi.mock('@/lib/line/defer', () => ({ deferLineNotification: (task: () => Promise<void>) => { void task().catch(() => {}) } }))

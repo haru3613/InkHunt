@@ -8,8 +8,6 @@ import { NextIntlClientProvider } from "next-intl"
 import { routing } from "@/i18n/routing"
 import { GoogleAnalytics } from "@/components/shared/GoogleAnalytics"
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ink-hunt.com'
-
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -44,6 +42,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "metadata" })
 
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://ink-hunt.com'),
     title: {
       template: "%s | InkHunt",
       default: t("defaultTitle"),
@@ -56,13 +55,6 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-    },
-    alternates: {
-      canonical: `${baseUrl}/${locale}`,
-      languages: {
-        'zh-TW': `${baseUrl}/zh-TW`,
-        'en': `${baseUrl}/en`,
-      },
     },
   }
 }

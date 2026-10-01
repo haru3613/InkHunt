@@ -10,6 +10,7 @@ vi.mock('next/image', () => ({
 }))
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'zh-TW',
   useTranslations: () => (key: string) => key,
 }))
 
@@ -87,7 +88,7 @@ describe('AuthSection', () => {
     const user = userEvent.setup()
 
     await user.click(screen.getAllByRole('button')[0])
-    expect(screen.getByText('刺青師後台')).toBeInTheDocument()
+    expect(screen.getByText('刺青師工作室')).toBeInTheDocument()
     await user.click(screen.getByText('登出'))
 
     expect(mockLogout).toHaveBeenCalled()

@@ -199,7 +199,7 @@ function searchPredicate(q: string | null | undefined): string | null {
 
 export const ARTIST_PUBLIC_SELECT = `
   id, slug, display_name, bio, avatar_url, ig_handle,
-  city, district, address, lat, lng,
+  city, district,
   price_min, price_max, pricing_note, deposit_amount,
   booking_notice, status, is_claimed, featured,
   offers_coverup, offers_custom_design, has_flash_designs,

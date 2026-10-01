@@ -13,7 +13,7 @@ import type { SendQuoteRequest } from '@/types/chat'
 import { compareByBudgetDesc } from '@/lib/inquiries/budget-triage'
 
 // TopBar: h-12 (48px) mobile, h-14 (56px) desktop + bottom tab h-16 (64px) on mobile
-const CHAT_HEIGHT_CLASSES = 'h-[calc(100dvh-48px-64px)] lg:h-[calc(100dvh-56px)]'
+const CHAT_HEIGHT_CLASSES = 'h-[calc(100dvh-72px-64px)] lg:h-[calc(100dvh-72px)]'
 
 // 'all' omits the status query param; the rest map 1:1 to /api/inquiries?status=
 type StatusFilter = 'all' | Inquiry['status']
@@ -42,24 +42,25 @@ export default function InquiriesPage() {
   const [inquiries, setInquiries] = useState<ChatListItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [quoteModalOpen, setQuoteModalOpen] = useState(false)
   const [templates, setTemplates] = useState<QuoteTemplate[]>([])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [sortBy, setSortBy] = useState<SortBy>('recent')
   const [isClosing, setIsClosing] = useState(false)
   const [closeError, setCloseError] = useState<string | null>(null)
+  const [templatesError, setTemplatesError] = useState<string | null>(null)
 
   const fetchInquiries = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError(null)
     try {
       const url =
         statusFilter === 'all'
           ? '/api/inquiries?role=artist'
           : `/api/inquiries?role=artist&status=${statusFilter}`
       const response = await fetch(url)
-      if (!response.ok) {
-        setIsLoading(false)
-        return
-      }
+      if (!response.ok) throw new Error(`Unable to load inquiries (${response.status})`)
       const data = await response.json()
       setInquiries(
         (data.data ?? []).map((inq: Inquiry) => ({
@@ -72,22 +73,28 @@ export default function InquiriesPage() {
           unread_count: 0,
         })),
       )
+    } catch {
+      setLoadError('無法載入詢價，請檢查連線後重新載入。')
     } finally {
       setIsLoading(false)
     }
   }, [statusFilter])
 
   useEffect(() => {
-    fetchInquiries()
+    const timer = window.setTimeout(() => { void fetchInquiries() }, 0)
+    return () => window.clearTimeout(timer)
   }, [fetchInquiries])
 
   useEffect(() => {
     fetch('/api/artists/me/templates')
-      .then((res) => (res.ok ? res.json() : { templates: [] }))
+      .then((res) => {
+        if (!res.ok) throw new Error('Unable to load quote templates')
+        return res.json()
+      })
       .then((data: { templates?: QuoteTemplate[] }) =>
         setTemplates(data.templates ?? []),
       )
-      .catch(() => {})
+      .catch(() => setTemplatesError('常用報價範本暫時無法載入，仍可手動建立報價。'))
   }, [])
 
   const handleSendQuote = useCallback(
@@ -170,24 +177,33 @@ export default function InquiriesPage() {
 
   if (isLoading) {
     return (
-      <div className={`flex items-center justify-center text-[#F5F0EB]/40 ${CHAT_HEIGHT_CLASSES}`}>
+      <div className={`flex items-center justify-center text-[#20241F]/40 ${CHAT_HEIGHT_CLASSES}`}>
         載入中...
       </div>
     )
   }
 
+  if (loadError) {
+    return (
+      <div className={`flex flex-col items-center justify-center gap-4 bg-[#F7F6F2] px-6 text-center text-sm text-[#20241F] ${CHAT_HEIGHT_CLASSES}`}>
+        <p role="alert">{loadError}</p>
+        <button type="button" onClick={fetchInquiries} className="h-11 rounded-lg bg-[#53614A] px-4 font-medium text-[#F7F6F2] hover:bg-[#3E4B36]">重新載入</button>
+      </div>
+    )
+  }
+
   return (
-    <div className={`flex bg-[#0A0A0A] ${CHAT_HEIGHT_CLASSES}`}>
+    <div className={`flex bg-[#F7F6F2] ${CHAT_HEIGHT_CLASSES}`}>
       {/* Chat list — full width on mobile, fixed 320px on desktop */}
       <div
-        className={`${selectedId ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-80 border-r border-[#2A2A2A]`}
+        className={`${selectedId ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-80 border-r border-[#DEDFD7]`}
       >
-        <div className="px-4 py-3 border-b border-[#2A2A2A]">
+        <div className="px-4 py-3 border-b border-[#DEDFD7]">
           <div className="flex items-baseline justify-between gap-2">
-            <h1 className="font-display text-lg font-semibold text-[#F5F0EB]">
+            <h1 className="font-display text-lg font-semibold text-[#20241F]">
               詢價管理
             </h1>
-            <span className="text-[12px] text-[#F5F0EB]/40 shrink-0">
+            <span className="text-[12px] text-[#20241F]/40 shrink-0">
               {activeFilter.label} · {inquiries.length}
             </span>
           </div>
@@ -202,8 +218,8 @@ export default function InquiriesPage() {
                   aria-pressed={isActive}
                   className={`px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors ${
                     isActive
-                      ? 'bg-[#C8A97E] text-[#0A0A0A]'
-                      : 'border border-[#2A2A2A] text-[#F5F0EB]/60 hover:text-[#F5F0EB]'
+                      ? 'bg-[#53614A] text-[#F7F6F2]'
+                      : 'border border-[#DEDFD7] text-[#20241F]/60 hover:text-[#20241F]'
                   }`}
                 >
                   {filter.label}
@@ -222,8 +238,8 @@ export default function InquiriesPage() {
                   aria-pressed={isActive}
                   className={`px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors ${
                     isActive
-                      ? 'bg-[#C8A97E] text-[#0A0A0A]'
-                      : 'border border-[#2A2A2A] text-[#F5F0EB]/60 hover:text-[#F5F0EB]'
+                      ? 'bg-[#53614A] text-[#F7F6F2]'
+                      : 'border border-[#DEDFD7] text-[#20241F]/60 hover:text-[#20241F]'
                   }`}
                 >
                   {tSort(option.labelKey)}
@@ -233,7 +249,7 @@ export default function InquiriesPage() {
           </div>
         </div>
         {inquiries.length === 0 ? (
-          <div className="p-8 text-center text-[#F5F0EB]/40 text-sm">
+          <div className="p-8 text-center text-[#20241F]/40 text-sm">
             {activeFilter.emptyCopy}
           </div>
         ) : (
@@ -251,16 +267,17 @@ export default function InquiriesPage() {
         {selectedId && user ? (
           <>
             {/* Mobile back navigation */}
-            <div className="lg:hidden flex items-center gap-2 px-4 py-3 border-b border-[#2A2A2A]">
+            <div className="lg:hidden flex items-center gap-2 px-4 py-3 border-b border-[#DEDFD7]">
               <button
                 onClick={() => setSelectedId(null)}
-                className="text-[#F5F0EB]/60 hover:text-[#F5F0EB] text-sm transition-colors"
+                className="text-[#20241F]/60 hover:text-[#20241F] text-sm transition-colors"
                 aria-label="返回列表"
               >
                 ← 返回
               </button>
             </div>
             <ChatWindow
+              key={selectedId}
               inquiryId={selectedId}
               currentUserId={user.lineUserId}
               isArtist={true}
@@ -274,7 +291,7 @@ export default function InquiriesPage() {
             />
           </>
         ) : (
-          <div className="flex items-center justify-center h-full text-[#F5F0EB]/30 text-sm">
+          <div className="flex items-center justify-center h-full text-[#20241F]/30 text-sm">
             選擇一個對話開始聊天
           </div>
         )}
@@ -282,14 +299,17 @@ export default function InquiriesPage() {
 
       {/* Quote form modal — triggered by the $ button in ChatInput */}
       {selectedId && (
-        <QuoteFormModal
-          open={quoteModalOpen}
-          onOpenChange={setQuoteModalOpen}
-          consumerName={selectedItem?.consumer_name ?? ''}
-          inquiryDescription={selectedItem?.inquiry.description ?? ''}
-          templates={templates}
-          onSubmit={handleSendQuote}
-        />
+        <>
+          {templatesError && quoteModalOpen && <p role="status" className="fixed bottom-4 right-4 z-50 rounded-lg border border-[#DEDFD7] bg-[#FFFFFF] px-3 py-2 text-xs text-[#20241F]/70 shadow-sm">{templatesError}</p>}
+          <QuoteFormModal
+            open={quoteModalOpen}
+            onOpenChange={setQuoteModalOpen}
+            consumerName={selectedItem?.consumer_name ?? ''}
+            inquiryDescription={selectedItem?.inquiry.description ?? ''}
+            templates={templates}
+            onSubmit={handleSendQuote}
+          />
+        </>
       )}
     </div>
   )

@@ -31,21 +31,21 @@ function ChecklistItem({ done, label, href }: ChecklistItemProps) {
 
   if (href) {
     return (
-      <li className="flex items-center gap-3 font-sans text-[15px] text-[#F5F0EB]">
+      <li className="flex items-center gap-3 font-sans text-[15px] text-[#20241F]">
         <span className="w-4 shrink-0 text-[#8A8A8A]">{indicator}</span>
         <Link
           href={href as Parameters<typeof Link>[0]['href']}
-          className="flex items-center gap-1 hover:text-[#C8A97E] transition-colors duration-200"
+          className="flex items-center gap-1 hover:text-[#53614A] transition-colors duration-200"
         >
           {label}
-          <span className="text-[#C8A97E]">→</span>
+          <span className="text-[#53614A]">→</span>
         </Link>
       </li>
     )
   }
 
   return (
-    <li className="flex items-center gap-3 font-sans text-[15px] text-[#F5F0EB]">
+    <li className="flex items-center gap-3 font-sans text-[15px] text-[#20241F]">
       <span className="w-4 shrink-0 text-[#8A8A8A]">{indicator}</span>
       {label}
     </li>
@@ -64,7 +64,7 @@ export function OnboardingChecklist({
   return (
     <div className="mx-auto max-w-lg px-4 pt-12">
       {statusBanner}
-      <h1 className="font-display text-[24px] font-bold text-[#F5F0EB]">
+      <h1 className="font-display text-[24px] font-bold text-[#20241F]">
         歡迎來到 InkHunt
       </h1>
       <p className="mt-2 font-sans text-[15px] text-[#8A8A8A]">
@@ -96,7 +96,7 @@ export function OnboardingChecklist({
       {artistSlug && (
         <Link
           href={`/artists/${artistSlug}` as Parameters<typeof Link>[0]['href']}
-          className="mt-6 inline-flex items-center rounded-[4px] px-4 py-2 font-sans text-[14px] font-medium text-[#C8A97E] transition-colors duration-200 hover:bg-[rgba(200,169,126,0.15)]"
+          className="mt-6 inline-flex items-center rounded-[4px] px-4 py-2 font-sans text-[14px] font-medium text-[#53614A] transition-colors duration-200 hover:bg-[rgba(200,169,126,0.15)]"
         >
           預覽我的 Profile
         </Link>
