@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { reportError } from '@/lib/observability'
 import type { Artist, Inquiry } from '@/types/database'
 import type { AuthUser } from '@/lib/auth/identity'
@@ -24,8 +24,10 @@ export {
 export async function getArtistForUser(
   lineUserId: string,
 ): Promise<Artist | null> {
-  const supabase = await createServerClient()
-  const { data } = await supabase
+  // This is a server-only owner lookup. Use the service role so public column
+  // grants never need to expose LINE identity merely to support owner UX.
+  const admin = createAdminClient()
+  const { data } = await admin
     .from('artists')
     .select('*')
     .eq('line_user_id', lineUserId)

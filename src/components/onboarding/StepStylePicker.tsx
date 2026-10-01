@@ -90,17 +90,17 @@ export function StepStylePicker({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-[#F5F0EB]">你的刺青風格</h2>
-        <p className="mt-1 text-sm text-[#F5F0EB]/50">
+        <h2 className="text-xl font-bold text-[#20241F]">你的刺青風格</h2>
+        <p className="mt-1 text-sm text-[#20241F]/50">
           最多選 {MAX_STYLES} 個，已選{' '}
-          <span className="text-[#C8A97E]">{data.selectedSlugs.length}</span>
+          <span className="text-[#53614A]">{data.selectedSlugs.length}</span>
         </p>
       </div>
 
       <div className="space-y-6">
         {STYLE_GROUPS.map((group) => (
           <div key={group.title}>
-            <h3 className="mb-3 text-xs font-semibold tracking-widest text-[#F5F0EB]/40 uppercase">
+            <h3 className="mb-3 text-xs font-semibold tracking-widest text-[#20241F]/40 uppercase">
               {group.title}
             </h3>
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -129,8 +129,8 @@ export function StepStylePicker({
       </div>
 
       {/* Service toggles */}
-      <div className="space-y-2 overflow-hidden rounded-lg border border-[#2A2A2A] bg-[#141414] p-4">
-        <p className="text-xs font-medium tracking-wide text-[#F5F0EB]/50 uppercase mb-3">
+      <div className="space-y-2 overflow-hidden rounded-lg border border-[#DEDFD7] bg-[#FFFFFF] p-4">
+        <p className="text-xs font-medium tracking-wide text-[#20241F]/50 uppercase mb-3">
           服務項目
         </p>
         {[
@@ -142,14 +142,14 @@ export function StepStylePicker({
             key={field}
             className="flex min-w-0 cursor-pointer items-center justify-between gap-3 py-1"
           >
-            <span className="min-w-0 flex-1 truncate text-sm text-[#F5F0EB]/80">{label}</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-[#20241F]/80">{label}</span>
             <button
               type="button"
               role="switch"
               aria-checked={data[field]}
               onClick={() => toggleOption(field)}
               className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-200 ${
-                data[field] ? 'bg-[#C8A97E]' : 'bg-[#2A2A2A]'
+                data[field] ? 'bg-[#53614A]' : 'bg-[#DEDFD7]'
               }`}
             >
               <span
@@ -166,14 +166,14 @@ export function StepStylePicker({
         <Button
           onClick={onBack}
           variant="outline"
-          className="h-11 flex-1 rounded-lg border-[#2A2A2A] bg-transparent text-[#F5F0EB]/60 hover:bg-[#141414] hover:text-[#F5F0EB]"
+          className="h-11 flex-1 rounded-lg border-[#DEDFD7] bg-transparent text-[#20241F]/60 hover:bg-[#FFFFFF] hover:text-[#20241F]"
         >
           上一步
         </Button>
         <Button
           onClick={onNext}
           disabled={!isValid}
-          className="h-11 flex-[2] rounded-lg bg-[#C8A97E] text-[#0A0A0A] font-semibold hover:bg-[#C8A97E]/90 disabled:opacity-40"
+          className="h-11 flex-[2] rounded-lg bg-[#53614A] text-[#F7F6F2] font-semibold hover:bg-[#53614A]/90 disabled:opacity-40"
         >
           下一步
         </Button>

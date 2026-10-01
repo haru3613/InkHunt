@@ -1,5 +1,7 @@
+import { deferLineNotification } from '@/lib/line/defer'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, handleApiError } from '@/lib/auth/helpers'
+import { isOwnedInquiryMediaUrl } from '@/lib/upload/inquiry-media'
 import { quoteRequestSchema } from '@/lib/validations/quote-request'
 import { createQuoteRequest } from '@/lib/supabase/queries/quote-requests'
 import { pushNewInquiryNotification } from '@/lib/line/messaging'
@@ -17,18 +19,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!validation.data.reference_images.every(url => isOwnedInquiryMediaUrl(url, user.supabaseId))) {
+      return NextResponse.json({ error: 'Reference image must be your own upload' }, { status: 400 })
+    }
+
     const { quoteRequest, inquiries } = await createQuoteRequest(
       user.lineUserId,
       user.displayName,
       validation.data,
     )
 
-    // Fire-and-forget LINE notifications for each inquiry
-    for (const inquiry of inquiries) {
-      pushNewInquiryNotification(inquiry).catch(() => {
-        // LINE notification failure is non-fatal
-      })
-    }
+    deferLineNotification(async () => {
+      await Promise.all(inquiries.map(inquiry => pushNewInquiryNotification(inquiry)))
+    })
 
     return NextResponse.json({ id: quoteRequest.id, inquiryCount: inquiries.length }, { status: 201 })
   } catch (err) {

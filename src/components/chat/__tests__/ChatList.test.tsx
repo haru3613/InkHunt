@@ -138,9 +138,9 @@ describe('ChatList', () => {
     enLabel: string
     colorClass: string
   }[] = [
-    { status: 'pending', zhLabel: '待回覆', enLabel: 'Awaiting reply', colorClass: 'bg-[#C8A97E]' },
+    { status: 'pending', zhLabel: '待回覆', enLabel: 'Awaiting reply', colorClass: 'bg-[#53614A]' },
     { status: 'quoted', zhLabel: '已報價', enLabel: 'Quoted', colorClass: 'text-[#8A8A8A]' },
-    { status: 'accepted', zhLabel: '已接受', enLabel: 'Accepted', colorClass: 'text-[#4ADE80]' },
+    { status: 'accepted', zhLabel: '已接受', enLabel: 'Accepted', colorClass: 'text-[#34734B]' },
     { status: 'closed', zhLabel: '已關閉', enLabel: 'Closed', colorClass: 'text-[#555555]' },
   ]
 
@@ -232,8 +232,8 @@ describe('ChatList', () => {
     )
 
     const btn = screen.getByRole('button')
-    // Selected items get bg-[#1C1C1C] class
-    expect(btn.className).toContain('bg-[#1C1C1C]')
+    // Selected items get bg-[#ECEEE7] class
+    expect(btn.className).toContain('bg-[#ECEEE7]')
   })
 
   it('does not apply selected styling when item is not selected', () => {
@@ -243,7 +243,7 @@ describe('ChatList', () => {
     )
 
     const btn = screen.getByRole('button')
-    expect(btn.className).not.toContain('bg-[#1C1C1C]')
+    expect(btn.className).not.toContain('bg-[#ECEEE7]')
   })
 
   it('applies opacity-50 class to closed items', () => {

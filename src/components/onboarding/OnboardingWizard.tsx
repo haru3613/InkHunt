@@ -20,6 +20,7 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
   const [isComplete, setIsComplete] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [uploadFailures, setUploadFailures] = useState<string[]>([])
 
   const [basicInfo, setBasicInfo] = useState<BasicInfoData>({
     display_name: prefillName,
@@ -48,6 +49,10 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
   })
 
   const submittingRef = useRef(false)
+  // The artist profile is created once. Failed portfolio uploads are retried
+  // against this slug, so retrying never makes a second artist POST.
+  const createdArtistSlugRef = useRef<string | null>(null)
+  const uploadedFilesRef = useRef(new Set<File>())
 
   const handleSubmit = useCallback(
     async (skipPortfolio = false) => {
@@ -55,6 +60,7 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
       submittingRef.current = true
       setIsSubmitting(true)
       setSubmitError(null)
+      setUploadFailures([])
 
       try {
         // Build artist profile payload
@@ -73,31 +79,51 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
           has_flash_designs: stylePicker.hasFlashDesigns,
         }
 
-        const res = await fetch('/api/artists', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error ?? '申請失敗，請稍後再試')
+        let artistSlug = createdArtistSlugRef.current
+        if (!artistSlug) {
+          const res = await fetch('/api/artists', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err.error ?? '申請失敗，請稍後再試')
+          }
+          const artist = await res.json()
+          artistSlug = artist.slug
+          createdArtistSlugRef.current = artistSlug
         }
 
-        const artist = await res.json()
-
-        // Upload portfolio images in parallel (non-fatal failures)
+        // Every selected file must reach the portfolio endpoint before the
+        // application completes. Keep successful files in the ref and retry
+        // only failures, while the parent-owned selection stays untouched.
         if (!skipPortfolio && portfolio.files.length > 0) {
-          await Promise.allSettled(
-            portfolio.files.map(async (file) => {
+          const pendingFiles = portfolio.files.filter((file) => !uploadedFilesRef.current.has(file))
+          const results = await Promise.allSettled(
+            pendingFiles.map(async (file) => {
               const publicUrl = await uploadFile('portfolio', file)
-              await fetch(`/api/artists/${artist.slug}/portfolio`, {
+              const response = await fetch(`/api/artists/${artistSlug}/portfolio`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image_url: publicUrl }),
               })
+              if (!response.ok) throw new Error('作品資料儲存失敗')
+              return file
             }),
           )
+          const failedFiles: File[] = []
+          for (const [index, result] of results.entries()) {
+            if (result.status === 'fulfilled') uploadedFilesRef.current.add(result.value)
+            else {
+              const failedFile = pendingFiles[index]
+              if (failedFile) failedFiles.push(failedFile)
+            }
+          }
+          if (failedFiles.length > 0) {
+            setUploadFailures(failedFiles.map((file) => file.name))
+            throw new Error(`有 ${failedFiles.length} 張作品上傳失敗。請重試失敗的檔案；已成功上傳的作品不會重複送出。`)
+          }
         }
 
         setIsComplete(true)
@@ -148,9 +174,10 @@ export function OnboardingWizard({ prefillName = '' }: OnboardingWizardProps) {
       {step === 4 && (
         <>
           {submitError && (
-            <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {submitError}
-            </p>
+            <div role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <p>{submitError}</p>
+              {uploadFailures.length > 0 && <ul className="mt-2 list-disc pl-5">{uploadFailures.map((name) => <li key={name}>{name}</li>)}</ul>}
+            </div>
           )}
           <StepPortfolio
             data={portfolio}

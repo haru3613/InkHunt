@@ -4,8 +4,11 @@ import { render, screen } from '@testing-library/react'
 const mockPush = vi.fn()
 
 vi.mock('@/i18n/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ replace: mockPush }),
+  Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }))
+
+vi.mock('next-intl', () => ({ useLocale: () => 'zh-TW' }))
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({

@@ -63,6 +63,23 @@ describe('POST /api/quote-requests', () => {
     mockPushNewInquiryNotification.mockResolvedValue(undefined)
   })
 
+  it('rejects another uploader or a legacy public URL before creating records', async () => {
+    mockRequireAuth.mockResolvedValue(mockUser)
+    for (const url of ['/api/media/inquiries/other-user/photo.jpg', 'https://example.supabase.co/storage/v1/object/public/inquiries/victim/photo.jpg']) {
+      const response = await POST(makeRequest('POST', '/api/quote-requests', { ...validBody, reference_images: [url] }))
+      expect(response.status).toBe(400)
+    }
+    expect(mockCreateQuoteRequest).not.toHaveBeenCalled()
+  })
+
+  it('accepts the authenticated upload owner canonical media path', async () => {
+    mockRequireAuth.mockResolvedValue(mockUser)
+    mockCreateQuoteRequest.mockResolvedValue({ quoteRequest: { id: 'new' }, inquiries: [] })
+    const response = await POST(makeRequest('POST', '/api/quote-requests', { ...validBody, reference_images: ['/api/media/inquiries/sup-123/photo.jpg'] }))
+    expect(response.status).toBe(201)
+    expect(mockCreateQuoteRequest).toHaveBeenCalled()
+  })
+
   it('returns 401 when user is not authenticated', async () => {
     mockRequireAuth.mockRejectedValue(new Error('UNAUTHORIZED'))
 
@@ -142,3 +159,5 @@ describe('POST /api/quote-requests', () => {
     expect(mockPushNewInquiryNotification).toHaveBeenCalledTimes(2)
   })
 })
+
+vi.mock('@/lib/line/defer', () => ({ deferLineNotification: (task: () => Promise<void>) => { void task().catch(() => {}) } }))

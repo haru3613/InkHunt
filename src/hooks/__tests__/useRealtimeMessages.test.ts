@@ -230,15 +230,13 @@ describe('useRealtimeMessages', () => {
     ).rejects.toThrow('Failed to send message')
   })
 
-  it('sendMessage is a no-op when inquiryId is null', async () => {
+  it('rejects sending without a conversation so the input is not cleared', async () => {
     const mockFetch = vi.fn()
     vi.stubGlobal('fetch', mockFetch)
 
     const { result } = renderHook(() => useRealtimeMessages(null))
 
-    await act(async () => {
-      await result.current.sendMessage('text', 'hello')
-    })
+    await expect(result.current.sendMessage('text', 'hello')).rejects.toThrow('No conversation selected')
 
     // Only the initial fetch guard fires (which also short-circuits); fetch never called
     expect(mockFetch).not.toHaveBeenCalled()
@@ -285,7 +283,7 @@ describe('useRealtimeMessages', () => {
     expect(mockOn).toHaveBeenCalledWith(
       'postgres_changes',
       expect.objectContaining({
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'messages',
         filter: `inquiry_id=eq.${INQUIRY_ID}`,
@@ -313,6 +311,16 @@ describe('useRealtimeMessages', () => {
 
     expect(result.current.messages).toHaveLength(2)
     expect(result.current.messages[1].id).toBe('msg-rt')
+  })
+
+  it('reloads live quote status instead of applying a stale realtime metadata snapshot', async () => {
+    const accepted = makeMessage({ id:'quote-msg', message_type:'quote', metadata:{quote_id:'q1',status:'accepted'} })
+    const fetchMock = makeFetchOk([accepted]); vi.stubGlobal('fetch',fetchMock)
+    const {result}=renderHook(()=>useRealtimeMessages(INQUIRY_ID))
+    await waitFor(()=>expect(result.current.isLoading).toBe(false))
+    await act(async()=>{capturedPostgresHandler!({new:{...accepted,metadata:{quote_id:'q1',status:'sent'}}})})
+    await waitFor(()=>expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(result.current.messages[0].metadata).toEqual({quote_id:'q1',status:'accepted'})
   })
 
   it('ignores a realtime INSERT whose id is already in the messages list', async () => {

@@ -3,6 +3,7 @@ import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'zh-TW',
   useTranslations: () => (key: string) => key,
 }))
 
@@ -56,10 +57,10 @@ describe('ProfileForm', () => {
     const realism = screen.getByText('寫實')
 
     // Selected styles should have the accent bg class
-    expect(fineLine.className).toContain('bg-[#C8A97E]')
-    expect(realism.className).toContain('bg-[#C8A97E]')
+    expect(fineLine.className).toContain('bg-[#53614A]')
+    expect(realism.className).toContain('bg-[#53614A]')
     // Unselected should have the dark bg class
-    expect(micro.className).toContain('bg-[#1F1F1F]')
+    expect(micro.className).toContain('bg-[#DEDFD7]')
   })
 
   it('toggles style selection on click', async () => {
@@ -67,13 +68,13 @@ describe('ProfileForm', () => {
     render(<ProfileForm artist={null} styles={mockStyles} selectedStyleIds={[]} />)
 
     const microButton = screen.getByText('微刺青')
-    expect(microButton.className).toContain('bg-[#1F1F1F]')
+    expect(microButton.className).toContain('bg-[#DEDFD7]')
 
     await user.click(microButton)
-    expect(microButton.className).toContain('bg-[#C8A97E]')
+    expect(microButton.className).toContain('bg-[#53614A]')
 
     await user.click(microButton)
-    expect(microButton.className).toContain('bg-[#1F1F1F]')
+    expect(microButton.className).toContain('bg-[#DEDFD7]')
   })
 
   it('shows submit button with correct text for new artist', () => {
@@ -156,8 +157,8 @@ describe('ProfileForm', () => {
     // Check that selected styles are marked with accent color
     const fineLine = screen.getByText('極簡線條')
     const realism = screen.getByText('寫實')
-    expect(fineLine.className).toContain('bg-[#C8A97E]')
-    expect(realism.className).toContain('bg-[#C8A97E]')
+    expect(fineLine.className).toContain('bg-[#53614A]')
+    expect(realism.className).toContain('bg-[#53614A]')
   })
 
   it('updates form when artist prop changes (hard refresh scenario)', () => {
@@ -224,8 +225,8 @@ describe('ProfileForm', () => {
     // Verify initial styles are selected
     let fineLine = screen.getByText('極簡線條')
     let micro = screen.getByText('微刺青')
-    expect(fineLine.className).toContain('bg-[#C8A97E]')
-    expect(micro.className).toContain('bg-[#C8A97E]')
+    expect(fineLine.className).toContain('bg-[#53614A]')
+    expect(micro.className).toContain('bg-[#53614A]')
 
     // Update prop with different artist but same styles
     rerender(<ProfileForm artist={artist1} styles={mockStyles} selectedStyleIds={[1, 2]} />)
@@ -233,7 +234,7 @@ describe('ProfileForm', () => {
     // Verify styles are still selected
     fineLine = screen.getByText('極簡線條')
     micro = screen.getByText('微刺青')
-    expect(fineLine.className).toContain('bg-[#C8A97E]')
-    expect(micro.className).toContain('bg-[#C8A97E]')
+    expect(fineLine.className).toContain('bg-[#53614A]')
+    expect(micro.className).toContain('bg-[#53614A]')
   })
 })

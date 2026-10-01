@@ -31,16 +31,16 @@
     --color-ring: var(--ring);
 
     /* InkHunt custom tokens — DESIGN.md */
-    --color-ink-accent: #C8A97E;
-    --color-ink-accent-hover: #E8D5B5;
-    --color-ink-accent-dim: rgba(200,169,126,0.15);
-    --color-ink-surface: #141414;
-    --color-ink-surface-hover: #1C1C1C;
-    --color-ink-text-muted: #555555;
-    --color-ink-success: #4ADE80;
-    --color-ink-warning: #FBBF24;
-    --color-ink-error: #F87171;
-    --color-ink-info: #60A5FA;
+    --color-ink-accent: #53614A;
+    --color-ink-accent-hover: #3E4B36;
+    --color-ink-accent-dim: rgba(83,97,74,0.09);
+    --color-ink-surface: #FFFFFF;
+    --color-ink-surface-hover: #ECEEE7;
+    --color-ink-text-muted: #72796E;
+    --color-ink-success: #34734B;
+    --color-ink-warning: #92691D;
+    --color-ink-error: #AD3939;
+    --color-ink-info: #376B94;
 
     /* Radius */
     --radius-sm: 4px;
@@ -69,40 +69,40 @@
     --color-chart-5: var(--chart-5);
 }
 
-/* DESIGN.md: "This IS the dark mode. No light mode for MVP." */
+/* V2: light editorial discovery and accessible workspaces; see docs/v2/product.md. */
 :root {
-    --background: #0A0A0A;
-    --foreground: #F5F0EB;
-    --card: #141414;
-    --card-foreground: #F5F0EB;
-    --popover: #141414;
-    --popover-foreground: #F5F0EB;
-    --primary: #C8A97E;
-    --primary-foreground: #0A0A0A;
-    --secondary: #1C1C1C;
-    --secondary-foreground: #F5F0EB;
-    --muted: #1C1C1C;
-    --muted-foreground: #8A8A8A;
-    --accent: rgba(200,169,126,0.15);
-    --accent-foreground: #C8A97E;
-    --destructive: #F87171;
-    --border: #2A2A2A;
-    --input: #2A2A2A;
-    --ring: #C8A97E;
+    --background: #F7F6F2;
+    --foreground: #20241F;
+    --card: #FFFFFF;
+    --card-foreground: #20241F;
+    --popover: #FFFFFF;
+    --popover-foreground: #20241F;
+    --primary: #53614A;
+    --primary-foreground: #FFFFFF;
+    --secondary: #ECEEE7;
+    --secondary-foreground: #20241F;
+    --muted: #ECEEE7;
+    --muted-foreground: #62675F;
+    --accent: rgba(83,97,74,0.09);
+    --accent-foreground: #53614A;
+    --destructive: #AD3939;
+    --border: #DEDFD7;
+    --input: #DEDFD7;
+    --ring: #53614A;
     --radius: 0.25rem; /* DESIGN.md radius-sm */
-    --chart-1: #C8A97E;
-    --chart-2: #8A8A8A;
-    --chart-3: #555555;
-    --chart-4: #2A2A2A;
-    --chart-5: #1C1C1C;
-    --sidebar: #0A0A0A;
-    --sidebar-foreground: #F5F0EB;
-    --sidebar-primary: #C8A97E;
-    --sidebar-primary-foreground: #0A0A0A;
-    --sidebar-accent: #1C1C1C;
-    --sidebar-accent-foreground: #F5F0EB;
-    --sidebar-border: #2A2A2A;
-    --sidebar-ring: #C8A97E;
+    --chart-1: #53614A;
+    --chart-2: #62675F;
+    --chart-3: #72796E;
+    --chart-4: #DEDFD7;
+    --chart-5: #ECEEE7;
+    --sidebar: #F7F6F2;
+    --sidebar-foreground: #20241F;
+    --sidebar-primary: #53614A;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #ECEEE7;
+    --sidebar-accent-foreground: #20241F;
+    --sidebar-border: #DEDFD7;
+    --sidebar-ring: #53614A;
 }
 
 @layer base {
@@ -116,3 +116,23 @@
     @apply font-sans;
   }
 }
+
+@layer base {
+  html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+  button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), select { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+  ::selection { background: #dbe3d3; color: #20241f; }
+}
+.v2-container { width: min(100% - 48px, 1408px); margin-inline: auto; }
+.v2-wordmark { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; letter-spacing: -1.6px; }
+.v2-button { display: inline-flex; min-height: 48px; justify-content: center; align-items: center; gap: 10px; padding: 12px 24px; border-radius: 8px; background: var(--primary); color: white; font-size: 15px; font-weight: 500; transition: background .18s, transform .18s; }
+.v2-button:hover { background: #3e4b36; }
+.v2-button:active { transform: translateY(1px); }
+.v2-button.secondary { background: transparent; border: 1px solid #9da496; color: var(--foreground); }
+.v2-button.secondary:hover { background: #eceee7; }
+.v2-select { min-height: 44px; border: 1px solid var(--border); border-radius: 8px; background: white; padding: 10px 34px 10px 12px; font-size: 14px; max-width: 100%; }
+.v2-label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+@media (min-width: 1024px) { .v2-container { width: min(100% - 112px, 1408px); } }
+@media (max-width: 640px) { .v2-container { width: calc(100% - 32px); } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

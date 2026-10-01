@@ -16,9 +16,9 @@ describe('OnboardingComplete', () => {
     expect(screen.getByText('申請已送出')).toBeInTheDocument()
   })
 
-  it('shows description text mentioning LINE notification', () => {
+  it('explains where to check review progress without promising LINE delivery', () => {
     render(<OnboardingComplete />)
-    expect(screen.getByText(/LINE 通知/)).toBeInTheDocument()
+    expect(screen.getByText(/刺青師入口查看審核進度/)).toBeInTheDocument()
   })
 
   it('"繼續上傳作品" button navigates to /artist/portfolio', () => {
@@ -33,3 +33,5 @@ describe('OnboardingComplete', () => {
     expect(mockReplace).toHaveBeenCalledWith('/')
   })
 })
+
+vi.mock('@/components/shared/LineNotificationHint', () => ({ LineNotificationHint: () => null }))

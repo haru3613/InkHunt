@@ -14,14 +14,34 @@ export async function GET(
 
   const { data: artist, error } = await supabase
     .from('artists')
-    .select('*, artist_styles(style_id, styles(*))')
+    .select(`
+      id, slug, display_name, bio, avatar_url, ig_handle,
+      city, district, price_min, price_max, pricing_note, deposit_amount,
+      booking_notice, status, is_claimed, featured,
+      offers_coverup, offers_custom_design, has_flash_designs,
+      created_at, updated_at,
+      artist_styles(style_id, styles(*))
+    `)
     .eq('slug', slug)
     .single()
 
   if (error || !artist) return NextResponse.json({ error: 'Artist not found' }, { status: 404 })
 
   const styles = flattenArtistStyles(artist.artist_styles)
-  const { admin_note: _note, artist_styles: _as, line_user_id: _lid, ...publicArtist } = artist
+  // Keep a defensive response boundary even though the SELECT above is already
+  // explicit; tests and future query changes must not reintroduce private data.
+  const publicArtist: Record<string, unknown> = { ...artist }
+  for (const privateField of [
+    'artist_styles',
+    'admin_note',
+    'line_user_id',
+    'address',
+    'lat',
+    'lng',
+    'quote_templates',
+  ]) {
+    delete publicArtist[privateField]
+  }
   return NextResponse.json({ ...publicArtist, styles })
 }
 

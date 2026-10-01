@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { UserIcon, LogOut, ChevronDown } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 // HAR-667: locale-aware router — bare next/navigation drops the locale segment.
 import { Link, useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -65,8 +65,8 @@ function DevLoginPicker({ onSuccess }: { onSuccess: () => void }) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-[#1F1F1F] bg-[#141414] py-1 shadow-xl">
-          <div className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-[#F5F0EB]/40">
+        <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-border bg-card py-1 shadow-xl">
+          <div className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             Test Users
           </div>
           {DEV_TEST_USERS.map((user) => (
@@ -74,13 +74,13 @@ function DevLoginPicker({ onSuccess }: { onSuccess: () => void }) {
               key={user.lineUserId}
               onClick={() => handleLogin(user.lineUserId, user.displayName)}
               disabled={isLoading !== null}
-              className="flex w-full items-start gap-2 px-3 py-2 text-left transition-colors hover:bg-[#1F1F1F] disabled:opacity-50"
+              className="flex w-full items-start gap-2 px-3 py-2 text-left transition-colors hover:bg-muted disabled:opacity-50"
             >
               <div className="min-w-0 flex-1">
-                <div className="text-sm text-[#F5F0EB]">
+                <div className="text-sm text-foreground">
                   {isLoading === user.lineUserId ? '...' : user.displayName}
                 </div>
-                <div className="text-[10px] text-[#F5F0EB]/40">{user.label}</div>
+                <div className="text-[10px] text-muted-foreground">{user.label}</div>
               </div>
             </button>
           ))}
@@ -95,7 +95,8 @@ interface AuthSectionProps {
 }
 
 export function AuthSection({ loginLabel }: AuthSectionProps) {
-  const { isLoggedIn, isAdmin, user, loginWithRedirect, logout } = useAuth()
+  const { isLoggedIn, isAdmin, user, loginWithRedirect, logout, refetch } = useAuth()
+  const en = useLocale() === 'en'
   const t = useTranslations('nav')
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -122,13 +123,15 @@ export function AuthSection({ loginLabel }: AuthSectionProps) {
   const isDev = process.env.NODE_ENV === 'development'
 
   if (isDev && !isLoggedIn) {
-    return <DevLoginPicker onSuccess={() => router.refresh()} />
+    return <DevLoginPicker onSuccess={() => { void refetch(); router.refresh() }} />
   }
 
   if (isLoggedIn && user) {
     return (
       <div ref={menuRef} className="relative">
         <button
+          aria-label={en ? "Account menu" : "帳號選單"}
+          aria-expanded={menuOpen}
           onClick={() => setMenuOpen((prev) => !prev)}
           className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
@@ -148,12 +151,12 @@ export function AuthSection({ loginLabel }: AuthSectionProps) {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-2 w-40 rounded-lg border border-[#1F1F1F] bg-[#141414] py-1 shadow-xl">
+          <div className="absolute right-0 top-full mt-2 w-40 rounded-lg border border-border bg-card py-1 shadow-xl">
             {isAdmin && (
               <Link
                 href="/admin"
                 onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2 text-sm text-primary transition-colors hover:bg-[#1F1F1F]"
+                className="block px-4 py-2 text-sm text-primary transition-colors hover:bg-muted"
               >
                 {t('admin')}
               </Link>
@@ -161,16 +164,16 @@ export function AuthSection({ loginLabel }: AuthSectionProps) {
             <Link
               href="/artist"
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-2 text-sm text-[#F5F0EB]/80 transition-colors hover:bg-[#1F1F1F]"
+              className="block px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
             >
-              刺青師後台
+              {en ? 'Artist workspace' : '刺青師工作室'}
             </Link>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#f87171]/80 transition-colors hover:bg-[#1F1F1F]"
+              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-destructive transition-colors hover:bg-muted"
             >
               <LogOut className="size-3.5" />
-              登出
+              {en ? 'Log out' : '登出'}
             </button>
           </div>
         )}
@@ -180,7 +183,7 @@ export function AuthSection({ loginLabel }: AuthSectionProps) {
 
   return (
     <button
-      onClick={() => loginWithRedirect('/')}
+      onClick={() => loginWithRedirect(window.location.pathname + window.location.search)}
       className="font-display text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
     >
       {loginLabel}

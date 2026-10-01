@@ -42,6 +42,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "metadata" })
 
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://ink-hunt.com'),
     title: {
       template: "%s | InkHunt",
       default: t("defaultTitle"),

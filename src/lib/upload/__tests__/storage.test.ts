@@ -33,6 +33,7 @@ describe('validateUploadRequest', () => {
       bucket: 'inquiries',
       filename: 'ref.png',
       content_type: 'image/png',
+      file_size: 1024,
     })
     expect(result.success).toBe(true)
   })
@@ -51,6 +52,25 @@ describe('validateUploadRequest', () => {
       bucket: 'portfolio',
       filename: 'doc.pdf',
       content_type: 'application/pdf',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('requires declared file size for inquiry uploads', () => {
+    const result = validateUploadRequest({
+      bucket: 'inquiries',
+      filename: 'ref.jpg',
+      content_type: 'image/jpeg',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects inquiry images larger than 5 MB', () => {
+    const result = validateUploadRequest({
+      bucket: 'inquiries',
+      filename: 'ref.jpg',
+      content_type: 'image/jpeg',
+      file_size: 5 * 1024 * 1024 + 1,
     })
     expect(result.success).toBe(false)
   })
@@ -113,6 +133,7 @@ describe('createSignedUploadUrl', () => {
 
     expect(result.signed_url).toBe('https://storage.example.com/signed?token=abc')
     expect(result.public_url).toBe('https://cdn.example.com/portfolio/user1/file.jpg')
+    expect(result.publicUrl).toBe('https://cdn.example.com/portfolio/user1/file.jpg')
     expect(result.path).toBeTruthy()
   })
 
@@ -126,6 +147,26 @@ describe('createSignedUploadUrl', () => {
 
     expect(result.path).toMatch(/^user42\//)
     expect(result.path).toMatch(/\.png$/)
+  })
+
+  it('returns a protected app URL for private inquiry media', async () => {
+    mockCreateSignedUploadUrl.mockResolvedValue({
+      data: { signedUrl: 'https://storage.example.com/signed?token=private' },
+      error: null,
+    })
+
+    const result = await createSignedUploadUrl(
+      'inquiries',
+      '00000000-0000-4000-8000-000000000001',
+      'reference.jpg',
+      'image/jpeg',
+    )
+
+    expect(result.publicUrl).toMatch(
+      /^\/api\/media\/inquiries\/00000000-0000-4000-8000-000000000001\/[0-9a-f-]+\.jpg$/,
+    )
+    expect(result.public_url).toBe(result.publicUrl)
+    expect(mockGetPublicUrl).not.toHaveBeenCalled()
   })
 
   it('throws when createSignedUploadUrl fails with error message', async () => {

@@ -1,7 +1,17 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { createInquiry } from '@/lib/supabase/queries/inquiries'
 import type { QuoteRequestInput } from '@/lib/validations/quote-request'
 import type { Inquiry, Quote } from '@/types/database'
+
+interface RpcError {
+  message: string
+}
+
+interface QuoteRequestRpcClient {
+  rpc(
+    functionName: string,
+    args: Record<string, unknown>,
+  ): Promise<{ data: unknown; error: RpcError | null }>
+}
 
 // Convenience alias with a narrower status union
 export interface QuoteRequest {
@@ -29,54 +39,43 @@ export async function createQuoteRequest(
   data: QuoteRequestInput,
 ): Promise<QuoteRequestResult> {
   const admin = createAdminClient()
+  const summaryParts = [
+    '新詢價',
+    data.body_part ? `部位：${data.body_part}` : null,
+    data.size_estimate ? `大小：${data.size_estimate}` : null,
+    data.budget_min || data.budget_max
+      ? `預算：NT$${data.budget_min ?? '?'} ~ NT$${data.budget_max ?? '?'}`
+      : null,
+    `\n${data.description}`,
+  ].filter(Boolean).join('\n')
 
-  // Insert the quote_request record
-  const { data: quoteRequest, error: qrError } = await admin
-    .from('quote_requests')
-    .insert({
-      consumer_line_id: consumerLineId,
-      consumer_name: consumerName,
-      description: data.description,
-      reference_images: data.reference_images,
-      body_part: data.body_part,
-      size_estimate: data.size_estimate,
-      budget_min: data.budget_min ?? null,
-      budget_max: data.budget_max ?? null,
-    })
-    .select()
-    .single()
+  const rpcClient = admin as unknown as QuoteRequestRpcClient
+  const { data: result, error } = await rpcClient.rpc('create_quote_request_transaction', {
+    p_consumer_line_id: consumerLineId,
+    p_consumer_name: consumerName,
+    p_artist_ids: data.artist_ids,
+    p_description: data.description,
+    p_reference_images: data.reference_images,
+    p_body_part: data.body_part,
+    p_size_estimate: data.size_estimate,
+    p_budget_min: data.budget_min ?? null,
+    p_budget_max: data.budget_max ?? null,
+    p_summary_content: summaryParts,
+  })
 
-  if (qrError || !quoteRequest) {
-    throw new Error(`Failed to create quote request: ${qrError?.message}`)
+  if (error) {
+    throw new Error(`Failed to create quote request: ${error.message}`)
+  }
+  if (
+    !result
+    || typeof result !== 'object'
+    || !('quoteRequest' in result)
+    || !('inquiries' in result)
+  ) {
+    throw new Error('Failed to create quote request: invalid transaction response')
   }
 
-  // Create one inquiry per artist in parallel, then link each back to the quote_request
-  const results = await Promise.all(
-    data.artist_ids.map(async (artistId) => {
-      const { inquiry } = await createInquiry(consumerLineId, consumerName, {
-        artist_id: artistId,
-        description: data.description,
-        reference_images: data.reference_images,
-        body_part: data.body_part,
-        size_estimate: data.size_estimate,
-        budget_min: data.budget_min,
-        budget_max: data.budget_max,
-      })
-
-      const { error: linkError } = await admin
-        .from('inquiries')
-        .update({ quote_request_id: quoteRequest.id })
-        .eq('id', inquiry.id)
-
-      if (linkError) {
-        throw new Error(`Failed to link inquiry to quote request: ${linkError.message}`)
-      }
-
-      return inquiry
-    }),
-  )
-
-  return { quoteRequest: quoteRequest as QuoteRequest, inquiries: results }
+  return result as QuoteRequestResult
 }
 
 export interface InquiryWithDetails extends Inquiry {

@@ -15,6 +15,11 @@ vi.mock('@/lib/auth/helpers', () => ({
 }))
 
 vi.mock('@/lib/supabase/queries/inquiries', () => ({
+  InquiryMutationError: class InquiryMutationError extends Error {
+    constructor(public code: string, message: string) {
+      super(message)
+    }
+  },
   getInquiryById: vi.fn(),
   updateInquiryStatus: vi.fn(),
 }))
@@ -225,7 +230,11 @@ describe('PATCH /api/inquiries/[id]', () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.status).toBe('closed')
-    expect(mockUpdateInquiryStatus).toHaveBeenCalledWith('inquiry-uuid-1', 'closed')
+    expect(mockUpdateInquiryStatus).toHaveBeenCalledWith(
+      'inquiry-uuid-1',
+      'closed',
+      MOCK_USER.lineUserId,
+    )
   })
 
   it('returns 403 when unauthorized user attempts to close inquiry', async () => {

@@ -208,6 +208,35 @@ describe('POST /api/artists', () => {
     expect(mockInsertStyles).not.toHaveBeenCalled()
   })
 
+  it('returns a clean conflict when the authenticated user already has an artist profile', async () => {
+    vi.mocked(requireAuth).mockResolvedValue(mockUser)
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: {
+        code: '23505',
+        message: 'duplicate key value violates unique constraint',
+        details: 'Key (line_user_id) already exists.',
+      },
+    })
+    const mockSelect = vi.fn().mockReturnValue({ single: mockSingle })
+    const mockInsertArtist = vi.fn().mockReturnValue({ select: mockSelect })
+    vi.mocked(createAdminClient).mockReturnValue({
+      from: vi.fn().mockReturnValue({ insert: mockInsertArtist }),
+    } as never)
+
+    const response = await POST(makeRequest('POST', 'http://localhost:3000/api/artists', {
+      display_name: 'Duplicate Artist',
+      city: '台北市',
+    }))
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Artist profile already exists',
+      code: 'ARTIST_ALREADY_EXISTS',
+    })
+  })
+
   it('resolves style_slugs to style_ids and persists service flags (the OnboardingWizard payload shape)', async () => {
     vi.mocked(requireAuth).mockResolvedValue(mockUser)
 

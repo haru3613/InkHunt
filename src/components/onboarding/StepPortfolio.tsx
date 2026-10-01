@@ -66,9 +66,9 @@ export function StepPortfolio({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-[#F5F0EB]">上傳作品集</h2>
-        <p className="mt-1 text-sm text-[#F5F0EB]/50">
-          有作品集的 Profile 曝光率高 3 倍
+        <h2 className="text-xl font-bold text-[#20241F]">上傳作品集</h2>
+        <p className="mt-1 text-sm text-[#20241F]/50">
+          讓客人看到你的風格，請上傳你創作或已取得授權的作品。
         </p>
       </div>
 
@@ -81,8 +81,8 @@ export function StepPortfolio({
         onDrop={handleDrop}
         className={`flex w-full flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed py-10 transition-colors ${
           isDragging
-            ? 'border-[#C8A97E] bg-[#C8A97E]/5'
-            : 'border-[#2A2A2A] bg-[#141414] hover:border-[#3A3A3A]'
+            ? 'border-[#53614A] bg-[#53614A]/5'
+            : 'border-[#DEDFD7] bg-[#FFFFFF] hover:border-[#3A3A3A]'
         }`}
       >
         <svg
@@ -92,18 +92,18 @@ export function StepPortfolio({
           fill="none"
           stroke="currentColor"
           strokeWidth="1.5"
-          className="text-[#F5F0EB]/20"
+          className="text-[#20241F]/20"
         >
           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
         <div className="text-center">
-          <p className="text-sm font-medium text-[#F5F0EB]/60">
+          <p className="text-sm font-medium text-[#20241F]/60">
             拖拉圖片至此，或{' '}
-            <span className="text-[#C8A97E]">點擊選擇</span>
+            <span className="text-[#53614A]">點擊選擇</span>
           </p>
-          <p className="mt-1 text-xs text-[#F5F0EB]/30">JPG、PNG、WebP，最大 10 MB</p>
+          <p className="mt-1 text-xs text-[#20241F]/30">JPG、PNG、WebP，最大 10 MB</p>
         </div>
         <input
           ref={inputRef}
@@ -144,7 +144,7 @@ export function StepPortfolio({
           onClick={onBack}
           variant="outline"
           disabled={isSubmitting}
-          className="h-11 flex-1 rounded-lg border-[#2A2A2A] bg-transparent text-[#F5F0EB]/60 hover:bg-[#141414] hover:text-[#F5F0EB]"
+          className="h-11 flex-1 rounded-lg border-[#DEDFD7] bg-transparent text-[#20241F]/60 hover:bg-[#FFFFFF] hover:text-[#20241F]"
         >
           上一步
         </Button>
@@ -152,14 +152,14 @@ export function StepPortfolio({
           onClick={onSkip}
           variant="outline"
           disabled={isSubmitting}
-          className="h-11 flex-1 rounded-lg border-[#2A2A2A] bg-transparent text-[#F5F0EB]/60 hover:bg-[#141414] hover:text-[#F5F0EB]"
+          className="h-11 flex-1 rounded-lg border-[#DEDFD7] bg-transparent text-[#20241F]/60 hover:bg-[#FFFFFF] hover:text-[#20241F]"
         >
           跳過
         </Button>
         <Button
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="h-11 flex-[2] rounded-lg bg-[#C8A97E] text-[#0A0A0A] font-semibold hover:bg-[#C8A97E]/90 disabled:opacity-40"
+          className="h-11 flex-[2] rounded-lg bg-[#53614A] text-[#F7F6F2] font-semibold hover:bg-[#53614A]/90 disabled:opacity-40"
         >
           {isSubmitting ? '送出中...' : '送出審核'}
         </Button>

@@ -8,6 +8,7 @@ const mockClient = {
 }
 vi.mock('@/lib/supabase/server', () => ({
   createServerClient: vi.fn(async () => mockClient),
+  createAdminClient: vi.fn(() => mockClient),
 }))
 
 const mockReportError = vi.fn()

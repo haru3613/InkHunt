@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/artist/dashboard', '/artist/portfolio', '/artist/profile', '/admin'],
+        disallow: ['/api/', '/*/artist/dashboard', '/*/artist/portfolio', '/*/artist/profile', '/*/artist/onboarding', '/*/artist/inquiries', '/*/inquiries', '/*/favorites', '/*/admin', '/admin'],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

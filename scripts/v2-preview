@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# A login-session launchd job keeps the review server independent of agent/PTY lifetime.
+set -euo pipefail
+root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+label="com.harvey.inkhunt-v2-preview"
+url="http://127.0.0.1:3200/zh-TW"
+case "${1:-start}" in
+  start)
+    if launchctl list "$label" >/dev/null 2>&1; then
+      launchctl start "$label"
+    else
+      if lsof -nP -iTCP:3200 -sTCP:LISTEN >/dev/null 2>&1; then
+        echo 'Port 3200 is already occupied by another process; leaving it untouched.' >&2
+        exit 1
+      fi
+      cd "$root_dir"
+      node_binary="$(node -p 'process.execPath')"
+      launchctl submit -l "$label" \
+        -o /tmp/inkhunt-v2-preview.stdout.log \
+        -e /tmp/inkhunt-v2-preview.stderr.log \
+        -- /usr/bin/env NODE_OPTIONS=--max-old-space-size=2048 /bin/bash -c \
+        'cd "$1" && exec "$2" "$1/node_modules/next/dist/bin/next" dev --webpack --hostname 127.0.0.1 --port 3200' \
+        inkhunt-preview "$root_dir" "$node_binary"
+    fi
+    echo "Preview starting: $url"
+    ;;
+  status)
+    launchctl list "$label"
+    curl --max-time 15 --fail --silent --output /dev/null --write-out 'Homepage HTTP %{http_code}\n' "$url"
+    ;;
+  stop)
+    launchctl remove "$label"
+    echo 'Preview server stopped; database and project files retained.'
+    ;;
+  *) echo 'Usage: scripts/v2-preview [start|status|stop]' >&2; exit 2 ;;
+esac

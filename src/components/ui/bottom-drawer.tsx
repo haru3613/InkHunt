@@ -52,6 +52,7 @@ function BottomDrawerContent({
   return (
     <BottomDrawerPortal>
       <BottomDrawerOverlay />
+      <Drawer.Viewport className="fixed inset-0 z-50">
       <Drawer.Popup
         data-slot="bottom-drawer-content"
         className={cn(
@@ -91,6 +92,7 @@ function BottomDrawerContent({
           </Drawer.Close>
         )}
       </Drawer.Popup>
+      </Drawer.Viewport>
     </BottomDrawerPortal>
   )
 }

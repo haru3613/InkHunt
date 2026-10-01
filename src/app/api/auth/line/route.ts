@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getLineAuthUrl } from '@/lib/line/auth'
+import { getLineAuthUrl, getSafeLineRedirectPath } from '@/lib/line/auth'
 
 export async function GET(request: NextRequest) {
-  const redirectTo = request.nextUrl.searchParams.get('redirect') ?? '/'
+  const redirectTo = getSafeLineRedirectPath(
+    request.nextUrl.searchParams.get('redirect'),
+  )
   const { url, state, nonce } = getLineAuthUrl()
 
   const cookieStore = await cookies()

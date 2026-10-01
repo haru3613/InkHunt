@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, authorizeInquiryAccess, handleApiError } from '@/lib/auth/helpers'
-import { getInquiryById, updateInquiryStatus } from '@/lib/supabase/queries/inquiries'
+import {
+  getInquiryById,
+  updateInquiryStatus,
+  InquiryMutationError,
+} from '@/lib/supabase/queries/inquiries'
 import { createServerClient } from '@/lib/supabase/server'
 
 export async function GET(
@@ -44,12 +48,23 @@ export async function PATCH(
     await authorizeInquiryAccess(user, inquiry)
 
     if (body.status === 'closed') {
-      const updated = await updateInquiryStatus(id, 'closed')
+      const updated = await updateInquiryStatus(id, 'closed', user.lineUserId)
       return NextResponse.json(updated)
     }
 
     return NextResponse.json({ error: 'Invalid status update' }, { status: 400 })
   } catch (err) {
+    if (err instanceof InquiryMutationError) {
+      const status = err.code === 'INQUIRY_NOT_FOUND'
+        ? 404
+        : err.code === 'INQUIRY_FORBIDDEN'
+          ? 403
+          : 409
+      return NextResponse.json(
+        { error: err.message, code: err.code },
+        { status },
+      )
+    }
     return handleApiError(err)
   }
 }

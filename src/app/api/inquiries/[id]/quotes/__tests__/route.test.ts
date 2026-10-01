@@ -19,6 +19,11 @@ vi.mock('@/lib/supabase/queries/inquiries', () => ({
 }))
 
 vi.mock('@/lib/supabase/queries/quotes', () => ({
+  QuoteMutationError: class QuoteMutationError extends Error {
+    constructor(public code: string, message: string) {
+      super(message)
+    }
+  },
   validateQuoteCreate: vi.fn(),
   createQuote: vi.fn(),
   respondToQuote: vi.fn(),
@@ -28,6 +33,7 @@ vi.mock('@/lib/supabase/queries/quotes', () => ({
 // Fire-and-forget LINE notification — not tested here
 vi.mock('@/lib/line/messaging', () => ({
   pushQuoteNotification: vi.fn().mockResolvedValue(undefined),
+  pushQuoteResponseNotification: vi.fn().mockResolvedValue(undefined),
 }))
 
 import { POST, PATCH } from '../route'
@@ -38,6 +44,7 @@ import {
   createQuote,
   respondToQuote,
   markQuoteViewed,
+  QuoteMutationError,
 } from '@/lib/supabase/queries/quotes'
 
 const mockRequireAuth = vi.mocked(requireAuth)
@@ -338,7 +345,12 @@ describe('PATCH /api/inquiries/[id]/quotes', () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.status).toBe('accepted')
-    expect(mockRespondToQuote).toHaveBeenCalledWith('quote-uuid-1', INQUIRY_ID, 'accepted', MOCK_INQUIRY.status)
+    expect(mockRespondToQuote).toHaveBeenCalledWith(
+      'quote-uuid-1',
+      INQUIRY_ID,
+      'accepted',
+      MOCK_CONSUMER_USER.lineUserId,
+    )
   })
 
   it('returns 200 with updated quote when consumer rejects', async () => {
@@ -361,7 +373,9 @@ describe('PATCH /api/inquiries/[id]/quotes', () => {
     const acceptedInquiry = { ...MOCK_INQUIRY, status: 'accepted' }
     mockRequireAuth.mockResolvedValueOnce(MOCK_CONSUMER_USER)
     mockGetInquiryById.mockResolvedValueOnce(acceptedInquiry as never)
-    mockRespondToQuote.mockRejectedValueOnce(new Error('Inquiry is already accepted'))
+    mockRespondToQuote.mockRejectedValueOnce(
+      new QuoteMutationError('INQUIRY_NOT_OPEN' as never, 'Inquiry is no longer open'),
+    )
 
     const req = makeRequest('PATCH', `/api/inquiries/${INQUIRY_ID}/quotes`, {
       quote_id: 'quote-uuid-1',
@@ -371,7 +385,8 @@ describe('PATCH /api/inquiries/[id]/quotes', () => {
 
     expect(res.status).toBe(409)
     const body = await res.json()
-    expect(body.error).toBe('Inquiry is already accepted')
+    expect(body.error).toBe('Inquiry is no longer open')
+    expect(body.code).toBe('INQUIRY_NOT_OPEN')
   })
 
   it('returns 404 when quote_id does not belong to this inquiry (IDOR guard)', async () => {
@@ -424,3 +439,5 @@ describe('PATCH /api/inquiries/[id]/quotes', () => {
     expect(body.status).toBe('already_viewed')
   })
 })
+
+vi.mock('@/lib/line/defer', () => ({ deferLineNotification: (task: () => Promise<void>) => { void task().catch(() => {}) } }))

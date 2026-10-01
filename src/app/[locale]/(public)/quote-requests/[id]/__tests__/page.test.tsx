@@ -83,10 +83,9 @@ describe('QuoteRequestPage', () => {
     )
 
     render(<QuoteRequestPage />)
-    await waitFor(() => {
-      expect(screen.getByText('yourInquiry')).toBeInTheDocument()
-    })
-    expect(screen.getByText(/quotesReceived/)).toBeInTheDocument()
+    expect(screen.getByText('yourInquiry')).toBeInTheDocument()
+    // The heading is present during loading; wait for the fetched progress.
+    expect(await screen.findByText('quotesReceived:{"count":1,"total":2}')).toBeInTheDocument()
     expect(screen.getAllByTestId('compare-card')).toHaveLength(2)
     expect(screen.getByText('Ink Wolf')).toBeInTheDocument()
   })

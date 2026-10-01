@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils'
 import type { Message } from '@/types/database'
 import type { QuoteMetadata } from '@/types/chat'
 import { QuoteCard } from './QuoteCard'
+import { toProtectedInquiryMediaUrl } from '@/lib/upload/inquiry-media'
 
 interface MessageBubbleProps {
   readonly message: Message
@@ -24,12 +25,12 @@ export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubblePr
 
     return (
       <div className="flex justify-center py-3">
-        <div className="w-full max-w-md rounded-xl border border-[#2A2A2A] bg-[#141414] px-5 py-4">
-          <div className="mb-2 text-sm font-display font-medium text-[#C8A97E]">{title}</div>
+        <div className="w-full max-w-md rounded-xl border border-[#DEDFD7] bg-[#FFFFFF] px-5 py-4">
+          <div className="mb-2 text-sm font-display font-medium text-[#53614A]">{title}</div>
           {details.length > 0 && (
             <div className="space-y-1">
               {details.map((line, i) => (
-                <p key={i} className="text-sm text-[#F5F0EB]/60">{line}</p>
+                <p key={i} className="text-sm text-[#20241F]/60">{line}</p>
               ))}
             </div>
           )}
@@ -60,13 +61,13 @@ export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubblePr
       <div
         className={cn(
           'max-w-[75%] rounded-2xl px-4 py-2.5',
-          isOwn ? 'bg-[#C8A97E] text-[#0A0A0A]' : 'bg-[#1F1F1F] text-[#F5F0EB]',
+          isOwn ? 'bg-[#53614A] text-[#F7F6F2]' : 'bg-[#DEDFD7] text-[#20241F]',
         )}
       >
         {message.message_type === 'image' ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={message.content ?? ''}
+            src={toProtectedInquiryMediaUrl(message.content ?? '')}
             alt="Shared image"
             className="rounded-lg max-w-full max-h-64 object-cover"
             loading="lazy"
@@ -77,7 +78,7 @@ export function MessageBubble({ message, isOwn, onQuoteAction }: MessageBubblePr
         <time
           className={cn(
             'text-xs mt-1.5 block',
-            isOwn ? 'text-[#0A0A0A]/50' : 'text-[#F5F0EB]/30',
+            isOwn ? 'text-[#F7F6F2]/50' : 'text-[#20241F]/30',
           )}
         >
           {formatTime(message.created_at)}

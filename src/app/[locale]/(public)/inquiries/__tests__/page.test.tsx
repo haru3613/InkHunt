@@ -10,11 +10,13 @@ import type { Inquiry } from '@/types/database'
 const push = vi.fn()
 vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push }),
+  Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }))
 
 // next-intl: return the key itself so chips/empty-copy render a stable,
 // assertable string (same shape as InquiryForm.test.tsx).
 vi.mock('next-intl', () => ({
+  useLocale: () => 'zh-TW',
   useTranslations: () => (key: string) => key,
 }))
 

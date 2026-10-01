@@ -26,8 +26,8 @@ describe('quoteRequestSchema — valid inputs', () => {
       ...validBase,
       artist_ids: [VALID_UUID_1, VALID_UUID_2],
       reference_images: [
-        'https://example.com/ref1.jpg',
-        'https://example.com/ref2.jpg',
+        '/api/media/inquiries/user/ref1.jpg',
+        '/api/media/inquiries/user/ref2.jpg',
       ],
       budget_min: 2000,
       budget_max: 6000,
@@ -147,10 +147,10 @@ describe('quoteRequestSchema — reference_images', () => {
     const result = quoteRequestSchema.safeParse({
       ...validBase,
       reference_images: [
-        'https://example.com/1.jpg',
-        'https://example.com/2.jpg',
-        'https://example.com/3.jpg',
-        'https://example.com/4.jpg',
+        '/api/media/inquiries/user/1.jpg',
+        '/api/media/inquiries/user/2.jpg',
+        '/api/media/inquiries/user/3.jpg',
+        '/api/media/inquiries/user/4.jpg',
       ],
     })
 
@@ -170,9 +170,9 @@ describe('quoteRequestSchema — reference_images', () => {
     const result = quoteRequestSchema.safeParse({
       ...validBase,
       reference_images: [
-        'https://example.com/1.jpg',
-        'https://example.com/2.jpg',
-        'https://example.com/3.jpg',
+        '/api/media/inquiries/user/1.jpg',
+        '/api/media/inquiries/user/2.jpg',
+        '/api/media/inquiries/user/3.jpg',
       ],
     })
 

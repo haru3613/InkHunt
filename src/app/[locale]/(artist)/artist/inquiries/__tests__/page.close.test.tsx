@@ -8,6 +8,7 @@ import zhTW from '../../../../../../../messages/zh-TW.json'
 // NextIntlClientProvider, so stub next-intl to return the zh-TW label — keeps
 // the closed-lead pill showing 已關閉 as the test asserts.
 vi.mock('next-intl', () => ({
+  useLocale: () => 'zh-TW',
   useTranslations: (namespace: string) => (key: string) => {
     const scope = namespace
       .split('.')
@@ -36,6 +37,7 @@ vi.mock('@/hooks/useRealtimeMessages', () => ({
     refetch: vi.fn(),
   }),
 }))
+vi.mock('@/components/booking/BookingPanel', () => ({ BookingPanel: () => null }))
 vi.mock('@/components/chat/ChatInput', () => ({
   ChatInput: () => <div data-testid="chat-input" />,
 }))

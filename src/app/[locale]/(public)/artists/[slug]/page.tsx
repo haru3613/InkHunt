@@ -12,7 +12,7 @@ import { generateArtistJsonLd } from "@/lib/seo"
 import { JsonLd } from "@/components/shared/JsonLd"
 import { BackButton } from "@/components/artists/BackButton"
 import { ArtistProfile } from "@/components/artists/ArtistProfile"
-import { ArtistCompareAction } from "@/components/artists/ArtistCompareAction"
+import { FavoriteButton } from "@/components/artists/FavoriteButton"
 import { ArtistProfileTracker } from "@/components/artists/ArtistProfileTracker"
 import { PortfolioSection } from "@/components/artists/PortfolioSection"
 import { ArtistReviewsSection } from "@/components/artist/ArtistReviewsSection"
@@ -123,14 +123,7 @@ export default async function ArtistProfilePage({ params }: PageProps) {
             <div className="lg:sticky lg:top-20">
               <ArtistProfile artist={artist} artistSlug={artist.slug} />
               <div className="mt-3">
-                <ArtistCompareAction
-                  artist={{
-                    id: artist.id,
-                    display_name: artist.display_name,
-                    slug: artist.slug,
-                    avatar_url: artist.avatar_url ?? null,
-                  }}
-                />
+                <FavoriteButton artistId={artist.id} />
               </div>
             </div>
           </div>

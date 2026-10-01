@@ -23,8 +23,8 @@ export default function OnboardingPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A]">
-        <div className="text-[#F5F0EB]/40">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F6F2]">
+        <div className="text-[#20241F]/40">Loading...</div>
       </div>
     )
   }
@@ -34,14 +34,14 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] px-4 py-10">
+    <div className="min-h-screen bg-[#F7F6F2] px-4 py-10">
       <div className="mx-auto w-full max-w-lg">
         {/* Header */}
         <div className="mb-8">
-          <p className="mb-1 text-xs font-medium tracking-widest text-[#C8A97E] uppercase">
+          <p className="mb-1 text-xs font-medium tracking-widest text-[#53614A] uppercase">
             InkHunt
           </p>
-          <h1 className="text-2xl font-bold tracking-tight text-[#F5F0EB]">
+          <h1 className="text-2xl font-bold tracking-tight text-[#20241F]">
             建立你的刺青師檔案
           </h1>
         </div>

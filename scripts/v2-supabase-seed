@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/v2-local-lib.sh"
+
+v2_require_isolated_stack
+
+status_file="$(mktemp)"
+trap 'rm -f "${status_file}"' EXIT
+v2_status_json > "${status_file}"
+
+service_role_key="$(node -e "const fs=require('node:fs'); const s=JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); process.stdout.write(s.SERVICE_ROLE_KEY || '')" "${status_file}")"
+if [[ -z "${service_role_key}" ]]; then
+  echo "The isolated stack did not return a service role key." >&2
+  exit 1
+fi
+
+cd "${V2_ROOT_DIR}"
+SUPABASE_URL="${V2_API_URL}" \
+SUPABASE_SERVICE_ROLE_KEY="${service_role_key}" \
+  ./node_modules/.bin/tsx scripts/seed-staging.ts
+
+SUPABASE_URL="${V2_API_URL}" \
+SUPABASE_SERVICE_ROLE_KEY="${service_role_key}" \
+  ./node_modules/.bin/tsx scripts/v2-local-auth.ts

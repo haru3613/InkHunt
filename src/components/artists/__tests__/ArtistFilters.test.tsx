@@ -15,6 +15,7 @@ vi.mock('@/i18n/navigation', () => ({
 }))
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'zh-TW',
   useTranslations: () => (key: string) => key,
 }))
 

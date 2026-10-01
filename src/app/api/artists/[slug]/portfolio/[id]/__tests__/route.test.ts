@@ -26,7 +26,7 @@ vi.mock('@/lib/cache/revalidate-artist', () => ({
   revalidateArtistPage: vi.fn(),
 }))
 
-import { DELETE } from '../route'
+import { DELETE, PATCH } from '../route'
 import { requireAuth, getArtistForUser } from '@/lib/auth/helpers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { deletePortfolioStorageObjects } from '@/lib/upload/storage'
@@ -63,6 +63,14 @@ function makeRequest(url: string): NextRequest {
   return new NextRequest(new URL(url, 'http://localhost:3000'), { method: 'DELETE' } as never)
 }
 
+function makePatchRequest(url: string, body: unknown): NextRequest {
+  return new NextRequest(new URL(url, 'http://localhost:3000'), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
 function makeParams(slug: string, id: string) {
   return { params: Promise.resolve({ slug, id }) }
 }
@@ -76,6 +84,101 @@ function makeDeleteChain(singleResult: { data: unknown; error: unknown }) {
     single: vi.fn().mockResolvedValue(singleResult),
   }
 }
+
+function makeUpdateChain(singleResult: { data: unknown; error: unknown }) {
+  return {
+    update: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue(singleResult),
+  }
+}
+
+describe('PATCH /api/artists/[slug]/portfolio/[id]', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('rejects unknown or ownership fields', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+
+    const res = await PATCH(
+      makePatchRequest('/api/artists/test-artist/portfolio/item-uuid-1', {
+        title: '作品',
+        artist_id: 'another-artist',
+      }),
+      makeParams('test-artist', 'item-uuid-1'),
+    )
+
+    expect(res.status).toBe(400)
+    expect(mockGetArtistForUser).not.toHaveBeenCalled()
+    expect(mockCreateAdminClient).not.toHaveBeenCalled()
+  })
+
+  it('returns 403 when the authenticated user does not own the slug', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetArtistForUser.mockResolvedValueOnce({ ...MOCK_ARTIST, slug: 'someone-else' } as never)
+
+    const res = await PATCH(
+      makePatchRequest('/api/artists/test-artist/portfolio/item-uuid-1', { title: '作品' }),
+      makeParams('test-artist', 'item-uuid-1'),
+    )
+
+    expect(res.status).toBe(403)
+  })
+
+  it('updates only the row matching both item id and owner artist id', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetArtistForUser.mockResolvedValueOnce(MOCK_ARTIST as never)
+    const updated = {
+      ...MOCK_ITEM,
+      artist_id: MOCK_ARTIST.id,
+      title: '牡丹與錦鯉',
+      description: '牡丹 錦鯉 日式傳統',
+      style_id: 2,
+      body_part: '前臂',
+      size_cm: '15 x 8 cm',
+    }
+    const updateChain = makeUpdateChain({ data: updated, error: null })
+    mockCreateAdminClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(updateChain),
+    } as never)
+
+    const payload = {
+      title: '牡丹與錦鯉',
+      description: '牡丹 錦鯉 日式傳統',
+      style_id: 2,
+      body_part: '前臂',
+      size_cm: '15 x 8 cm',
+      healed_image_url: null,
+    }
+    const res = await PATCH(
+      makePatchRequest('/api/artists/test-artist/portfolio/item-uuid-1', payload),
+      makeParams('test-artist', 'item-uuid-1'),
+    )
+
+    expect(res.status).toBe(200)
+    expect(updateChain.update).toHaveBeenCalledWith(payload)
+    expect(updateChain.eq).toHaveBeenCalledWith('id', 'item-uuid-1')
+    expect(updateChain.eq).toHaveBeenCalledWith('artist_id', MOCK_ARTIST.id)
+    expect(mockRevalidateArtistPage).toHaveBeenCalledWith('test-artist')
+  })
+
+  it('returns 404 and does not revalidate when the owned row is absent', async () => {
+    mockRequireAuth.mockResolvedValueOnce(MOCK_USER)
+    mockGetArtistForUser.mockResolvedValueOnce(MOCK_ARTIST as never)
+    const updateChain = makeUpdateChain({ data: null, error: { message: 'no rows' } })
+    mockCreateAdminClient.mockReturnValue({ from: vi.fn().mockReturnValue(updateChain) } as never)
+
+    const res = await PATCH(
+      makePatchRequest('/api/artists/test-artist/portfolio/missing', { title: '作品' }),
+      makeParams('test-artist', 'missing'),
+    )
+
+    expect(res.status).toBe(404)
+    expect(mockRevalidateArtistPage).not.toHaveBeenCalled()
+  })
+})
 
 describe('DELETE /api/artists/[slug]/portfolio/[id]', () => {
   beforeEach(() => {

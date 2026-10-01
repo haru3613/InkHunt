@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { ImagePlus, X, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { uploadFile } from '@/lib/upload/client'
+import { toProtectedInquiryMediaUrl } from '@/lib/upload/inquiry-media'
 
 const MAX_REFERENCE_SIZE = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -85,10 +86,11 @@ export function ReferenceImageUpload({
             className="relative aspect-square overflow-hidden rounded-lg border border-border"
           >
             <Image
-              src={url}
+              src={toProtectedInquiryMediaUrl(url)}
               alt={`${t('referenceImage')} ${index + 1}`}
               fill
               sizes="120px"
+              unoptimized
               className="object-cover"
             />
             <button

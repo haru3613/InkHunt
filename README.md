@@ -1,104 +1,56 @@
-# InkHunt — 找到你的刺青師
+# InkHunt v2
 
-台灣第一個刺青師垂直媒合平台。按風格篩選、瀏覽作品集、價格透明、一鍵詢價。
+免費的台灣刺青師媒合網站。讓使用者從作品找到喜歡的創作者，免費詢價、溝通並確認預約。刺青師免費入駐，平台不收取抽成、訂閱費或曝光費。
 
-## Features
+## MVP
 
-- **風格篩選** — 18 種刺青風格標籤（寫實、幾何、日式、極簡線條...）
-- **地區篩選** — 台灣各縣市
-- **作品集展示** — 大圖 Gallery + Lightbox + 恢復照對比
-- **一鍵詢價** — 填寫需求、選部位、設預算，LINE 登入送出
-- **SEO 優先** — 每位刺青師都有獨立 SEO 頁面 + JSON-LD 結構化資料
-- **Mobile-first** — 手機優先設計，底部 Tab 導航
+- 作品探索：題材、風格、地區、分頁、收藏與空狀態。
+- 初次刺青引導：從喜歡的題材與地區開始找方向。
+- 刺青師頁：作品、參考價格、個人資訊與結構化 SEO。
+- 三步驟詢價：描述、私人參考圖、部位、大小、預算，LINE 登入後保留草稿。
+- 私人對話與報價：持久化訊息、即時更新、接受／婉拒與狀態鎖定。
+- 預約安排：刺青師提出台灣時間與地點，使用者確認，雙方可取消。
+- 刺青師入駐：LINE 身分、審核、私人檔案、作品上傳／編輯／刪除、上傳失敗重試。
+- 管理員：核准、退回、停權；未核准內容不公開。
 
-## Tech Stack
+預約不包含線上付款、訂金代收或公開即時空檔日曆。付款與取消約定由雙方直接確認。
 
-| Layer | Choice |
-|-------|--------|
-| Framework | Next.js 15 (App Router) + TypeScript |
-| UI | Tailwind CSS 4 + shadcn/ui |
-| Database | Supabase (PostgreSQL + RLS) |
-| Auth | LINE Login (LIFF) |
-| Storage | Supabase Storage |
-| Deploy | Vercel |
+## Local acceptance
 
-## Getting Started
+Node 22.14+ (22.x) and npm 11.6.2. A working Docker installation is needed for the isolated Supabase stack.
 
 ```bash
-# Install dependencies
-npm install
-
-# Copy env vars
-cp .env.local.example .env.local
-# Fill in your Supabase and LINE credentials
-
-# Run dev server
-npm run dev
+npx --yes npm@11.6.2 ci
+./scripts/v2-supabase-up
+./scripts/v2-supabase-seed
+./scripts/v2-dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-## Project Structure
-
-```
-src/
-  app/                    # Next.js App Router
-    (public)/             # Consumer pages (no auth)
-      artists/            # Artist list + profile
-      styles/             # Style category pages (SSG)
-    (artist)/             # Artist dashboard (LINE auth)
-    (admin)/              # Admin panel
-    api/                  # API Route Handlers
-  components/
-    artists/              # ArtistCard, Profile, Portfolio, Filters
-    inquiry/              # InquiryForm
-    layout/               # Header, Footer, MobileNav
-    ui/                   # shadcn/ui components
-  lib/
-    supabase/             # Client + queries
-    validations/          # Zod schemas
-    seo.ts                # JSON-LD helpers
-    utils.ts              # Shared utilities
-supabase/
-  migrations/             # SQL schema + RLS policies
-  seed.sql                # 18 tattoo style tags
-```
-
-## Scripts
+Open http://localhost:3200/zh-TW. The development-only **Dev Login** menu provides consumer, artist and admin test accounts. The v2 stack uses ports 5632x and its own volume. Never run the local seed against production.
 
 ```bash
-npm run dev              # Dev server (Turbopack)
-npm run build            # Production build
-npm run test:unit        # Vitest unit tests
-npm run test:e2e         # Playwright E2E tests
-npm run test:unit:coverage  # Unit tests with coverage
+npm run test:v2:acceptance
+npx eslint src/
+npx tsc --noEmit
+npm run test:unit -- --maxWorkers=2
+# Stop dev before building into the same .next directory.
+NODE_OPTIONS=--max-old-space-size=2048 npm run build -- --webpack
 ```
 
-## Database
+## Delivery documents
 
-8 tables: `artists`, `styles`, `artist_styles`, `portfolio_items`, `inquiries`, `quotes`, `reviews`, `favorites`
+- [Product scope](docs/v2/product.md)
+- [Local harness](docs/v2/local-verification.md)
+- [Verification receipt](docs/v2/verification.md)
+- [Production rollout](docs/v2/launch.md)
+- [Current production audit and pending decisions](docs/v2/production-readiness.md)
+- [Design system](DESIGN.md)
+- [Visual references and asset provenance](docs/v2/assets.md)
 
-Schema: `supabase/migrations/001_initial_schema.sql`
-RLS: `supabase/migrations/002_rls_policies.sql`
-Seed: `supabase/seed.sql` (18 tattoo styles)
+The local MVP is verified separately from deployment. Production LINE OAuth/push, cloud migrations/storage and the deployed domain must be checked before public launch. No real user notifications are sent by the isolated local test harness.
 
-## Roadmap
+## Stack
 
-- [x] Project setup + architecture
-- [x] Artist list page with style/city filters
-- [x] Artist profile page with portfolio gallery
-- [x] Inquiry form with Zod validation
-- [x] 18 style category pages (SSG)
-- [x] SEO (sitemap, robots, JSON-LD, OG tags)
-- [x] Test infrastructure (Vitest + Playwright)
-- [ ] LINE Login integration
-- [ ] Artist dashboard (inquiry management)
-- [ ] Artist portfolio management
-- [ ] LINE Messaging notifications
-- [ ] Admin panel
-- [ ] Connect to Supabase (replace mock data)
-- [ ] Deploy to Vercel
+Next.js 16.2.1, React 19, TypeScript, next-intl, Tailwind CSS, Base UI, Supabase Postgres/Auth/Storage/Realtime, LINE Login/Messaging. Server-validated identity comes from `app_metadata`. Private media is participant-scoped; lifecycle mutations use database transactions.
 
-## License
-
-Private
+Private repository.

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { FavoriteButton } from '../FavoriteButton'
 
+vi.mock('next-intl', () => ({ useLocale: () => 'zh-TW' }))
+
 const ARTIST_ID = '11111111-1111-4111-8111-111111111111'
 
 // Mutable auth state the mocked useAuth returns; tests tweak before render.

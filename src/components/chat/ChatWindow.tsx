@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import { MessageBubble } from './MessageBubble'
 import { ChatInput } from './ChatInput'
+import { BookingPanel } from '@/components/booking/BookingPanel'
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages'
 import type { Inquiry } from '@/types/database'
 
@@ -26,7 +27,7 @@ interface ChatWindowProps {
   readonly currentUserId: string
   readonly isArtist: boolean
   readonly onSendQuote?: () => void
-  readonly onQuoteAction?: (quoteId: string, action: 'accepted' | 'rejected') => void
+  readonly onQuoteAction?: (quoteId: string, action: 'accepted' | 'rejected') => Promise<void> | void
   /** Current inquiry status — drives the artist close-lead header. */
   readonly status?: Inquiry['status']
   /** Artist-only: close the lead (PATCH status=closed). */
@@ -51,9 +52,20 @@ export function ChatWindow({
   closeError,
   budgetRange,
 }: ChatWindowProps) {
-  const { messages, isLoading, sendMessage } = useRealtimeMessages(inquiryId)
+  const { messages, isLoading, error, sendMessage, refetch } = useRealtimeMessages(inquiryId)
+  const en = useLocale() === 'en'
   const t = useTranslations('inquiry.budgetRange')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [liveStatus, setLiveStatus] = useState<Inquiry['status'] | undefined>(status)
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/inquiries/${inquiryId}`).then(async response => {
+      if (!response.ok) return
+      const data = await response.json()
+      if (!cancelled && data.inquiry?.status) setLiveStatus(data.inquiry.status)
+    }).catch(() => { /* message retry remains available */ })
+    return () => { cancelled = true }
+  }, [inquiryId, messages.length, status])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -63,24 +75,28 @@ export function ChatWindow({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full text-[#F5F0EB]/40">
+      <div className="flex items-center justify-center h-full text-[#20241F]/40">
         載入中...
       </div>
     )
   }
 
-  const isClosed = status === 'closed'
+  const effectiveStatus = status === 'closed' || liveStatus === 'closed' ? 'closed'
+    : status === 'accepted' || liveStatus === 'accepted' ? 'accepted'
+    : liveStatus ?? status
+  const isClosed = effectiveStatus === 'closed'
   const budgetLabel =
     budgetRange && BUDGET_RANGE_CODES.has(budgetRange)
       ? t(`options.${budgetRange}`)
       : t('notSpecified')
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex min-h-0 flex-1 flex-col">
+      {error && <p role="alert" className="bg-destructive/10 p-3 text-sm text-destructive">{en ? "Could not refresh messages." : "訊息暫時無法更新。"} <button className="underline" onClick={() => void refetch()}>{en ? "Retry" : "重試"}</button></p>}
       {isArtist && (
-        <div className="border-b border-[#2A2A2A] bg-[#0A0A0A] px-4 py-2.5">
+        <div className="border-b border-[#DEDFD7] bg-[#F7F6F2] px-4 py-2.5">
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
-            <p className="text-[12px] leading-snug text-[#F5F0EB]/40">
+            <p className="text-[12px] leading-snug text-[#20241F]/40">
               {NEXT_STEP_COPY}
             </p>
             {isClosed ? (
@@ -92,13 +108,13 @@ export function ChatWindow({
                 type="button"
                 onClick={onCloseLead}
                 disabled={isClosing}
-                className="shrink-0 rounded-full border border-[#2A2A2A] px-3 py-1 text-[12px] font-medium text-[#F5F0EB]/60 transition-colors hover:border-[#555555] hover:text-[#F5F0EB] disabled:opacity-50"
+                className="shrink-0 rounded-full border border-[#DEDFD7] px-3 py-1 text-[12px] font-medium text-[#20241F]/60 transition-colors hover:border-[#555555] hover:text-[#20241F] disabled:opacity-50"
               >
                 {isClosing ? '關閉中…' : '關閉詢價'}
               </button>
             )}
           </div>
-          <p className="mx-auto mt-1 max-w-2xl text-[12px] text-[#F5F0EB]/40">
+          <p className="mx-auto mt-1 max-w-2xl text-[12px] text-[#20241F]/40">
             預算範圍：{budgetLabel}
           </p>
           {closeError && (
@@ -115,14 +131,16 @@ export function ChatWindow({
               key={msg.id}
               message={msg}
               isOwn={msg.sender_id === currentUserId}
-              onQuoteAction={onQuoteAction}
+              onQuoteAction={onQuoteAction ? async (quoteId, action) => { await onQuoteAction(quoteId, action); await refetch() } : undefined}
             />
           ))}
         </div>
       </div>
+      <div className="mx-auto w-full max-w-2xl px-4"><BookingPanel inquiryId={inquiryId} isArtist={isArtist} inquiryStatus={effectiveStatus} /></div>
       <ChatInput
         onSendMessage={sendMessage}
-        onSendQuote={onSendQuote}
+        onSendQuote={effectiveStatus === 'accepted' || isClosed ? undefined : onSendQuote}
+        disabled={isClosed}
         isArtist={isArtist}
       />
     </div>
