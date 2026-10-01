@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronLeft, ChevronRight, MessageSquare, RefreshCw } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Link } from '@/i18n/navigation'
@@ -15,8 +15,12 @@ import type { ArtistDashboardData, DashboardPeriod } from '@/types/artist-dashbo
 const PERIODS = [{ value: '7', label: '近 7 天' }, { value: '30', label: '近 30 天' }, { value: '90', label: '近 90 天' }]
 const number = new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 1 })
 const shortDate = (date: string) => date.slice(5).replace('-', '/')
+const subscribeHydration = () => () => {}
+const clientHydrated = () => true
+const serverHydrated = () => false
 
 export default function DashboardPage() {
+  const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated)
   const { artist } = useAuth()
   const [selectedDate, setSelectedDate] = useState(() => getTaipeiDate(new Date()))
   const [period, setPeriod] = useState<DashboardPeriod>(30)
@@ -50,6 +54,10 @@ export default function DashboardPage() {
   const selectedAppointments = appointments.filter(item => getTaipeiDate(new Date(item.startsAt)) === selectedDate)
   const ready = data && !loading && !loadError
   const firstInquiry = data?.actionQueue[0]
+
+  // A static server render may come from yesterday's build. Do not hydrate a
+  // build-time calendar date into today's client calendar.
+  if (!hydrated) return <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-8 lg:px-10"><CalendarLoading /></div>
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 text-foreground sm:px-8 lg:px-10">

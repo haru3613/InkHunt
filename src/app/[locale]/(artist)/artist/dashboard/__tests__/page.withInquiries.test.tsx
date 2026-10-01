@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { renderToString } from 'react-dom/server'
 import { dashboardFixture } from '@/components/artists/dashboard/__tests__/fixture'
 import { addDays, getWeekStart } from '@/lib/artist-dashboard/dates'
 import { formatCalendarDate } from '@/components/artists/dashboard/CalendarWeek'
@@ -24,6 +25,12 @@ function mockDashboard() {
 
 describe('Artist calendar dashboard', () => {
   beforeEach(() => vi.stubGlobal('fetch', mockDashboard()))
+
+  it('does not freeze a build-time calendar date into static server markup', () => {
+    const html = renderToString(<DashboardPage />)
+    expect(html).toContain('正在載入行事曆')
+    expect(html).not.toContain(formatCalendarDate(dashboardFixture().today))
+  })
 
   it('uses aggregate metrics above 20 and links each calendar/queue item to its conversation', async () => {
     render(<DashboardPage />)

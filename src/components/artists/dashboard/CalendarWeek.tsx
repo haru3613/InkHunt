@@ -58,8 +58,8 @@ export function CalendarWeek({ start, today, selectedDate, appointments, onSelec
       </div>
       <div className="hidden md:block">
         {bands.map(hour => <div key={hour} className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-b border-border/70 last:border-b-0">
-          <div className="flex flex-col gap-0.5 border-r border-border/70 pt-3 text-[10px] tabular-nums text-muted-foreground" aria-hidden="true"><span>{String(hour).padStart(2, '0')}:00</span><span>– {String(hour + 3).padStart(2, '0')}:00</span></div>
-          {days.map(day => <div key={day} className={cn('flex min-h-[84px] min-w-0 flex-col gap-2 border-r border-border/70 px-1.5 py-2 last:border-r-0', day === selectedDate && 'bg-primary/5')}>
+          <div className="flex flex-col gap-0.5 border-r border-border/70 pt-3 text-[11px] tabular-nums text-muted-foreground" aria-hidden="true"><span>{String(hour).padStart(2, '0')}:00</span><span>– {String(hour + 3).padStart(2, '0')}:00</span></div>
+          {days.map(day => <div key={day} className={cn('flex min-h-[70px] min-w-0 flex-col gap-2 border-r border-border/70 px-1.5 py-2 last:border-r-0', day === selectedDate && 'bg-primary/5')}>
             {(groups.get(`${day}:${hour}`) ?? []).map(item => <Link key={item.id} href={inquiryHref(item.inquiryId)}
               aria-label={`${formatCalendarDate(day)} ${formatTaipeiTime(item.startsAt)} ${appointmentTitle(item)}，${item.status === 'confirmed' ? '已確認' : '待客人確認'}，開啟詢價`}
               className="group flex min-w-0 flex-col gap-1 rounded-lg border border-border bg-card px-2 py-2 text-[13px] transition-colors hover:border-primary/50 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
